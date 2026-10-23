@@ -8,3 +8,7 @@ dist/
 wohnpilot-uebergabe.zip
 .phpunit.cache/
 backend/var/
+# Frontend build output (npm run build in frontend/)
+backend/public/*
+!backend/public/index.php
+!backend/public/.htaccess

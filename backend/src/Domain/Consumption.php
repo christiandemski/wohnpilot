@@ -30,10 +30,12 @@ final class Consumption
                 continue;
             }
             $days = Day::between($previous->date, $current->date);
+            $amount = $current->value - $previous->value;
             if ($days <= 0) {
+                // Two readings on one day: the difference belongs to that day.
+                $this->daily[$current->date] = ($this->daily[$current->date] ?? 0.0) + $amount;
                 continue;
             }
-            $amount = $current->value - $previous->value;
             $this->intervals[] = ['from' => $previous->date, 'to' => $current->date, 'days' => $days, 'amount' => $amount];
             $perDay = $amount / $days;
             for ($d = 0; $d < $days; $d++) {

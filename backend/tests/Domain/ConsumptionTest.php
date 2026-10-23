@@ -96,6 +96,19 @@ final class ConsumptionTest extends TestCase
         self::assertSame(0.0, $meter->latest()->value - 31.0);
     }
 
+    public function testSecondReadingOnTheSameDayIsNotLost(): void
+    {
+        $meter = MeterFactory::withRows([
+            ['2026-10-24', '23712.0'],
+            ['2026-10-24', '23702.0'],
+            ['2026-10-01', '23456.0'],
+        ]);
+
+        $october = (new Consumption($meter))->monthly('2026-10-24', 1)[0];
+
+        self::assertEqualsWithDelta(256.0, $october['amount'], 1e-9);
+    }
+
     public function testSingleReadingHasNoConsumption(): void
     {
         $consumption = new Consumption(MeterFactory::withRows([['2026-10-01', '1234.567']]));

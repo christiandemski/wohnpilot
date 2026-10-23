@@ -1,0 +1,188 @@
+/*
+ * Base styles. All colours, spaces and radii come from the design tokens
+ * (docs/design/tokens.css); nothing here is a hard-coded colour.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--paper);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 21px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Buttons (docs/design/komponenten/Button.md) */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-full);
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.btn-primary {
+  min-height: var(--button-height);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.btn-large {
+  min-height: var(--button-height-l);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.on-surface .btn-secondary,
+.btn-secondary.on-surface {
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.btn-inverse {
+  min-height: var(--touch-min);
+  background: var(--inverse);
+  color: var(--on-inverse);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.btn-icon {
+  width: var(--touch-min);
+  height: var(--touch-min);
+  padding: 0;
+  flex-shrink: 0;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.btn-icon-l {
+  width: var(--button-height-l);
+  height: var(--button-height-l);
+}
+
+/* Cards and form fields */
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field label,
+.field .label {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+.field .hint {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-muted);
+}
+
+.field .error {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--due);
+}
+
+.input {
+  min-height: var(--touch-min);
+  width: 100%;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.input:focus-visible {
+  border-color: var(--accent);
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--due);
+}

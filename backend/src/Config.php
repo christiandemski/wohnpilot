@@ -31,7 +31,8 @@ final readonly class Config
             }
         }
         $env = [];
-        foreach ($_ENV + getenv() as $key => $value) {
+        // Real environment variables win over .env (Dotenv cannot see getenv-only variables).
+        foreach (getenv() + $_ENV as $key => $value) {
             if (is_string($value)) {
                 $env[$key] = $value;
             }
