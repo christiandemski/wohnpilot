@@ -61,7 +61,7 @@ final readonly class Meter
             readings: $readings,
             object: (string) $fm->get('objekt', ''),
             number: (string) $fm->get('zaehlernummer', ''),
-            name: (string) $fm->get('name', ''),
+            name: (string) $fm->get('bezeichnung', ''),
         );
     }
 

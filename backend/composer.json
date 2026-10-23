@@ -12,17 +12,29 @@
         "vlucas/phpdotenv": "^5.7"
     },
     "autoload": {
-        "psr-4": { "Wohnpilot\\": "src/" }
+        "psr-4": {
+            "Wohnpilot\\": "src/"
+        }
     },
     "autoload-dev": {
-        "psr-4": { "Wohnpilot\\Tests\\": "tests/" }
+        "psr-4": {
+            "Wohnpilot\\Tests\\": "tests/"
+        }
     },
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit",
+        "test-live": "phpunit --group live",
+        "seed-dev": "php bin/seed-dev.php",
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "php -S localhost:8080 -t public public/index.php"
+        ]
     },
     "config": {
         "sort-packages": true,
-        "platform": { "php": "8.3.0" }
+        "platform": {
+            "php": "8.3.0"
+        }
     },
     "require-dev": {
         "phpunit/phpunit": "^12.5"
