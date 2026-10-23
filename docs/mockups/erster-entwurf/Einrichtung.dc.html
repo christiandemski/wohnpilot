@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Hausbuch – Einrichtung</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&amp;family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1F6F6B}a:hover{color:#16524F}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F3EC; color: #1F2328; font-family: 'IBM Plex Sans', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+<header style="padding: 24px 16px 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #5E646C"><span style="width: 10px; height: 10px; border-radius: 3px; background: #1F6F6B"></span>Hausbuch einrichten</span>
+<span style="font-size: 12px; color: #5E646C">{{stepLabel}}</span>
+</div>
+<span style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px">
+<sc-for list="{{progress}}" as="p" hint-placeholder-count="5"><span style="height: 4px; border-radius: 2px; background: {{p.bg}}"></span></sc-for>
+</span>
+<h1 style="margin: 0; font-family: 'Fraunces', serif; font-weight: 600; font-size: 26px; line-height: 1.2">{{stepTitle}}</h1>
+<p style="margin: 0; font-size: 14px; color: #5E646C; line-height: 1.45">{{stepLead}}</p>
+</header>
+<main style="flex-grow: 1; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+
+<sc-if value="{{isStep0}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{storage}}" as="o" hint-placeholder-count="3">
+<button type="button" onClick="{{o.pick}}" aria-pressed="{{o.pressed}}" style="{{o.style}}">
+<span style="display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 10px; border: 2px solid {{o.ring}}; box-sizing: border-box; flex-shrink: 0; margin-top: 2px"><sc-if value="{{o.selected}}" hint-placeholder-val="{{ false }}"><span style="width: 10px; height: 10px; border-radius: 5px; background: #1F6F6B"></span></sc-if></span>
+<span style="display: flex; flex-direction: column; gap: 2px; text-align: left; flex-grow: 1"><span style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #1F2328">{{o.name}}<sc-if value="{{o.hasBadge}}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; font-weight: 600; color: #16524F; background: #DDEDEC; border-radius: 999px; padding: 2px 8px">Empfohlen</span></sc-if></span><span style="font-size: 13px; color: #5E646C; line-height: 1.4">{{o.desc}}</span></span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{isNextcloud}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 6px; padding-top: 6px">
+<label for="nc-url" style="font-size: 13px; font-weight: 600">Nextcloud-Adresse</label>
+<input id="nc-url" type="url" value="https://cloud.codekorb.de" style="min-height: 44px; box-sizing: border-box; border: 1px solid #C9C3B6; border-radius: 8px; padding: 0 12px; font-family: 'IBM Plex Mono', monospace; font-size: 14px; background: #FFFFFF; color: #1F2328">
+<span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5E646C"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Im nächsten Schritt meldest du dich bei Nextcloud an und erteilst ein App-Passwort nur für das Hausbuch.</span>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{isStep1}}" hint-placeholder-val="{{ false }}">
+<div role="group" aria-label="Art des Objekts" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" onClick="{{pickHaus}}" aria-pressed="{{hausPressed}}" style="{{hausStyle}}">Haus</button>
+<button type="button" onClick="{{pickWohnung}}" aria-pressed="{{wohnungPressed}}" style="{{wohnungStyle}}">Wohnung</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<span style="display: flex; flex-direction: column; gap: 6px"><label for="einzug" style="font-size: 13px; font-weight: 600">Einzug</label><input id="einzug" type="text" value="[TT.MM.JJJJ]" style="min-height: 44px; box-sizing: border-box; border: 1px solid #C9C3B6; border-radius: 8px; padding: 0 12px; font-family: 'IBM Plex Mono', monospace; font-size: 14px; background: #FFFFFF; color: #1F2328; width: 100%"></span>
+<span style="display: flex; flex-direction: column; gap: 6px"><label for="flaeche" style="font-size: 13px; font-weight: 600">Wohnfläche</label><input id="flaeche" type="text" value="[m²]" style="min-height: 44px; box-sizing: border-box; border: 1px solid #C9C3B6; border-radius: 8px; padding: 0 12px; font-family: 'IBM Plex Mono', monospace; font-size: 14px; background: #FFFFFF; color: #1F2328; width: 100%"></span>
+</div>
+<span style="font-size: 13px; font-weight: 600; padding-top: 6px">Räume und Orte</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{rooms}}" as="r" hint-placeholder-count="10">
+<button type="button" onClick="{{r.pick}}" aria-pressed="{{r.pressed}}" style="{{r.style}}">{{r.name}}</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isStep2}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{heating}}" as="h" hint-placeholder-count="7">
+<button type="button" onClick="{{h.pick}}" aria-pressed="{{h.pressed}}" style="{{h.style}}">
+<span style="display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 5px; border: 2px solid {{h.ring}}; background: {{h.boxBg}}; box-sizing: border-box; flex-shrink: 0"><sc-if value="{{h.selected}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></sc-if></span>
+<span style="display: flex; flex-direction: column; gap: 1px; text-align: left"><span style="font-size: 15px; font-weight: 600; color: #1F2328">{{h.name}}</span><span style="font-size: 12px; color: #5E646C">{{h.desc}}</span></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isStep3}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #E2DDD2; border-radius: 12px; padding: 2px 8px 2px 16px">
+<sc-for list="{{meters}}" as="m" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 8px; min-height: 56px; border-bottom: 1px solid {{m.line}}">
+<span style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1"><span style="font-size: 15px; font-weight: 600">{{m.name}}</span><span style="font-size: 12px; color: #5E646C">{{m.hint}}</span></span>
+<button type="button" onClick="{{m.dec}}" aria-label="{{m.decLabel}}" style="width: 44px; height: 44px; border: 1px solid #E2DDD2; border-radius: 22px; background: #FFFFFF; color: #1F2328; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+<span style="width: 28px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 500">{{m.count}}</span>
+<button type="button" onClick="{{m.inc}}" aria-label="{{m.incLabel}}" style="width: 44px; height: 44px; border: 1px solid #E2DDD2; border-radius: 22px; background: #FFFFFF; color: #1F2328; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+</sc-for>
+</div>
+<span style="font-size: 13px; color: #5E646C">{{meterSum}}</span>
+</sc-if>
+
+<sc-if value="{{isStep4}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #FFFFFF; border: 1px solid #E2DDD2; border-radius: 12px">
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-size: 15px; font-weight: 600">Tonnen selbst rausstellen</span><span style="font-size: 12px; color: #5E646C">{{binsText}}</span></span>
+<button type="button" role="switch" aria-checked="{{binsChecked}}" aria-label="Tonnen selbst rausstellen" onClick="{{toggleBins}}" style="width: 52px; height: 32px; border-radius: 16px; border: 0; padding: 3px; background: {{switchBg}}; display: flex; justify-content: {{switchAlign}}; cursor: pointer; flex-shrink: 0"><span style="width: 26px; height: 26px; border-radius: 13px; background: #FFFFFF"></span></button>
+</div>
+<button type="button" style="min-height: 44px; border: 1px dashed #C9C3B6; border-radius: 12px; background: transparent; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; font-weight: 600; color: #1F6F6B; cursor: pointer">Abfuhrkalender importieren (ICS)</button>
+<span style="font-size: 13px; font-weight: 600; padding-top: 6px">Deine Pflichten laut Mietvertrag</span>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{duties}}" as="d" hint-placeholder-count="4">
+<button type="button" onClick="{{d.pick}}" aria-pressed="{{d.pressed}}" style="{{d.style}}">
+<span style="display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 5px; border: 2px solid {{d.ring}}; background: {{d.boxBg}}; box-sizing: border-box; flex-shrink: 0"><sc-if value="{{d.selected}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></sc-if></span>
+<span style="font-size: 15px; font-weight: 500; color: #1F2328; text-align: left">{{d.name}}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+<dl style="margin: 0; display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #E2DDD2; border-radius: 12px; padding: 4px 16px">
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #E2DDD2"><dt style="font-size: 13px; color: #5E646C">Speicherort</dt><dd style="margin: 0; font-size: 14px; font-weight: 600; text-align: right">{{sumStorage}}</dd></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #E2DDD2"><dt style="font-size: 13px; color: #5E646C">Objekt</dt><dd style="margin: 0; font-size: 14px; font-weight: 600; text-align: right">{{sumObjekt}}</dd></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #E2DDD2"><dt style="font-size: 13px; color: #5E646C">Heizung</dt><dd style="margin: 0; font-size: 14px; font-weight: 600; text-align: right">{{sumHeating}}</dd></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #E2DDD2"><dt style="font-size: 13px; color: #5E646C">Zähler</dt><dd style="margin: 0; font-size: 14px; font-weight: 600; text-align: right">{{sumMeters}}</dd></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; padding: 12px 0"><dt style="font-size: 13px; color: #5E646C">Müll</dt><dd style="margin: 0; font-size: 14px; font-weight: 600; text-align: right">{{sumBins}}</dd></div>
+</dl>
+<span style="display: flex; gap: 8px; font-size: 13px; color: #5E646C; line-height: 1.45"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E7D4F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Das Hausbuch legt jetzt Ordner, Zähler und Erinnerungen an. Alles bleibt in den Einstellungen änderbar.</span>
+</sc-if>
+</main>
+<footer style="padding: 12px 16px 28px; display: flex; gap: 8px">
+<sc-if value="{{showBack}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{back}}" style="min-height: 52px; padding: 0 20px; border: 1px solid #C9C3B6; background: #FFFFFF; border-radius: 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; font-weight: 600; color: #1F2328; cursor: pointer">Zurück</button></sc-if>
+<sc-if value="{{showNext}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{next}}" style="flex-grow: 1; min-height: 52px; border: 0; background: #1F6F6B; border-radius: 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; font-weight: 600; color: #FFFFFF; cursor: pointer">{{nextLabel}}</button></sc-if>
+<sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}"><a href="Main.dc.html" style="flex-grow: 1; min-height: 52px; background: #1F6F6B; border-radius: 8px; font-size: 15px; font-weight: 600; color: #FFFFFF; display: flex; align-items: center; justify-content: center; text-decoration: none">Zur Übersicht</a></sc-if>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+get s() {
+return this.state || {};
+}
+val(key, def) {
+const v = this.s[key];
+return v === undefined ? def : v;
+}
+toggleIn(key, def, id) {
+const list = this.val(key, def).slice();
+const i = list.indexOf(id);
+if (i >= 0) { list.splice(i, 1); } else { list.push(id); }
+this.setState({ [key]: list });
+}
+choiceStyle(selected) {
+return 'display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; min-height: 44px; width: 100%; box-sizing: border-box; border-radius: 12px; cursor: pointer; font-family: inherit; background: #FFFFFF; border: ' + (selected ? '2px solid #1F6F6B' : '1px solid #E2DDD2') + '; margin: ' + (selected ? '0' : '1px 0');
+}
+checkStyle(selected) {
+return 'display: flex; align-items: center; gap: 12px; padding: 10px 14px; min-height: 48px; width: 100%; box-sizing: border-box; border-radius: 12px; cursor: pointer; font-family: inherit; background: ' + (selected ? '#F1F7F6' : '#FFFFFF') + '; border: 1px solid ' + (selected ? '#1F6F6B' : '#E2DDD2');
+}
+chipStyle(selected) {
+return 'min-height: 40px; padding: 0 14px; border-radius: 999px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: ' + (selected ? '600' : '500') + '; background: ' + (selected ? '#DDEDEC' : '#FFFFFF') + '; color: ' + (selected ? '#16524F' : '#1F2328') + '; border: 1px solid ' + (selected ? '#1F6F6B' : '#E2DDD2');
+}
+segStyle(selected) {
+return 'min-height: 48px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 600; background: ' + (selected ? '#1F6F6B' : '#FFFFFF') + '; color: ' + (selected ? '#FFFFFF' : '#1F2328') + '; border: 1px solid ' + (selected ? '#1F6F6B' : '#C9C3B6');
+}
+renderVals() {
+const step = this.val('step', 0);
+const storageId = this.val('storage', 'nextcloud');
+const objekt = this.val('objekt', 'haus');
+const roomsSel = this.val('rooms', ['Keller', 'Küche', 'Bad', 'Wohnzimmer', 'Garten']);
+const heatSel = this.val('heating', ['gas', 'kamin']);
+const meterVals = this.val('meters', { strom: 1, wasser: 1, gas: 1, garten: 1, waerme: 0, pv: 0 });
+const binsOut = this.val('binsOut', false);
+const dutySel = this.val('duties', ['garten', 'winterdienst']);
+
+const titles = ['Wo sollen deine Daten liegen?', 'Dein Zuhause', 'Wie wird geheizt?', 'Welche Zähler gibt es?', 'Müll und Pflichten', 'Alles bereit'];
+const leads = [
+'Du kannst das später ändern. Ein Wechsel läuft über Export und Import.',
+'Haus oder Wohnung bestimmt, welche Module und Vorlagen passen.',
+'Mehrfachauswahl möglich. Jede Heizform bringt passende Wartungen und Termine mit.',
+'Daraus entstehen deine Zähler und die Reihenfolge der Ablese-Runde.',
+'Damit erinnert das Hausbuch nur an das, was wirklich deine Aufgabe ist.',
+'Das hast du eingerichtet:'
+];
+
+const storageOpts = [
+{ id: 'nextcloud', name: 'Nextcloud Notes', desc: 'Markdown-Notizen in deiner Nextcloud, auch ohne App lesbar.', badge: true },
+{ id: 'sqlite', name: 'SQLite', desc: 'Eine Datei auf dem Server. Einfach und schnell, ohne Nextcloud.', badge: false },
+{ id: 'mysql', name: 'MySQL / MariaDB', desc: 'Datenbank auf deinem Webhosting, gut für mehrere Personen.', badge: false }
+];
+const storage = storageOpts.map((o) => {
+const selected = o.id === storageId;
+return { name: o.name, desc: o.desc, hasBadge: o.badge, selected: selected, pressed: selected ? 'true' : 'false', ring: selected ? '#1F6F6B' : '#C9C3B6', style: this.choiceStyle(selected), pick: () => this.setState({ storage: o.id }) };
+});
+
+const roomNames = ['Keller', 'Küche', 'Bad', 'Wohnzimmer', 'Schlafzimmer', 'Arbeitszimmer', 'Flur', 'Dachboden', 'Garage', 'Garten'];
+const rooms = roomNames.map((n) => {
+const selected = roomsSel.indexOf(n) >= 0;
+return { name: n, pressed: selected ? 'true' : 'false', style: this.chipStyle(selected), pick: () => this.toggleIn('rooms', roomsSel, n) };
+});
+
+const heatOpts = [
+{ id: 'gas', name: 'Gas', desc: 'Gaszähler, Wartung, Schornsteinfeger' },
+{ id: 'oel', name: 'Öl', desc: 'Tankstand, Nachkauf, Schornsteinfeger' },
+{ id: 'pellets', name: 'Pellets', desc: 'Lagerstand, Bestellungen, Schornsteinfeger' },
+{ id: 'wp', name: 'Wärmepumpe', desc: 'Eigener Stromzähler, Filter, Wartung' },
+{ id: 'fern', name: 'Fernwärme', desc: 'Wärmemengenzähler, Abrechnung' },
+{ id: 'nacht', name: 'Nachtspeicher', desc: 'Stromzähler mit HT/NT' },
+{ id: 'kamin', name: 'Kamin oder Kaminofen', desc: 'Kehrtermine, Feuerstättenschau, Holzvorrat' }
+];
+const heating = heatOpts.map((h) => {
+const selected = heatSel.indexOf(h.id) >= 0;
+return { name: h.name, desc: h.desc, selected: selected, pressed: selected ? 'true' : 'false', ring: selected ? '#1F6F6B' : '#C9C3B6', boxBg: selected ? '#1F6F6B' : '#FFFFFF', style: this.checkStyle(selected), pick: () => this.toggleIn('heating', heatSel, h.id) };
+});
+
+const meterOpts = [
+{ id: 'strom', name: 'Strom', hint: 'Haushalt, ggf. HT/NT' },
+{ id: 'wasser', name: 'Wasser', hint: 'Kalt- und Warmwasser einzeln' },
+{ id: 'gas', name: 'Gas', hint: heatSel.indexOf('gas') >= 0 ? 'passt zur Gasheizung' : 'nur bei Gasheizung oder Herd' },
+{ id: 'garten', name: 'Gartenwasser', hint: 'spart Abwassergebühr' },
+{ id: 'waerme', name: 'Wärmemenge', hint: 'Fernwärme oder Wärmepumpe' },
+{ id: 'pv', name: 'PV-Einspeisung', hint: 'falls Solaranlage vorhanden' }
+];
+let total = 0;
+const meters = meterOpts.map((m, i) => {
+const c = meterVals[m.id] || 0;
+total += c;
+const setC = (n) => { const next = Object.assign({}, meterVals); next[m.id] = Math.max(0, Math.min(9, n)); this.setState({ meters: next }); };
+return { name: m.name, hint: m.hint, count: c, line: i === meterOpts.length - 1 ? 'transparent' : '#E2DDD2', decLabel: m.name + ' weniger', incLabel: m.name + ' mehr', dec: () => setC(c - 1), inc: () => setC(c + 1) };
+});
+
+const dutyOpts = [
+{ id: 'garten', name: 'Gartenpflege' },
+{ id: 'winterdienst', name: 'Winterdienst und Gehweg' },
+{ id: 'treppenhaus', name: 'Treppenhaus reinigen' },
+{ id: 'kleinrep', name: 'Kleinreparaturen bis Grenze' }
+];
+const duties = dutyOpts.map((d) => {
+const selected = dutySel.indexOf(d.id) >= 0;
+return { name: d.name, selected: selected, pressed: selected ? 'true' : 'false', ring: selected ? '#1F6F6B' : '#C9C3B6', boxBg: selected ? '#1F6F6B' : '#FFFFFF', style: this.checkStyle(selected), pick: () => this.toggleIn('duties', dutySel, d.id) };
+});
+
+const progress = [0, 1, 2, 3, 4].map((i) => ({ bg: i <= step ? '#1F6F6B' : '#E2DDD2' }));
+const heatNames = heatOpts.filter((h) => heatSel.indexOf(h.id) >= 0).map((h) => h.name).join(', ');
+const storageName = storageOpts.filter((o) => o.id === storageId).map((o) => o.name).join('');
+
+return {
+stepLabel: step < 5 ? 'Schritt ' + (step + 1) + ' von 5' : 'Fertig',
+stepTitle: titles[step],
+stepLead: leads[step],
+progress: progress,
+isStep0: step === 0, isStep1: step === 1, isStep2: step === 2, isStep3: step === 3, isStep4: step === 4, isDone: step === 5,
+isNextcloud: storageId === 'nextcloud',
+storage: storage,
+hausStyle: this.segStyle(objekt === 'haus'), wohnungStyle: this.segStyle(objekt === 'wohnung'),
+hausPressed: objekt === 'haus' ? 'true' : 'false', wohnungPressed: objekt === 'wohnung' ? 'true' : 'false',
+pickHaus: () => this.setState({ objekt: 'haus' }), pickWohnung: () => this.setState({ objekt: 'wohnung' }),
+rooms: rooms,
+heating: heating,
+meters: meters,
+meterSum: total + (total === 1 ? ' Zähler' : ' Zähler') + ' werden angelegt.',
+binsChecked: binsOut ? 'true' : 'false',
+binsText: binsOut ? 'An – Erinnerung am Vorabend' : 'Aus – Vollservice, nur Info zur Abholung',
+switchBg: binsOut ? '#1F6F6B' : '#C9C3B6',
+switchAlign: binsOut ? 'flex-end' : 'flex-start',
+toggleBins: () => this.setState({ binsOut: !binsOut }),
+duties: duties,
+sumStorage: storageName,
+sumObjekt: (objekt === 'haus' ? 'Haus' : 'Wohnung') + ' · ' + roomsSel.length + ' Räume',
+sumHeating: heatNames || 'keine Angabe',
+sumMeters: total + ' Zähler',
+sumBins: binsOut ? 'selbst rausstellen' : 'Vollservice',
+showBack: step > 0 && step < 5,
+showNext: step < 5,
+nextLabel: step === 4 ? 'Einrichtung abschließen' : 'Weiter',
+next: () => this.setState({ step: Math.min(5, step + 1) }),
+back: () => this.setState({ step: Math.max(0, step - 1) })
+};
+}
+}
+</script>
+</body>
+</html>

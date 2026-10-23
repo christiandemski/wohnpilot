@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap">
+<style>
+body{margin:0;padding:24px;background:var(--paper);color:var(--ink);font-family:var(--font-ui)}
+.card{max-width:358px;box-sizing:border-box;background:var(--surface);border-radius:var(--radius-xl);padding:16px 10px 20px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.digits{display:flex;align-items:center;gap:var(--space-1)}
+.col{display:flex;flex-direction:column;align-items:center}
+.arrow{width:44px;height:40px;border:0;background:transparent;color:var(--ink-muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.arrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--radius-xs)}
+.wheel{width:46px;height:72px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-family:var(--font-num);font-size:40px;font-weight:600;letter-spacing:-.02em;color:var(--counter-digit);background:var(--counter-face);box-shadow:inset 0 12px 12px -10px rgba(0,0,0,.55),inset 0 -12px 12px -10px rgba(0,0,0,.55)}
+.dec{background:var(--counter-decimal)}
+.comma{font-family:var(--font-num);font-size:36px;font-weight:600;color:var(--ink-muted)}
+.pill{font-family:var(--font-num);font-size:15px;font-weight:600;color:var(--on-inverse);background:var(--inverse);border-radius:var(--radius-full);padding:7px 12px}
+.ok{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ok)}
+</style>
+</head>
+<body>
+<section class="card">
+<div class="digits" role="group" aria-label="Zählerstand">
+<span class="col"><button class="arrow" type="button" aria-label="Stelle 1 erhöhen"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><span class="wheel">2</span><button class="arrow" type="button" aria-label="Stelle 1 verringern"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
+<span class="col"><button class="arrow" type="button" aria-label="Stelle 2 erhöhen"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><span class="wheel">3</span><button class="arrow" type="button" aria-label="Stelle 2 verringern"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
+<span class="col"><button class="arrow" type="button" aria-label="Stelle 3 erhöhen"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><span class="wheel">7</span><button class="arrow" type="button" aria-label="Stelle 3 verringern"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
+<span class="col"><button class="arrow" type="button" aria-label="Stelle 4 erhöhen"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><span class="wheel">0</span><button class="arrow" type="button" aria-label="Stelle 4 verringern"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
+<span class="col"><button class="arrow" type="button" aria-label="Stelle 5 erhöhen"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><span class="wheel">2</span><button class="arrow" type="button" aria-label="Stelle 5 verringern"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
+<span class="comma" aria-hidden="true">,</span>
+<span class="col"><button class="arrow" type="button" aria-label="Nachkommastelle erhöhen"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><span class="wheel dec">0</span><button class="arrow" type="button" aria-label="Nachkommastelle verringern"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button></span>
+</div>
+<span style="display:flex;align-items:center;gap:8px"><span class="pill">+246,0 kWh</span><span style="font-size:13px;color:var(--ink-muted)">seit 01.10.</span></span>
+<span class="ok" role="status"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Passt zu deinem Verbrauch</span>
+</section>
+</body>
+</html>

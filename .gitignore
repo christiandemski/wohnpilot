@@ -1,0 +1,10 @@
+.env
+node_modules/
+vendor/
+dist/
+*.sqlite
+.DS_Store
+.idea/
+wohnpilot-uebergabe.zip
+.phpunit.cache/
+backend/var/

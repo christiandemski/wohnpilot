@@ -1,0 +1,210 @@
+/* Wohnpilot — generiert aus tokens.json. Nicht von Hand ändern, sondern tokens.json anpassen und neu erzeugen. */
+
+:root, [data-theme="light"] {
+  --paper: #f6f3ec;
+  --surface: #ffffff;
+  --ink: #1f2328;
+  --ink-muted: #5e646c;
+  --line: #e2ddd2;
+  --line-strong: #c9c3b6;
+  --inverse: #1f2328;
+  --on-inverse: #ffffff;
+  --on-inverse-muted: #b4b9c3;
+  --accent: #1f6f6b;
+  --accent-strong: #16524f;
+  --accent-tint: #ddedec;
+  --on-accent: #ffffff;
+  --ok: #0e7a3e;
+  --ok-tint: #ddf3e5;
+  --soon: #b7791f;
+  --soon-text: #8a5a12;
+  --soon-tint: #f7eedd;
+  --due: #b23a2e;
+  --due-tint: #fbe3e0;
+  --due-on-inverse: #ff9a9d;
+  --counter-face: #1f2328;
+  --counter-decimal: #b23a2e;
+  --counter-digit: #ffffff;
+  --module-zaehler-tint: #ffe7c7;
+  --module-zaehler-ink: #8a4b00;
+  --module-miete-tint: #e9e4f7;
+  --module-miete-ink: #5a4a99;
+  --module-nebenkosten-tint: #f1e8d6;
+  --module-nebenkosten-ink: #6e5426;
+  --module-vertraege-tint: #dce7ff;
+  --module-vertraege-ink: #1d4ed8;
+  --module-geraete-tint: #e2eed9;
+  --module-geraete-ink: #3f6b2a;
+  --module-wartung-tint: #f6e1d3;
+  --module-wartung-ink: #8a3e12;
+  --module-termine-tint: #d9f2ec;
+  --module-termine-ink: #0f6b5a;
+  --module-maengel-tint: #f6dfe9;
+  --module-maengel-ink: #8e2f5a;
+  --module-wissen-tint: #e9eaec;
+  --module-wissen-ink: #4a4f57;
+  --module-kontakte-tint: #dbeef6;
+  --module-kontakte-ink: #22647f;
+  --bin-rest: #6b7178;
+  --bin-bio: #8b5a2b;
+  --bin-papier: #2f6db5;
+  --bin-gelb: #f2c230;
+  --bin-glas: #3f8f4f;
+  --bin-tint: #fff6d6;
+  --scrim: rgba(31, 35, 40, 0.45);
+  --shadow-tabbar: 0 12px 32px rgba(31, 35, 40, 0.25);
+  --shadow-sheet: 0 -8px 24px rgba(31, 35, 40, 0.18);
+  color-scheme: light;
+}
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-xs: 12px;
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 24px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+  --touch-min: 44px;
+  --button-height: 52px;
+  --button-height-l: 56px;
+  --tabbar-height: 68px;
+  --fab: 52px;
+  --font-ui: "Geist", system-ui, sans-serif;
+  --font-num: "Geist Mono", ui-monospace, monospace;
+}
+
+[data-theme="dark"] {
+  --paper: #17181a;
+  --surface: #222326;
+  --ink: #eceae4;
+  --ink-muted: #a3a7ad;
+  --line: #34363a;
+  --line-strong: #4a4d52;
+  --inverse: #2e3035;
+  --on-inverse: #eceae4;
+  --on-inverse-muted: #a3a7ad;
+  --accent: #5fb3ac;
+  --accent-strong: #8fd0ca;
+  --accent-tint: #1d3533;
+  --on-accent: #0f1a19;
+  --ok: #6cc08f;
+  --ok-tint: #1b3324;
+  --soon: #e0a84a;
+  --soon-text: #e0a84a;
+  --soon-tint: #3a2f1c;
+  --due: #e57366;
+  --due-tint: #3d211e;
+  --due-on-inverse: #ff9a9d;
+  --counter-face: #0e0f10;
+  --counter-decimal: #b23a2e;
+  --counter-digit: #ffffff;
+  --module-zaehler-tint: #3a2a14;
+  --module-zaehler-ink: #f0b866;
+  --module-miete-tint: #2a2540;
+  --module-miete-ink: #b8abe8;
+  --module-nebenkosten-tint: #332b1d;
+  --module-nebenkosten-ink: #d6bb86;
+  --module-vertraege-tint: #1c2742;
+  --module-vertraege-ink: #8fb0ff;
+  --module-geraete-tint: #22301b;
+  --module-geraete-ink: #a6cf8c;
+  --module-wartung-tint: #3a2519;
+  --module-wartung-ink: #e8a57a;
+  --module-termine-tint: #183330;
+  --module-termine-ink: #7fd3c1;
+  --module-maengel-tint: #3a1f2b;
+  --module-maengel-ink: #e89cbc;
+  --module-wissen-tint: #2b2d31;
+  --module-wissen-ink: #c3c7cd;
+  --module-kontakte-tint: #1a2f38;
+  --module-kontakte-ink: #8ccbe3;
+  --bin-rest: #8a9098;
+  --bin-bio: #b07a48;
+  --bin-papier: #6e9fe0;
+  --bin-gelb: #f2c230;
+  --bin-glas: #6cc08f;
+  --bin-tint: #2e2a1a;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --shadow-tabbar: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #17181a;
+    --surface: #222326;
+    --ink: #eceae4;
+    --ink-muted: #a3a7ad;
+    --line: #34363a;
+    --line-strong: #4a4d52;
+    --inverse: #2e3035;
+    --on-inverse: #eceae4;
+    --on-inverse-muted: #a3a7ad;
+    --accent: #5fb3ac;
+    --accent-strong: #8fd0ca;
+    --accent-tint: #1d3533;
+    --on-accent: #0f1a19;
+    --ok: #6cc08f;
+    --ok-tint: #1b3324;
+    --soon: #e0a84a;
+    --soon-text: #e0a84a;
+    --soon-tint: #3a2f1c;
+    --due: #e57366;
+    --due-tint: #3d211e;
+    --due-on-inverse: #ff9a9d;
+    --counter-face: #0e0f10;
+    --counter-decimal: #b23a2e;
+    --counter-digit: #ffffff;
+    --module-zaehler-tint: #3a2a14;
+    --module-zaehler-ink: #f0b866;
+    --module-miete-tint: #2a2540;
+    --module-miete-ink: #b8abe8;
+    --module-nebenkosten-tint: #332b1d;
+    --module-nebenkosten-ink: #d6bb86;
+    --module-vertraege-tint: #1c2742;
+    --module-vertraege-ink: #8fb0ff;
+    --module-geraete-tint: #22301b;
+    --module-geraete-ink: #a6cf8c;
+    --module-wartung-tint: #3a2519;
+    --module-wartung-ink: #e8a57a;
+    --module-termine-tint: #183330;
+    --module-termine-ink: #7fd3c1;
+    --module-maengel-tint: #3a1f2b;
+    --module-maengel-ink: #e89cbc;
+    --module-wissen-tint: #2b2d31;
+    --module-wissen-ink: #c3c7cd;
+    --module-kontakte-tint: #1a2f38;
+    --module-kontakte-ink: #8ccbe3;
+    --bin-rest: #8a9098;
+    --bin-bio: #b07a48;
+    --bin-papier: #6e9fe0;
+    --bin-gelb: #f2c230;
+    --bin-glas: #6cc08f;
+    --bin-tint: #2e2a1a;
+    --scrim: rgba(0, 0, 0, 0.6);
+    --shadow-tabbar: 0 12px 32px rgba(0, 0, 0, 0.5);
+    --shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+}
+
+.text-display { font-family: var(--font-ui); font-size: 32px; line-height: 35px; font-weight: 700; letter-spacing: -0.02em; }
+.text-title { font-family: var(--font-ui); font-size: 24px; line-height: 29px; font-weight: 700; letter-spacing: -0.01em; }
+.text-section { font-family: var(--font-ui); font-size: 17px; line-height: 22px; font-weight: 700; }
+.text-body-strong { font-family: var(--font-ui); font-size: 15px; line-height: 20px; font-weight: 600; }
+.text-body { font-family: var(--font-ui); font-size: 15px; line-height: 21px; font-weight: 400; }
+.text-button { font-family: var(--font-ui); font-size: 16px; line-height: 20px; font-weight: 600; }
+.text-small { font-family: var(--font-ui); font-size: 13px; line-height: 18px; font-weight: 400; }
+.text-label { font-family: var(--font-ui); font-size: 12px; line-height: 16px; font-weight: 600; }
+.text-stand { font-family: var(--font-num); font-size: 40px; line-height: 44px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.text-kpi { font-family: var(--font-num); font-size: 30px; line-height: 34px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.text-num-l { font-family: var(--font-num); font-size: 17px; line-height: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.text-num { font-family: var(--font-num); font-size: 13px; line-height: 18px; font-weight: 500; font-variant-numeric: tabular-nums; }

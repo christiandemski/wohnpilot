@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Wohnpilot – Ablese-Runde</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1F2328}a:hover{color:#1F2328}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F3EC; color: #1F2328; font-family: 'Geist', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+<header style="padding: 20px 16px 0; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<a href="ModernMain.dc.html" aria-label="Schließen" style="display: flex; width: 44px; height: 44px; border-radius: 22px; background: #FFFFFF; align-items: center; justify-content: center; color: #1F2328"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></a>
+<span style="font-size: 15px; font-weight: 600">Ablese-Runde</span>
+<span style="font-family: 'Geist Mono', monospace; font-size: 13px; font-weight: 600; background: #FFFFFF; border-radius: 999px; padding: 8px 12px">2/4</span>
+</div>
+<span style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px"><span style="height: 6px; border-radius: 3px; background: #1F2328"></span><span style="height: 6px; border-radius: 3px; background: #1F2328"></span><span style="height: 6px; border-radius: 3px; background: #C9C3B6"></span><span style="height: 6px; border-radius: 3px; background: #C9C3B6"></span></span>
+</header>
+<main style="flex-grow: 1; padding: 24px 16px 16px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 14px">
+<span style="display: flex; width: 52px; height: 52px; border-radius: 18px; background: #FFE7C7; color: #8A4B00; align-items: center; justify-content: center; flex-shrink: 0"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>
+<span style="display: flex; flex-direction: column; gap: 2px"><h1 style="margin: 0; font-size: 24px; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em">Strom · Hauptzähler</h1><span style="font-size: 13px; color: #5E646C">Keller · <span style="font-family: 'Geist Mono', monospace">1ESY 1160 1234 56</span></span></span>
+</div>
+<section aria-label="Zählerstand einstellen" style="background: #FFFFFF; border-radius: 28px; padding: 16px 10px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px">
+<div style="display: flex; align-items: center; gap: 4px">
+<sc-for list="{{digits}}" as="item" hint-placeholder-count="6">
+<sc-if value="{{item.isDecimal}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="font-family: 'Geist Mono', monospace; font-size: 36px; font-weight: 600; padding: 0 1px; align-self: center; color: #5E646C">,</span></sc-if>
+<span style="display: flex; flex-direction: column; align-items: center">
+<button type="button" onClick="{{item.up}}" aria-label="{{item.upLabel}}" style="width: 44px; height: 40px; border: 0; background: transparent; color: #5E646C; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button>
+<span style="width: 46px; height: 72px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-family: 'Geist Mono', monospace; font-size: 40px; font-weight: 600; letter-spacing: -0.02em; background: {{item.bg}}; color: {{item.fg}}; box-shadow: inset 0 12px 12px -10px rgba(0, 0, 0, 0.55), inset 0 -12px 12px -10px rgba(0, 0, 0, 0.55)">{{item.v}}</span>
+<button type="button" onClick="{{item.down}}" aria-label="{{item.downLabel}}" style="width: 44px; height: 40px; border: 0; background: transparent; color: #5E646C; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+</span>
+</sc-for>
+</div>
+<span style="display: flex; align-items: center; gap: 8px">
+<span style="font-family: 'Geist Mono', monospace; font-size: 15px; font-weight: 600; color: #FFFFFF; background: #1F2328; border-radius: 999px; padding: 7px 12px">{{deltaText}}</span>
+<span style="font-size: 13px; color: #5E646C">seit 01.10.</span>
+</span>
+<sc-if value="{{warnLower}}" hint-placeholder-val="{{ false }}"><span role="status" style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #C4261B"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>Kleiner als der letzte Stand</span></sc-if>
+<sc-if value="{{warnJump}}" hint-placeholder-val="{{ false }}"><span role="status" style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #A35200"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>Ungewöhnlich hoch</span></sc-if>
+<sc-if value="{{plausible}}" hint-placeholder-val="{{ true }}"><span style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #0E7A3E"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>Passt zu deinem Verbrauch</span></sc-if>
+</section>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="background: #FFFFFF; border-radius: 20px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #5E646C">Letzter Stand</span><span style="font-family: 'Geist Mono', monospace; font-size: 17px; font-weight: 600">23 456,0</span><span style="font-size: 12px; color: #5E646C">01.10.2026</span></div>
+<div style="background: #FFFFFF; border-radius: 20px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #5E646C">Pro Tag</span><span style="font-family: 'Geist Mono', monospace; font-size: 17px; font-weight: 600">{{perDay}}</span><span style="font-size: 12px; color: #5E646C">kWh über 23 Tage</span></div>
+</div>
+</main>
+<footer style="padding: 12px 16px 28px; display: flex; gap: 10px; align-items: center">
+<button type="button" aria-label="Zähler fotografieren" style="width: 56px; height: 56px; border-radius: 28px; border: 0; background: #FFFFFF; color: #1F2328; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+<a href="ModernZaehler.dc.html" style="flex-grow: 1; min-height: 56px; border-radius: 999px; background: #1F6F6B; color: #FFFFFF; font-size: 16px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center">Speichern &amp; weiter</a>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+current() {
+return (this.state && this.state.digits) || [2, 3, 7, 0, 2, 0];
+}
+setDigit(i, v) {
+const d = this.current().slice();
+d[i] = v;
+this.setState({ digits: d });
+}
+renderVals() {
+const d = this.current();
+const last = 23456;
+const value = d[0] * 10000 + d[1] * 1000 + d[2] * 100 + d[3] * 10 + d[4] + d[5] / 10;
+const delta = Math.round((value - last) * 10) / 10;
+const sign = delta >= 0 ? '+' : '−';
+const fmt = (n) => Math.abs(n).toFixed(1).replace('.', ',');
+const warnLower = delta < 0;
+const warnJump = delta > 600;
+const digits = d.map((v, i) => ({
+v: v,
+isDecimal: i === 5,
+bg: i === 5 ? '#B23A2E' : '#1F2328',
+fg: '#FFFFFF',
+upLabel: 'Stelle ' + (i + 1) + ' erhöhen',
+downLabel: 'Stelle ' + (i + 1) + ' verringern',
+up: () => this.setDigit(i, (v + 1) % 10),
+down: () => this.setDigit(i, (v + 9) % 10)
+}));
+return {
+digits: digits,
+deltaText: sign + fmt(delta) + ' kWh',
+perDay: (warnLower ? '–' : fmt(delta / 23)),
+warnLower: warnLower,
+warnJump: warnJump,
+plausible: !warnLower && !warnJump
+};
+}
+}
+</script>
+</body>
+</html>

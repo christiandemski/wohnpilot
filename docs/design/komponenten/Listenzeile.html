@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0;padding:24px;background:var(--paper);color:var(--ink);font-family:var(--font-ui)}
+.card{max-width:358px;box-sizing:border-box;background:var(--surface);border-radius:var(--radius-lg);padding:var(--space-4);display:flex;flex-direction:column;gap:4px}
+.row{display:flex;align-items:center;gap:12px;min-height:52px}
+.ic{display:flex;width:40px;height:40px;border-radius:var(--radius-sm);align-items:center;justify-content:center;flex-shrink:0}
+.t{font-size:15px;font-weight:600}
+.m{font-size:13px;color:var(--ink-muted)}
+.chip{font-size:13px;font-weight:600;background:var(--paper);border-radius:var(--radius-full);padding:6px 10px}
+.check{width:44px;height:44px;border-radius:22px;border:2px solid var(--line-strong);background:var(--surface);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.done{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.lid,.body{fill:var(--bin-gelb);stroke:var(--ink);stroke-width:1.25;stroke-linejoin:round}
+.groove{stroke:var(--ink);stroke-width:1.25;stroke-linecap:round}
+</style>
+</head>
+<body>
+<section class="card">
+<div class="row"><span class="ic" style="background:var(--bin-tint)"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24"><rect class="lid" x="3.5" y="4" width="17" height="3.5" rx="1.25"/><path class="body" d="M5.5 8.5h13l-1.3 11.1a1.5 1.5 0 0 1-1.5 1.4H8.3a1.5 1.5 0 0 1-1.5-1.4z"/><path class="groove" d="M10 11.5v6M14 11.5v6"/></svg></span><span style="display:flex;flex-direction:column;gap:1px;flex-grow:1"><span class="t">Gelbe Tonne</span><span class="m">Abholung · Vollservice</span></span><span class="chip">Di 27.</span></div>
+<div class="row"><span class="ic" style="background:var(--module-wartung-tint);color:var(--module-wartung-ink)"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"/></svg></span><span style="display:flex;flex-direction:column;gap:1px;flex-grow:1"><span class="t">Heizkörper entlüften</span><span class="m">Wartung · jährlich</span></span><button type="button" class="check" aria-label="Heizkörper entlüften als erledigt markieren"></button></div>
+<div class="row"><span class="ic" style="background:var(--module-geraete-tint);color:var(--module-geraete-ink)"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/></svg></span><span style="display:flex;flex-direction:column;gap:1px;flex-grow:1"><span class="t">Dunstabzug-Filter</span><span class="m">Erledigt · heute · CD</span></span><button type="button" class="check done" aria-label="Dunstabzug-Filter wieder öffnen"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></button></div>
+</section>
+</body>
+</html>

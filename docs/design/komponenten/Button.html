@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0;padding:24px;background:var(--paper);color:var(--ink);font-family:var(--font-ui)}
+.col{display:flex;flex-direction:column;gap:12px;max-width:358px}
+.row{display:flex;gap:10px;align-items:center}
+.pill{border:0;border-radius:var(--radius-full);font-family:var(--font-ui);font-size:16px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.primary{flex:1;min-height:var(--button-height-l);background:var(--accent);color:var(--on-accent)}
+.primary:hover{background:var(--accent-strong)}
+.secondary{min-height:var(--button-height);padding:0 20px;background:var(--surface);color:var(--ink)}
+.inverse{min-height:44px;padding:0 16px;background:var(--inverse);color:var(--on-inverse);font-size:14px}
+.icon{width:var(--button-height-l);height:var(--button-height-l);border-radius:var(--radius-full);border:0;background:var(--surface);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="col">
+<div class="row">
+<button type="button" class="icon" aria-label="Zähler fotografieren"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+<button type="button" class="pill primary">Speichern &amp; weiter</button>
+</div>
+<div class="row">
+<button type="button" class="pill secondary">Überspringen</button>
+<button type="button" class="pill inverse"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ablesen</button>
+</div>
+</div>
+</body>
+</html>

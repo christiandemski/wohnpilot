@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Wohnpilot – Zähler Strom</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1F2328}a:hover{color:#1F2328}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F3EC; color: #1F2328; font-family: 'Geist', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+<header style="padding: 20px 16px 0; display: flex; justify-content: space-between; align-items: center">
+<a href="ModernMain.dc.html" aria-label="Zurück" style="display: flex; width: 44px; height: 44px; border-radius: 22px; background: #FFFFFF; align-items: center; justify-content: center; color: #1F2328"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></a>
+<a href="ModernAblesung.dc.html" style="display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 999px; background: #1F2328; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ablesen</a>
+</header>
+<main style="flex-grow: 1; overflow: hidden; padding: 16px 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 0 4px">
+<span style="display: flex; align-items: center; gap: 8px"><span style="font-size: 12px; font-weight: 600; color: #8A4B00; background: #FFE7C7; border-radius: 999px; padding: 4px 10px">Zähler · Keller</span><span style="font-size: 12px; font-weight: 600; color: #0E7A3E; background: #DDF3E5; border-radius: 999px; padding: 4px 10px">Heute erfasst</span></span>
+<h1 style="margin: 6px 0 0; font-size: 32px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em">Strom</h1>
+<span style="display: flex; align-items: baseline; gap: 6px"><span style="font-family: 'Geist Mono', monospace; font-size: 40px; font-weight: 600; letter-spacing: -0.03em">23 702,0</span><span style="font-size: 16px; color: #5E646C">kWh</span></span>
+</div>
+<div role="tablist" aria-label="Zeitraum" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: #E2DDD2; border-radius: 999px; padding: 4px">
+<button type="button" role="tab" aria-selected="true" style="min-height: 40px; border: 0; border-radius: 999px; background: #FFFFFF; font-family: 'Geist', sans-serif; font-size: 14px; font-weight: 600; color: #1F2328; cursor: pointer">Monate</button>
+<button type="button" role="tab" aria-selected="false" style="min-height: 40px; border: 0; border-radius: 999px; background: transparent; font-family: 'Geist', sans-serif; font-size: 14px; font-weight: 500; color: #5E646C; cursor: pointer">Jahre</button>
+<button type="button" role="tab" aria-selected="false" style="min-height: 40px; border: 0; border-radius: 999px; background: transparent; font-family: 'Geist', sans-serif; font-size: 14px; font-weight: 500; color: #5E646C; cursor: pointer">Kosten</button>
+</div>
+<figure style="margin: 0; background: #FFFFFF; border-radius: 24px; padding: 16px 12px 10px; display: flex; flex-direction: column; gap: 10px">
+<figcaption style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px"><span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 13px; color: #5E646C">Oktober bisher</span><span style="font-family: 'Geist Mono', monospace; font-size: 20px; font-weight: 600">246 kWh</span></span><span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 11px; color: #5E646C"><span style="display: flex; align-items: center; gap: 5px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #1F6F6B"></span>2026</span><span style="display: flex; align-items: center; gap: 5px"><span style="width: 6px; height: 6px; border-radius: 3px; background: #1F2328"></span>Vorjahr</span></span></figcaption>
+<svg role="img" aria-label="Monatsverbrauch November bis Oktober, jeden Monat unter dem Vorjahr" width="326" height="150" viewBox="0 0 326 150" style="display: block">
+<g fill="#E2DDD2">
+<rect x="4.6" y="34.7" width="18" height="85.3" rx="6"/>
+<rect x="31.8" y="23.2" width="18" height="96.8" rx="6"/>
+<rect x="58.9" y="18.8" width="18" height="101.2" rx="6"/>
+<rect x="86.1" y="29.2" width="18" height="90.8" rx="6"/>
+<rect x="113.3" y="40.2" width="18" height="79.8" rx="6"/>
+<rect x="140.5" y="51.8" width="18" height="68.2" rx="6"/>
+<rect x="167.6" y="59.5" width="18" height="60.5" rx="6"/>
+<rect x="194.8" y="63.6" width="18" height="56.4" rx="6"/>
+<rect x="222" y="62.2" width="18" height="57.8" rx="6"/>
+<rect x="249.1" y="57.8" width="18" height="62.2" rx="6"/>
+<rect x="276.3" y="54.5" width="18" height="65.5" rx="6"/>
+</g>
+<rect x="303.5" y="52.3" width="18" height="67.7" rx="6" fill="#1F6F6B"/>
+<g fill="#1F2328"><circle cx="13.6" cy="30.6" r="3"/><circle cx="40.8" cy="18.25" r="3"/><circle cx="67.9" cy="12.75" r="3"/><circle cx="95.1" cy="25.1" r="3"/><circle cx="122.3" cy="37.5" r="3"/><circle cx="149.5" cy="48" r="3"/><circle cx="176.6" cy="56.75" r="3"/><circle cx="203.8" cy="61.7" r="3"/><circle cx="231" cy="60.9" r="3"/><circle cx="258.1" cy="56.2" r="3"/><circle cx="285.3" cy="51.25" r="3"/><circle cx="312.5" cy="46.3" r="3"/></g>
+<g font-family="Geist, sans-serif" font-size="11" fill="#5E646C" text-anchor="middle"><text x="13.6" y="140">N</text><text x="40.8" y="140">D</text><text x="67.9" y="140">J</text><text x="95.1" y="140">F</text><text x="122.3" y="140">M</text><text x="149.5" y="140">A</text><text x="176.6" y="140">M</text><text x="203.8" y="140">J</text><text x="231" y="140">J</text><text x="258.1" y="140">A</text><text x="285.3" y="140">S</text><text x="312.5" y="140" font-weight="700" fill="#1F2328">O</text></g>
+</svg>
+</figure>
+<section style="background: #F7EEDD; border-radius: 24px; padding: 16px; display: flex; gap: 12px">
+<span style="display: flex; width: 36px; height: 36px; border-radius: 12px; background: #FFFFFF; color: #A35200; align-items: center; justify-content: center; flex-shrink: 0"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg></span>
+<span style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1">
+<span style="font-size: 15px; font-weight: 700">Ca. 70 € Nachzahlung erwartet</span>
+<span style="font-size: 13px; color: #4A3A22; line-height: 1.4">Hochrechnung ≈ 3 160 kWh. Mit 91 € statt 85 € Abschlag gehst du auf null.</span>
+<button type="button" style="align-self: flex-start; min-height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: #1F2328; color: #FFFFFF; font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer">Erinnerung anlegen</button>
+</span>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
