@@ -62,7 +62,7 @@ Zehn Module decken den Haushalt ab; Zähler und Mietverhältnis bringen bei eine
 
 - Zählerart, Zählernummer, Einheit, Ort, Messstellenbetreiber, Tarif (Arbeits- und Grundpreis), Abschlag
 - Ablesungen mit Datum, Wert, Foto und Anlass (regulär, Stichtag, Einzug, Auszug, Zählerwechsel)
-- Zählerwechsel sauber abbilden: alter Endstand, neuer Anfangsstand, Verbrauch läuft durch
+- Zählerwechsel sauber abbilden: alter Endstand, neuer Anfangsstand, Verbrauch läuft durch. In der Notiz sind das zwei Zeilen mit demselben Datum und dem Anlass „Zählerwechsel“; die untere ist der Endstand des alten, die obere der Anfangsstand des neuen Zählers
 - Zweitarif-Zähler (HT/NT) und Einspeisezähler bei PV
 - Plausibilitätsprüfung: kleiner als der letzte Wert, ungewöhnlicher Sprung, Ablesung überfällig
 - Abgeleitet: Verbrauch pro Tag, Monat und Jahr, Vorjahresvergleich, Hochrechnung aufs Abrechnungsjahr, Kosten und ob der Abschlag reicht
@@ -297,12 +297,23 @@ Stufe 1 liefert mit Zählern und Übersicht schon im ersten Monat Alltagsnutzen;
 - Mit einer Test-Notiz-Sammlung starten (ein Zähler, ein Vertrag), damit der Parser gegen echte Dateien getestet wird, bevor die Oberfläche entsteht.
 - Stufe für Stufe als eigene Aufgabe vergeben und am Ende jeder Stufe einmal echte Daten eintragen.
 
+## Festlegungen aus Stufe 1
+
+- **Ablage in Nextcloud:** Die Notes API sieht nur den Notes-Ordner; Wohnpilot legt seine Notizen dort in der Kategorie `Wohnpilot/…` ab (z. B. `Notes/Wohnpilot/objekte/efh-musterstrasse/zaehler/strom-haupt.md`). Notizen mit Titeln, die kein Slug sind, gehören nicht zu Wohnpilot und werden ignoriert.
+- **Neue Ablesung:** wird immer auf die aktuelle Fassung der Notiz angewendet und mit deren ETag geschrieben. Änderungen aus der Notes-App bleiben so erhalten; dieselbe Ablesung zweimal gesendet ergibt nur eine Zeile.
+- **Stammdaten ändern:** feldweiser Drei-Wege-Abgleich. Nur wenn dasselbe Feld auch woanders geändert wurde, zeigt die App beide Werte und du entscheidest.
+- **Verbrauch:** wird zwischen zwei Ablesungen gleichmäßig auf die Tage verteilt; Monate, Jahre und Hochrechnung sind Summen von Tagen. Tage ohne Ablesung zählen in der Hochrechnung mit dem Vorjahreswert desselben Tages, sonst mit dem Durchschnitt der letzten 365 Tage.
+- **Plausibilität:** „Ungewöhnlich hoch“ ab dem Doppelten des Erwarteten (Durchschnitt pro Tag × Tage seit der letzten Ablesung).
+- **Fälligkeit:** Ablesetag aus `_haushalt.md` (`einstellungen.ablesetag`), Intervall je Zähler; eine Ablesung bis 5 Tage vor dem Termin zählt für diesen Termin.
+- **Zahlenformat:** Tausendertrenner ist das schmale geschützte Leerzeichen (U+202F), Dezimalzeichen das Komma. In den Notizen stehen Zahlen mit Punkt (`23702.0`); von Hand geschriebene Werte wie `23 702,0` oder `23.702,0` werden ebenfalls gelesen.
+- **Erster Zugang:** Solange es noch keinen Haushalt gibt, dürfen nur die BearID-Benutzer aus `WOHNPILOT_USERS` ihn anlegen; danach entscheidet die Personenliste in `_haushalt.md`.
+
 ## Offene Fragen
 
-- [ ] Name: Wohnpilot (entschieden)
-- [ ] Läuft das Backend auf dem Netcup Webhosting oder auf dem Server neben Nextcloud?
-- [ ] Welche Technik nutzt BearID bisher (PHP, OIDC), damit das Backend denselben Weg geht?
+- [x] Name: Wohnpilot
+- [x] Backend: PHP 8.3+ mit Slim 4 auf dem Netcup Webhosting, SQLite als Index-Cache (entschieden 24.10.2026)
+- [ ] Welche Technik nutzt BearID bisher? Umgesetzt ist eine austauschbare Login-Schnittstelle mit OIDC (Discovery, Authorization Code mit PKCE) als erster Variante; noch gegen BearID zu prüfen, sobald Client-ID und -Secret da sind
 - [ ] Welche Heizform(en) und Zähler gibt es im Haus genau? (wird im Einrichtungsassistenten abgefragt)
 - [ ] Welche Pflichten regelt dein Mietvertrag für Garten, Winterdienst und Kleinreparaturen?
-- [ ] Frontend mit Svelte oder Vue?
+- [x] Frontend: Svelte 5 mit Vite (entschieden 24.10.2026)
 - [ ] Sollen Termine nur als ICS-Feed kommen oder direkt per CalDAV in den Kalender geschrieben werden?

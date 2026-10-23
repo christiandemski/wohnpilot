@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Wohnpilot: house with the roll counter inside. Colours: accent, surface, counter-decimal (docs/design/tokens.json). -->
+  <rect width="512" height="512" rx="112" fill="#1f6f6b"/>
+  <path d="M256 100 410 222v160a32 32 0 0 1-32 32H134a32 32 0 0 1-32-32V222Z" fill="none" stroke="#ffffff" stroke-width="30" stroke-linejoin="round"/>
+  <rect x="154" y="262" width="56" height="100" rx="14" fill="#ffffff"/>
+  <rect x="228" y="262" width="56" height="100" rx="14" fill="#ffffff"/>
+  <rect x="302" y="262" width="56" height="100" rx="14" fill="#b23a2e"/>
+</svg>
