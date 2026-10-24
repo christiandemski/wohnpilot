@@ -48,6 +48,27 @@ final class Frontmatter
     }
 
     /** Sets a top-level key. An unchanged value leaves the text untouched. */
+    /**
+     * A single-line value as written, for things YAML would turn into a
+     * number: "+491701234567" stays with its plus. Quoted values come back
+     * as YAML reads them; null if the key is missing or not one line.
+     */
+    public function raw(string $key): ?string
+    {
+        $block = $this->findBlock($key);
+        if ($block === null || $block[1] !== 1 || is_array($this->get($key))) {
+            return null;
+        }
+        $line = Lines::content($this->lines[$block[0]]);
+        $text = trim((string) preg_replace('/^' . preg_quote($key, '/') . '\s*:/', '', $line));
+        $text = trim((string) preg_replace('/\s+#.*$/', '', $text));
+        if ($text === '' || str_starts_with($text, '"') || str_starts_with($text, "'")) {
+            $value = $this->get($key);
+            return is_scalar($value) ? (string) $value : null;
+        }
+        return $text;
+    }
+
     public function set(string $key, mixed $value): void
     {
         if ($this->has($key) && $this->get($key) === $value) {
