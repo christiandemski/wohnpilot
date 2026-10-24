@@ -24,6 +24,7 @@ use Wohnpilot\App\ObjectNotes;
 use Wohnpilot\App\PhotoService;
 use Wohnpilot\App\SearchService;
 use Wohnpilot\App\SettingsService;
+use Wohnpilot\App\UtilityService;
 use Wohnpilot\App\WasteService;
 use Wohnpilot\Auth\AccountStore;
 use Wohnpilot\Auth\BearId;
@@ -203,6 +204,11 @@ class Services
         return $this->instances[__FUNCTION__] ??= new SettingsService($this->notes(), $this->household());
     }
 
+    public function utilities(): UtilityService
+    {
+        return $this->instances[__FUNCTION__] ??= new UtilityService($this->notes(), $this->household(), $this->meters(), $this->lease(), $this->clock());
+    }
+
     public function agenda(): AgendaService
     {
         return $this->instances[__FUNCTION__] ??= new AgendaService(
@@ -215,6 +221,7 @@ class Services
             $this->defects(),
             $this->devices(),
             $this->waste(),
+            $this->utilities(),
         );
     }
 

@@ -104,6 +104,9 @@ final class DailyDigest
             'nachfassen' => "Nachfassen: $name",
             'garantie' => (($item['which'] ?? '') === 'garantie' ? 'Garantie' : 'Gewährleistung') . " $name",
             'muell' => "$name rausstellen",
+            'nachzahlung' => "Nachzahlung $name überweisen",
+            'einwand' => "Einwände gegen $name",
+            'abrechnung' => "$name fehlt noch",
             default => $name,
         };
     }
@@ -144,6 +147,7 @@ final class DailyDigest
             'mangel' => "/maengel/$id",
             'geraet' => "/geraete/$id",
             'muell' => '/termine',
+            'nebenkosten' => $id === '' ? '/nebenkosten' : "/nebenkosten/$id",
             default => '/',
         };
     }

@@ -1,4 +1,4 @@
-import { dueChip, months } from './contracts'
+import { dueChip, euro, months } from './contracts'
 import { formatChipDay, formatDay } from './format'
 import type { ChipTone } from './meters'
 import type { AgendaGroup, AgendaItem, NextReading } from './types'
@@ -97,6 +97,29 @@ export function agendaText(item: AgendaItem, today: string): AgendaText {
         meta: item.fullService ? 'Abholung · Vollservice' : 'Am Vorabend rausstellen',
         href: '/termine',
         chip: { text: item.daysUntil === 0 ? 'Heute' : item.daysUntil === 1 ? 'Morgen' : formatChipDay(item.date), tone: !item.fullService && item.daysUntil <= 1 ? 'soon' : 'neutral' },
+      }
+    case 'nachzahlung':
+      return {
+        title: `Nachzahlung ${name}`,
+        meta: `${item.amount != null ? `${euro(item.amount)} · ` : ''}überweisen bis ${formatDay(item.date)}`,
+        href: `/nebenkosten/${encodeURIComponent(item.ref.id ?? '')}`,
+        chip,
+      }
+    case 'einwand':
+      return {
+        title: `Einwände gegen ${name}`,
+        meta: `Nur noch bis ${formatDay(item.date)} · danach gilt die Abrechnung`,
+        href: `/nebenkosten/${encodeURIComponent(item.ref.id ?? '')}`,
+        chip,
+      }
+    case 'abrechnung':
+      return {
+        title: `${name} fehlt noch`,
+        meta: item.daysUntil >= 0
+          ? `Der Vermieter muss bis ${formatDay(item.date)} abrechnen`
+          : 'Zu spät: Eine Nachzahlung darf er nicht mehr verlangen',
+        href: '/nebenkosten',
+        chip: item.daysUntil >= 0 ? chip : { text: 'Frist vorbei', tone: 'neutral' },
       }
     case 'frist': {
       const early = !!item.from && today < item.from && (item.meterIds?.length ?? 0) > 0

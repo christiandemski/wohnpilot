@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CalendarClock, CalendarDays, Check, Gauge, House, KeyRound, Plus, Receipt, Search, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
+  import { CalendarClock, CalendarDays, Check, Gauge, House, KeyRound, Plus, Receipt, ReceiptText, Search, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
   import { outbox } from '../lib/outbox.svelte'
   import { api, ApiError } from '../lib/api'
   import { Resource } from '../lib/resource.svelte'
@@ -75,6 +75,9 @@
       termin: 'Termin ansehen',
       nachfassen: 'Mangel ansehen',
       garantie: 'Gerät ansehen',
+      nachzahlung: 'Abrechnung ansehen',
+      einwand: 'Abrechnung ansehen',
+      abrechnung: 'Nebenkosten ansehen',
     }
     return { title: text.title, meta: text.meta, chip: text.chip, action: { href: text.href, text: label[item.kind] ?? 'Vertrag ansehen' } }
   }
@@ -246,6 +249,8 @@
                   <IconTile module="maengel"><TriangleAlert size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
                 {:else if item.kind === 'garantie'}
                   <IconTile module="geraete"><WashingMachine size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
+                {:else if item.kind === 'nachzahlung' || item.kind === 'einwand' || item.kind === 'abrechnung'}
+                  <IconTile module="miete"><ReceiptText size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
                 {:else if item.kind === 'zustimmung'}
                   <IconTile module="miete"><KeyRound size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
                 {:else if item.kind === 'ablesung' || (item.kind === 'frist' && item.meterIds?.length)}

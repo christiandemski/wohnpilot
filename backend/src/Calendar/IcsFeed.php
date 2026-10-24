@@ -162,6 +162,24 @@ final class IcsFeed
                 '/fristen/' . rawurlencode((string) ($item['ref']['id'] ?? '')),
                 $both,
             ],
+            'nachzahlung' => [
+                "Nachzahlung $name überweisen",
+                isset($item['amount']) ? GermanNumber::format((float) $item['amount'], 2) . ' € an den Vermieter, falls die Abrechnung stimmt.' : '',
+                '/nebenkosten/' . rawurlencode((string) ($item['ref']['id'] ?? '')),
+                [self::WEEK_BEFORE],
+            ],
+            'einwand' => [
+                "Letzter Tag: Einwände gegen $name",
+                'Danach kannst du die Abrechnung nicht mehr beanstanden.',
+                '/nebenkosten/' . rawurlencode((string) ($item['ref']['id'] ?? '')),
+                $both,
+            ],
+            'abrechnung' => [
+                "$name: Frist des Vermieters endet",
+                'Kommt die Abrechnung später, darf der Vermieter keine Nachzahlung mehr verlangen.',
+                '/nebenkosten',
+                [],
+            ],
             // Voluntary readings are no appointment.
             default => null,
         };

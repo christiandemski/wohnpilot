@@ -66,6 +66,23 @@ describe('agendaText', () => {
     })
   })
 
+  it('names back payments, objections and a missing statement', () => {
+    const utility = (changes: Partial<AgendaItem>) => item({ ref: { type: 'nebenkosten', id: 'betriebskosten-2025' }, name: 'Betriebskosten 2025', category: null, ...changes })
+    expect(agendaText(utility({ kind: 'nachzahlung', date: '2026-10-30', daysUntil: 6, amount: 665.8 }), today)).toMatchObject({
+      title: 'Nachzahlung Betriebskosten 2025',
+      meta: '665,80 € · überweisen bis 30.10.',
+      href: '/nebenkosten/betriebskosten-2025',
+    })
+    expect(agendaText(utility({ kind: 'einwand', date: '2026-11-30' }), today).meta).toBe('Nur noch bis 30.11. · danach gilt die Abrechnung')
+    const missing = utility({ ref: { type: 'nebenkosten', id: null }, name: 'Betriebskosten 2026', kind: 'abrechnung', date: '2027-12-31', daysUntil: -5, status: 'due' })
+    expect(agendaText(missing, today)).toMatchObject({
+      title: 'Betriebskosten 2026 fehlt noch',
+      meta: 'Zu spät: Eine Nachzahlung darf er nicht mehr verlangen',
+      href: '/nebenkosten',
+      chip: { text: 'Frist vorbei', tone: 'neutral' },
+    })
+  })
+
   it('tells when a requested reading starts', () => {
     expect(agendaText(meldungItem, today).meta).toBe('Ablesen ab 05.12., bis 20.12.')
     expect(agendaText(meldungItem, '2026-12-06').meta).toBe('Bis 20.12.')

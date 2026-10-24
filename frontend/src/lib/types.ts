@@ -109,10 +109,10 @@ export type AgendaGroup = 'ueberfaellig' | 'woche' | 'bald' | 'spaeter' | 'hinwe
 
 /** One dated thing of "Was steht an" (AgendaService); kind decides which extra fields are set. */
 export interface AgendaItem {
-  ref: { type: 'vertrag' | 'mietvertrag' | 'frist' | 'ablesung' | 'wartung' | 'termin' | 'mangel' | 'geraet' | 'muell'; id: string | null }
+  ref: { type: 'vertrag' | 'mietvertrag' | 'frist' | 'ablesung' | 'wartung' | 'termin' | 'mangel' | 'geraet' | 'muell' | 'nebenkosten'; id: string | null }
   name: string | null
   category: string | null
-  kind: 'kuendigung' | 'vertragsende' | 'sonderkuendigung' | 'zustimmung' | 'frist' | 'ablesung' | 'wartung' | 'termin' | 'nachfassen' | 'garantie' | 'muell'
+  kind: 'kuendigung' | 'vertragsende' | 'sonderkuendigung' | 'zustimmung' | 'frist' | 'ablesung' | 'wartung' | 'termin' | 'nachfassen' | 'garantie' | 'muell' | 'nachzahlung' | 'einwand' | 'abrechnung'
   date: string
   daysUntil: number
   status: DueStatus | 'open'
@@ -142,6 +142,11 @@ export interface AgendaItem {
   /** muell */
   color?: string
   fullService?: boolean
+  /** nachzahlung */
+  amount?: number | null
+  /** abrechnung: the period of the statement that is missing */
+  periodFrom?: string
+  periodTo?: string
 }
 
 export interface Figures {
