@@ -41,12 +41,33 @@ cd frontend && npm run check       # Svelte- und TypeScript-Prüfung
 
 ## Betrieb auf Netcup Webhosting
 
-1. Lokal bauen: `cd frontend && npm run build` (legt die App nach `backend/public/`), `cd backend && composer install --no-dev --optimize-autoloader`.
-2. Den Ordner `backend/` hochladen, z. B. nach `/wohnpilot/`. **Document Root der (Sub-)Domain auf `/wohnpilot/public` stellen**, damit `.env`, `var/` und `vendor/` nicht erreichbar sind.
-3. `.env` nach `/wohnpilot/.env` (neben `composer.json`) mit `APP_ENV=prod`, `APP_URL=https://wohnpilot.codekorb.de`, Nextcloud-App-Passwort, `BEARID_PUBLIC_KEY_FILE` (Pfad zu `bearid-guard/public.key` im Webspace) und `WOHNPILOT_USERS` (deine E-Mail-Adresse). `DEV_LOGIN_USER` bleibt leer.
-4. PHP-Version im Panel auf 8.3 oder neuer; `pdo_sqlite` muss aktiv sein. Der Ordner `var/` muss beschreibbar sein (Index und Sessions-Cache).
-5. **BearID:** Wohnpilot auf der Subdomain `wohnpilot.codekorb.de` betreiben (nur dort bekommt es das Cookie `bearid`). In BearID unter Tools ein Tool mit Kürzel `wohnpilot` und Adresse `https://wohnpilot.codekorb.de` anlegen. In Plesk bei der Subdomain `open_basedir` auf `{WEBSPACEROOT}{/}{:}{TMP}{/}` stellen, damit PHP `bearid-guard/public.key` lesen darf.
-6. **Notzugang:** per SSH im Ordner `/wohnpilot` `php bin/account.php add <deine-email> christian` ausführen und ein Passwort mit mindestens 12 Zeichen setzen. `var/accounts.sqlite` gehört ins Backup.
-7. Optional Cronjob, damit Änderungen aus der Notes-App auch ohne Aufruf eingelesen werden: `php /wohnpilot/bin/reindex.php` alle 15 Minuten.
+Ziel: Subdomain `wohnpilot.codekorb.de`, Ordner im Webspace `wohnpilot.codekorb.de/httpdocs/`, **Document Root `wohnpilot.codekorb.de/httpdocs/public`**. So sind `.env`, `var/` und `vendor/` eine Ebene über dem Document Root und nicht aus dem Web erreichbar. Der Webspace liegt unter `/var/www/vhosts/hosting226222.ae9bd.netcup.net/`.
+
+```
+/var/www/vhosts/hosting226222.ae9bd.netcup.net/
+  bearid-guard/                 public.key, guard.php (von BearID)
+  wohnpilot.codekorb.de/
+    httpdocs/                   Inhalt von backend/
+      .env                      Zugangsdaten (nie ins Repo)
+      bin/  src/  vendor/  var/  composer.json
+      public/                   ← Document Root: index.php, .htaccess, gebaute App
+```
+
+1. **Lokal bauen:** `cd frontend && npm run build` (legt die App nach `backend/public/`), dann `cd backend && composer install --no-dev --optimize-autoloader`.
+2. **Hochladen:** den *Inhalt* von `backend/` nach `wohnpilot.codekorb.de/httpdocs/` (ohne `var/`, ohne `.env` aus der Entwicklung). Der Ordner `var/` muss für PHP beschreibbar sein; er entsteht beim ersten Aufruf.
+3. **`.env`** nach `wohnpilot.codekorb.de/httpdocs/.env`, mit:
+   - `APP_ENV=prod`, `APP_URL=https://wohnpilot.codekorb.de`, `DEV_LOGIN_USER` leer
+   - Nextcloud-URL, -Benutzer und App-Passwort
+   - `BEARID_PUBLIC_KEY_FILE=/var/www/vhosts/hosting226222.ae9bd.netcup.net/bearid-guard/public.key`
+   - `WOHNPILOT_USERS=` deine E-Mail-Adresse (darf den Haushalt anlegen)
+4. **Plesk, Subdomain `wohnpilot.codekorb.de`:**
+   - Document Root `httpdocs/public`, Let's-Encrypt-Zertifikat
+   - PHP 8.3 oder neuer, `pdo_sqlite` und `sodium` aktiv
+   - `open_basedir` auf `{WEBSPACEROOT}{/}{:}{TMP}{/}`, damit PHP an `bearid-guard/public.key` kommt
+5. **BearID** (`id.codekorb.de` → Tools → Tool anlegen): Name `Wohnpilot`, Kürzel `wohnpilot`, Adresse `https://wohnpilot.codekorb.de`, Symbol `home`. Andere Personen gibst du unter Benutzer frei.
+6. **Notzugang** per SSH: `cd /var/www/vhosts/hosting226222.ae9bd.netcup.net/wohnpilot.codekorb.de/httpdocs && php bin/account.php add <deine-email> christian`, Passwort mit mindestens 12 Zeichen. `var/accounts.sqlite` gehört ins Backup.
+7. **Optional Cronjob** (alle 15 Minuten), damit Änderungen aus der Notes-App auch ohne Aufruf eingelesen werden: `php /var/www/vhosts/hosting226222.ae9bd.netcup.net/wohnpilot.codekorb.de/httpdocs/bin/reindex.php`
+
+Bei späteren Updates nur `public/`, `src/`, `bin/`, `vendor/` und `composer.*` ersetzen; `.env` und `var/` bleiben.
 
 Der SQLite-Index ist nur ein Cache: Löschen von `var/index.sqlite` oder `php bin/reindex.php --full` baut ihn aus der Nextcloud neu auf.
