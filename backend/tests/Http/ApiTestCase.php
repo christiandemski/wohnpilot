@@ -12,6 +12,8 @@ use Slim\Psr7\Factory\ServerRequestFactory;
 use Wohnpilot\App\Clock;
 use Wohnpilot\Auth\AccountStore;
 use Wohnpilot\Calendar\CalendarLinks;
+use Wohnpilot\Push\PushSender;
+use Wohnpilot\Push\PushSubscriptions;
 use Wohnpilot\Auth\ArraySession;
 use Wohnpilot\Auth\BearId;
 use Wohnpilot\Auth\Identity;
@@ -23,6 +25,7 @@ use Wohnpilot\Services;
 use Wohnpilot\Storage\FilesystemAdapter;
 use Wohnpilot\Storage\StorageAdapter;
 use Wohnpilot\Tests\Fixtures;
+use Wohnpilot\Tests\Push\FakePushSender;
 
 /**
  * Runs the API against a copy of the fixtures in a temp folder, with a fixed
@@ -33,6 +36,8 @@ abstract class ApiTestCase extends TestCase
     protected string $root;
     protected ArraySession $session;
     protected App $app;
+    /** Pushes the API sent instead of delivering them */
+    protected FakePushSender $push;
 
     protected function setUp(): void
     {
@@ -43,6 +48,7 @@ abstract class ApiTestCase extends TestCase
         }
         $this->session = new ArraySession();
         $this->bearIdPair = sodium_crypto_sign_keypair();
+        $this->push = new FakePushSender();
         $this->app = $this->buildApp();
     }
 
@@ -77,11 +83,28 @@ abstract class ApiTestCase extends TestCase
         $session = $this->session;
         $today = $this->today;
         $bearIdKey = base64_encode(sodium_crypto_sign_publickey($this->bearIdPair));
-        $services = new class ($config, $root, $session, $today, $bearIdKey) extends Services {
+        $push = $this->push;
+        $services = new class ($config, $root, $session, $today, $bearIdKey, $push) extends Services {
             protected ?NoteIndex $testIndex = null;
             protected ?StorageAdapter $testStorage = null;
             protected ?AccountStore $testAccounts = null;
             protected ?CalendarLinks $testCalendarLinks = null;
+            protected ?PushSubscriptions $testPushSubscriptions = null;
+
+            public function pushSubscriptions(): PushSubscriptions
+            {
+                return $this->testPushSubscriptions ??= new PushSubscriptions(new PDO('sqlite::memory:'));
+            }
+
+            public function vapidPublicKey(): string
+            {
+                return 'BPublicTestKey';
+            }
+
+            public function pushSender(): PushSender
+            {
+                return $this->testPush;
+            }
 
             public function calendarLinks(): CalendarLinks
             {
@@ -98,7 +121,7 @@ abstract class ApiTestCase extends TestCase
                 return $this->testAccounts;
             }
 
-            public function __construct(Config $config, private readonly string $root, private readonly ArraySession $testSession, private readonly string $today, private readonly string $bearIdKey)
+            public function __construct(Config $config, private readonly string $root, private readonly ArraySession $testSession, private readonly string $today, private readonly string $bearIdKey, private readonly FakePushSender $testPush)
             {
                 parent::__construct($config, sys_get_temp_dir());
             }

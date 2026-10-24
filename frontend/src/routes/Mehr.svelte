@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { CalendarClock, CalendarPlus, ChevronRight, Copy, FileText, KeyRound, LogOut, RefreshCw } from '@lucide/svelte'
+  import { Bell, BellOff, CalendarClock, CalendarPlus, ChevronRight, Copy, FileText, KeyRound, LogOut, RefreshCw } from '@lucide/svelte'
   import { api, ApiError, logout } from '../lib/api'
   import { theme, type ThemeChoice } from '../lib/theme.svelte'
   import type { User } from '../lib/types'
   import { Resource } from '../lib/resource.svelte'
   import { formatDate } from '../lib/format'
+  import { disablePush, enablePush, isAppleMobile, pushState, testPush, type PushState } from '../lib/push'
   import IconTile from '../components/IconTile.svelte'
   import Segmentschalter from '../components/Segmentschalter.svelte'
 
@@ -18,6 +19,45 @@
 
   let choice = $state<string>(theme.choice)
   $effect(() => theme.set(choice as ThemeChoice))
+
+  // Morning push on this device
+  let push = $state<PushState | null>(null)
+  let pushKey: string | null = null
+  let pushBusy = $state(false)
+  let pushMessage = $state('')
+
+  pushState()
+    .then((result) => {
+      push = result.state
+      pushKey = result.publicKey
+    })
+    .catch(() => (push = 'unsupported'))
+
+  async function pushAction(run: () => Promise<void>) {
+    pushBusy = true
+    pushMessage = ''
+    try {
+      await run()
+    } catch (e) {
+      pushMessage = e instanceof ApiError ? e.text : 'Das hat nicht geklappt. Versuch es bitte noch einmal.'
+    } finally {
+      pushBusy = false
+    }
+  }
+
+  const turnOn = () => pushAction(async () => {
+    push = await enablePush(pushKey!)
+  })
+  const turnOff = () => pushAction(async () => {
+    await disablePush()
+    push = 'inactive'
+  })
+  const sendTest = () =>
+    pushAction(async () => {
+      const result = await testPush()
+      pushMessage = result === 'sent' ? 'Testnachricht ist unterwegs.' : result === 'gone' ? 'Dieses Gerät ist nicht mehr angemeldet. Schalt die Mitteilungen bitte neu ein.' : 'Der Push-Dienst hat nicht geantwortet. Versuch es später noch einmal.'
+      if (result === 'gone') push = 'inactive'
+    })
 
   // Calendar subscription: the link is shown once, right after it is made.
   const calendar = new Resource(() => api.get<{ active: boolean; createdAt: string | null }>('/calendar'))
@@ -96,6 +136,42 @@
     {/each}
   </ul>
 </nav>
+
+<section class="card" aria-labelledby="mitteilungen">
+  <h2 id="mitteilungen">Mitteilungen</h2>
+  <p class="muted">Morgens um 8 Uhr eine Nachricht, wenn eine Frist näher rückt: 30, 14, 7 und 3 Tage vorher, am Vortag und am Tag selbst. An ruhigen Tagen kommt nichts.</p>
+  {#if push === null}
+    <p class="muted small" aria-live="polite">Prüft …</p>
+  {:else if push === 'unsupported'}
+    <p>
+      {isAppleMobile()
+        ? 'Auf iPhone und iPad gehen Mitteilungen nur in der App auf dem Home-Bildschirm: Teilen › Zum Home-Bildschirm, dann dort einschalten.'
+        : 'Dieser Browser kann hier keine Mitteilungen empfangen.'}
+    </p>
+  {:else if push === 'off'}
+    <p>Mitteilungen sind auf dem Server noch nicht eingerichtet.</p>
+  {:else if push === 'denied'}
+    <p>Du hast Mitteilungen für Wohnpilot blockiert. Erlaub sie in den Einstellungen des Browsers, dann kannst du sie hier einschalten.</p>
+  {:else if push === 'active'}
+    <p><strong>Auf diesem Gerät eingeschaltet.</strong></p>
+    <div class="actions">
+      <button type="button" class="btn btn-secondary on-surface" disabled={pushBusy} onclick={sendTest}>
+        <Bell size={18} strokeWidth={1.75} aria-hidden="true" />
+        Test senden
+      </button>
+      <button type="button" class="btn btn-secondary on-surface" disabled={pushBusy} onclick={turnOff}>
+        <BellOff size={18} strokeWidth={1.75} aria-hidden="true" />
+        Ausschalten
+      </button>
+    </div>
+  {:else}
+    <button type="button" class="btn btn-secondary on-surface" disabled={pushBusy} onclick={turnOn}>
+      <Bell size={18} strokeWidth={1.75} aria-hidden="true" />
+      Auf diesem Gerät einschalten
+    </button>
+  {/if}
+  <p role="status" class="small">{pushMessage}</p>
+</section>
 
 <section class="card" aria-labelledby="kalender">
   <h2 id="kalender">Kalender</h2>

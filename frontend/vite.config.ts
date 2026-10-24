@@ -45,6 +45,8 @@ export default defineConfig({
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         cleanupOutdatedCaches: true,
+        // Push messages and taps on them (public/push-sw.js)
+        importScripts: ['push-sw.js'],
       },
     }),
   ],

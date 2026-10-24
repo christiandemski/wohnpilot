@@ -242,6 +242,41 @@ final class Api
                 return $response->withStatus(204);
             });
 
+            // Push: the key for the browser, devices of the signed-in person, a test message.
+            $api->get('/push', fn (Request $r, Response $response) => self::json($response, [
+                'publicKey' => $services->vapidPublicKey() ?: null,
+            ]));
+            $api->post('/push/subscriptions', function (Request $request, Response $response) use ($services): Response {
+                $body = self::body($request);
+                $endpoint = (string) ($body['endpoint'] ?? '');
+                $keys = is_array($body['keys'] ?? null) ? $body['keys'] : [];
+                $encoding = (string) ($body['contentEncoding'] ?? 'aes128gcm');
+                if (!preg_match('#^https://[^\s]+$#', $endpoint) || strlen($endpoint) > 1000) {
+                    throw AppException::validation(['endpoint' => 'url']);
+                }
+                if (!is_string($keys['p256dh'] ?? null) || !is_string($keys['auth'] ?? null) || !in_array($encoding, ['aes128gcm', 'aesgcm'], true)) {
+                    throw AppException::validation(['keys' => 'required']);
+                }
+                $services->pushSubscriptions()->save(self::user($request)->id, $endpoint, $keys['p256dh'], $keys['auth'], $encoding);
+                return $response->withStatus(204);
+            });
+            $api->post('/push/unsubscribe', function (Request $request, Response $response) use ($services): Response {
+                $services->pushSubscriptions()->remove((string) (self::body($request)['endpoint'] ?? ''), self::user($request)->id);
+                return $response->withStatus(204);
+            });
+            $api->post('/push/test', function (Request $request, Response $response) use ($services): Response {
+                $sender = $services->pushSender() ?? throw new AppException('push_off', 409, 'VAPID keys are not set');
+                $subscription = $services->pushSubscriptions()->find((string) (self::body($request)['endpoint'] ?? ''));
+                if ($subscription === null || $subscription['person'] !== self::user($request)->id) {
+                    throw AppException::notFound('Push subscription');
+                }
+                $outcome = $sender->send($subscription, ['title' => 'Wohnpilot', 'body' => 'So sehen deine Erinnerungen aus. Sie kommen morgens, wenn eine Frist näher rückt.', 'url' => '/mehr', 'tag' => 'wohnpilot-test']);
+                if ($outcome === \Wohnpilot\Push\PushSender::GONE) {
+                    $services->pushSubscriptions()->remove($subscription['endpoint']);
+                }
+                return self::json($response, ['result' => $outcome]);
+            });
+
             $api->post('/sync', function (Request $r, Response $response) use ($services): Response {
                 $services->notes()->refresh(true);
                 return $response->withStatus(204);

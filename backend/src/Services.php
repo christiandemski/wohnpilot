@@ -14,14 +14,18 @@ use Wohnpilot\App\LeaseService;
 use Wohnpilot\App\MeterService;
 use Wohnpilot\App\NoteRepository;
 use Wohnpilot\Auth\AccountStore;
-use Wohnpilot\Calendar\CalendarLinks;
-use Wohnpilot\Calendar\IcsFeed;
 use Wohnpilot\Auth\BearId;
 use Wohnpilot\Auth\DevLogin;
 use Wohnpilot\Auth\LoginProvider;
 use Wohnpilot\Auth\NativeSession;
 use Wohnpilot\Auth\Session;
+use Wohnpilot\Calendar\CalendarLinks;
+use Wohnpilot\Calendar\IcsFeed;
 use Wohnpilot\Index\NoteIndex;
+use Wohnpilot\Push\MorningPush;
+use Wohnpilot\Push\PushSender;
+use Wohnpilot\Push\PushSubscriptions;
+use Wohnpilot\Push\WebPushSender;
 use Wohnpilot\Storage\FilesystemAdapter;
 use Wohnpilot\Storage\NextcloudNotesAdapter;
 use Wohnpilot\Storage\StorageAdapter;
@@ -139,6 +143,37 @@ class Services
     public function calendarLinks(): CalendarLinks
     {
         return $this->instances[__FUNCTION__] ??= CalendarLinks::open($this->path($this->config->get('SETTINGS_FILE', 'var/settings.sqlite')));
+    }
+
+    public function pushSubscriptions(): PushSubscriptions
+    {
+        return $this->instances[__FUNCTION__] ??= PushSubscriptions::open($this->path($this->config->get('SETTINGS_FILE', 'var/settings.sqlite')));
+    }
+
+    /** Public VAPID key for the browser, or '' while push is not set up. */
+    public function vapidPublicKey(): string
+    {
+        return $this->config->get('VAPID_PRIVATE_KEY') === '' ? '' : $this->config->get('VAPID_PUBLIC_KEY');
+    }
+
+    /** Null while VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY are missing. */
+    public function pushSender(): ?PushSender
+    {
+        if (array_key_exists(__FUNCTION__, $this->instances)) {
+            return $this->instances[__FUNCTION__];
+        }
+        $public = $this->vapidPublicKey();
+        return $this->instances[__FUNCTION__] = $public === '' ? null : new WebPushSender(
+            $public,
+            $this->config->get('VAPID_PRIVATE_KEY'),
+            $this->config->get('VAPID_SUBJECT', $this->appUrl()),
+        );
+    }
+
+    public function morningPush(): ?MorningPush
+    {
+        $sender = $this->pushSender();
+        return $sender === null ? null : new MorningPush($this->pushSubscriptions(), $sender);
     }
 
     public function calendarFeed(): IcsFeed
