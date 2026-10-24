@@ -182,6 +182,7 @@ Wohnpilot/
     efh-musterstrasse/
       _objekt.md          Adresse, Typ, Einzug, Räume
       zaehler/
+      fristen/            einmalige Fristen dieses Zuhauses
       mietvertrag/
       nebenkosten/
       geraete/
@@ -190,6 +191,7 @@ Wohnpilot/
       maengel/
       wissen/
   vertraege/              haushaltsgebunden, ziehen mit um
+  fristen/                einmalige Fristen des Haushalts
   kontakte/
   anhaenge/               Fotos, Belege
 ```
@@ -236,6 +238,21 @@ paperless: 1234
 bezieht_sich_auf: [strom-haupt]
 ---
 Preiserhöhung zum 01.01.2027 angekündigt, Sonderkündigung prüfen.
+```
+
+Beispiel Frist (Aufforderung des Versorgers, den Zählerstand zu melden):
+
+```markdown
+---
+typ: frist
+id: strom-ablesung-2026
+objekt: efh-musterstrasse
+titel: Zählerstand Strom an die Stadtwerke melden
+ab: 2026-12-05
+datum: 2026-12-20
+vorlauf_tage: 14
+bezieht_sich_auf: [strom-haupt]
+---
 ```
 
 Regeln: `id` ist stabil und dient für Verweise und QR-Codes; Datumsangaben immer ISO; abgeleitete Werte (Fristende, Verbrauch) werden nie gespeichert, sondern berechnet; unbekannte Felder bleiben beim Speichern erhalten.
@@ -304,10 +321,20 @@ Stufe 1 liefert mit Zählern und Übersicht schon im ersten Monat Alltagsnutzen;
 - **Stammdaten ändern:** feldweiser Drei-Wege-Abgleich. Nur wenn dasselbe Feld auch woanders geändert wurde, zeigt die App beide Werte und du entscheidest.
 - **Verbrauch:** wird zwischen zwei Ablesungen gleichmäßig auf die Tage verteilt; Monate, Jahre und Hochrechnung sind Summen von Tagen. Tage ohne Ablesung zählen in der Hochrechnung mit dem Vorjahreswert desselben Tages, sonst mit dem Durchschnitt der letzten 365 Tage.
 - **Plausibilität:** „Ungewöhnlich hoch“ ab dem Doppelten des Erwarteten (Durchschnitt pro Tag × Tage seit der letzten Ablesung).
-- **Fälligkeit:** Ablesetag aus `_haushalt.md` (`einstellungen.ablesetag`), Intervall je Zähler; eine Ablesung bis 5 Tage vor dem Termin zählt für diesen Termin.
+- **Fälligkeit:** Ablesetag aus `_haushalt.md` (`einstellungen.ablesetag`), Intervall je Zähler; eine Ablesung bis 5 Tage vor dem Termin zählt für diesen Termin. Seit Stufe 2 ist dieser Rhythmus nur ein freiwilliger Vorschlag (siehe unten).
 - **Zahlenformat:** Tausendertrenner ist der Punkt, Dezimalzeichen das Komma (`23.702,0`). In den Notizen stehen Zahlen ohne Tausendertrenner mit Dezimalpunkt (`23702.0`); von Hand geschriebene Werte wie `23702,0` oder `23.702,0` werden ebenfalls gelesen. In Eingabefeldern gilt `1.450` als Tausendertrenner, also 1450.
 - **Erster Zugang:** Solange es noch keinen Haushalt gibt, dürfen nur Benutzernamen oder E-Mail-Adressen aus `WOHNPILOT_USERS` ihn anlegen; danach entscheidet die Personenliste in `_haushalt.md`.
 - **Anmeldung:** Wer bei BearID angemeldet ist und Wohnpilot freigegeben hat (oder Admin ist), ist ohne Klick drin; die Person wird über `bearid` (BearID-ID) oder `email` in `_haushalt.md` gefunden. Abmelden in Wohnpilot meldet auch bei BearID ab, sonst wäre man über das Cookie sofort wieder angemeldet. Der Notzugang mit E-Mail und Passwort nutzt eigene Konten in `var/accounts.sqlite` (kein Cache, gehört ins Backup), angelegt mit `php bin/account.php`; Passwörter nur als Hash, Bremse nach 5 Fehlversuchen pro E-Mail bzw. 20 pro IP in 15 Minuten. „Passwort vergessen“ per Mail gibt es noch nicht.
+
+## Festlegungen aus Stufe 2
+
+- **Ablesen, Pflicht und Kür:** Der Rhythmus je Zähler ist freiwillig und warnt nie; ab dem vorgeschlagenen Tag heißt es nur „Ablesen möglich“. Pflicht ist eine Ablesung erst, wenn der Versorger dazu auffordert (bei uns einmal im Jahr). Dann legst du eine Frist an, die mit `bezieht_sich_auf` auf die Zähler zeigt. Sie ist von selbst erledigt, sobald jeder dieser Zähler ab `ab` (ohne `ab`: 30 Tage vor dem Stichtag) abgelesen ist; auch eine verspätete Ablesung zählt. Melden musst du die Stände trotzdem selbst.
+- **Vertragslaufzeit:** Perioden laufen ab `beginn`: zuerst die Mindestlaufzeit, dann jeweils `verlaengerung_monate`. Eine Periode endet nach § 188 BGB am Tag vor dem gleichen Kalendertag (Beginn 01.12. → Ende 30.11.). Letzter Kündigungstag = Periodenende + 1 Tag − Kündigungsfrist − 1 Tag. Ohne Verlängerung endet der Vertrag von selbst, ohne Beginn oder Laufzeit ist er jederzeit mit der Frist kündbar. Mit `gekuendigt_zum` (bestätigt) oder `gekuendigt_am` (dann rechnet Wohnpilot das Ende) gilt er als gekündigt.
+- **Preisänderungen:** Die Tabelle `Gültig ab | …` im Vertrag, neueste Zeile oben. Die unterste Zeile ist der Startpreis; jede spätere Zeile in der Zukunft gibt ein Sonderkündigungsrecht bis zum Vortag. Die Kosten im Kopf (`kosten_eur`) passt du selbst an, wenn der neue Preis gilt.
+- **Dringlichkeit:** „bald“ ab `vorlauf_tage` vor dem Stichtag (Verträge 30, Fristen 14 Tage), „fällig“ am Tag selbst und danach. „Was steht an“ gruppiert nach überfällig, diese Woche, 30 Tage, später; freiwilliges Ablesen steht als Hinweis am Ende. Die Karte „Als Nächstes“ zeigt das Dringendste, ob Frist oder Ablesung.
+- **Mietvertrag:** Eine Notiz je Zuhause in `mietvertrag/`, Kaution als Map im Frontmatter, Mietverlauf als Tabelle `Gültig ab | Kaltmiete € | Nebenkosten € | Grund | Eingang | Zugestimmt`. Zustimmen zu einer Mieterhöhung musst du bis zum Ende des übernächsten Monats nach Eingang (§ 558b BGB); bei Index- und Staffelmiete entfällt das. Deine Kündigung muss bis zum dritten Werktag eines Monats ankommen; Samstag zählt mit, Wohnpilot nimmt nur bundesweite Feiertage heraus und liegt damit eher zu früh als zu spät.
+- **Kalender:** ICS-Abo statt CalDAV. Jede Person bekommt einen geheimen Link (`/api/calendar/<token>.ics`); gespeichert wird nur sein Hash in `var/settings.sqlite` (kein Cache, gehört ins Backup). Ein neuer Link ersetzt den alten. Termine sind ganztägig mit Erinnerung eine Woche und einen Tag vorher um 9 Uhr. Der Pfad muss ohne BearID-Anmeldung erreichbar sein, weil Kalender-Apps sich nicht anmelden können.
+- **Push:** Web Push mit VAPID, höchstens eine Nachricht am Morgen (Cron `bin/notify.php` um 8 Uhr). Sie kommt nur, wenn eine Frist 30, 14, 7, 3, 1 oder 0 Tage entfernt ist, seit 1, 3 oder 7 Tagen überfällig ist oder ein Ablesezeitraum beginnt, und nennt dann alles der nächsten 14 Tage. Abos je Gerät in `var/settings.sqlite`; abgemeldete Geräte werden vergessen.
 
 ## Offene Fragen
 
@@ -317,4 +344,6 @@ Stufe 1 liefert mit Zählern und Übersicht schon im ersten Monat Alltagsnutzen;
 - [ ] Welche Heizform(en) und Zähler gibt es im Haus genau? (wird im Einrichtungsassistenten abgefragt)
 - [ ] Welche Pflichten regelt dein Mietvertrag für Garten, Winterdienst und Kleinreparaturen?
 - [x] Frontend: Svelte 5 mit Vite (entschieden 24.10.2026)
-- [ ] Sollen Termine nur als ICS-Feed kommen oder direkt per CalDAV in den Kalender geschrieben werden?
+- [x] Kalender: ICS-Abo mit geheimem Link je Person; CalDAV-Schreiben bleibt eine spätere Option (entschieden 24.10.2026)
+- [x] Zählerstände: monatlich freiwillig, Pflicht nur auf Aufforderung des Versorgers als Frist (entschieden 24.10.2026)
+- [x] Erinnerungen: eine tägliche Zusammenfassung als Push, nur an Tagen mit Anlass (entschieden 24.10.2026)

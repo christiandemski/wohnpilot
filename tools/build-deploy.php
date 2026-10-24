@@ -73,7 +73,7 @@ function localEnv(string $file): array
 
 // 1. Frontend into backend/public
 run('npm run build', "$root/frontend");
-foreach (['index.html', 'sw.js', 'manifest.webmanifest', 'assets'] as $built) {
+foreach (['index.html', 'sw.js', 'push-sw.js', 'manifest.webmanifest', 'assets'] as $built) {
     if (!file_exists("$backend/public/$built")) {
         fwrite(STDERR, "Frontend-Build unvollständig: public/$built fehlt\n");
         exit(1);
@@ -110,11 +110,17 @@ $template = [
     'BEARID_PUBLIC_KEY_FILE' => '/var/www/vhosts/hosting226222.ae9bd.netcup.net/bearid-guard/public.key',
     'BEARID_APP' => 'wohnpilot',
     'ACCOUNTS_FILE' => 'var/accounts.sqlite',
+    'SETTINGS_FILE' => 'var/settings.sqlite',
     'WOHNPILOT_USERS' => $local['WOHNPILOT_USERS'] ?? '',
     'DEV_LOGIN_USER' => '',
+    // Push: create the keys on the server with php bin/vapid.php (never from the local .env)
+    'VAPID_PUBLIC_KEY' => '',
+    'VAPID_PRIVATE_KEY' => '',
+    'VAPID_SUBJECT' => '',
 ];
 $env = "# Wohnpilot auf wohnpilot.codekorb.de. Als .env neben composer.json speichern.\n"
-    . "# NEXTCLOUD_APP_PASSWORD hier auf dem Server eintragen – es ist absichtlich nicht im Paket.\n";
+    . "# NEXTCLOUD_APP_PASSWORD hier auf dem Server eintragen – es ist absichtlich nicht im Paket.\n"
+    . "# VAPID_*: mit php bin/vapid.php auf dem Server erzeugen; VAPID_SUBJECT=mailto:<deine-email>\n";
 foreach ($template as $key => $value) {
     $env .= "$key=$value\n";
 }
@@ -133,10 +139,14 @@ Erstinstallation
    open_basedir auf {WEBSPACEROOT}{/}{:}{TMP}{/}, var/ beschreibbar.
 4. BearID → Tools → Tool anlegen: Kürzel wohnpilot, Adresse https://wohnpilot.codekorb.de
 5. Notzugang per SSH:  php bin/account.php add <deine-email> christian
+6. Push per SSH:       php bin/vapid.php  → beide Zeilen in .env, dazu VAPID_SUBJECT=mailto:<deine-email>
+7. Plesk → Geplante Aufgaben, täglich 08:00:  php <pfad>/httpdocs/bin/notify.php
+   (optional alle 15 Minuten: php <pfad>/httpdocs/bin/reindex.php)
+8. Keinen BearID-Guard vor die ganze Subdomain: Kalender-Apps holen /api/calendar/… ohne Anmeldung.
 
 Update
 Nur public/, src/, bin/, vendor/ und composer.* ersetzen. .env und var/ bleiben stehen.
-var/accounts.sqlite gehört ins Backup.
+Ins Backup: var/accounts.sqlite und var/settings.sqlite (Kalender-Links, Push-Abos).
 TXT);
 
 // 5. Zip
