@@ -175,6 +175,8 @@ final class DefectService
             ->enum('zustaendig', self::RESPONSIBLE, default: 'vermieter')
             ->bool('kleinreparatur')
             ->number('kosten_eur')
+            // Labour share of the costs, for § 35a
+            ->number('arbeitskosten_eur')
             ->date('nachfassen')
             ->slug('kontakt')
             ->fields();

@@ -1171,6 +1171,7 @@ class ComposerStaticInit46f8d95941feb8dbc73c995178fc46ab
         'Wohnpilot\\App\\NoteRepository' => __DIR__ . '/../..' . '/src/App/NoteRepository.php',
         'Wohnpilot\\App\\ObjectNotes' => __DIR__ . '/../..' . '/src/App/ObjectNotes.php',
         'Wohnpilot\\App\\PhotoService' => __DIR__ . '/../..' . '/src/App/PhotoService.php',
+        'Wohnpilot\\App\\ReportService' => __DIR__ . '/../..' . '/src/App/ReportService.php',
         'Wohnpilot\\App\\SearchService' => __DIR__ . '/../..' . '/src/App/SearchService.php',
         'Wohnpilot\\App\\SettingsService' => __DIR__ . '/../..' . '/src/App/SettingsService.php',
         'Wohnpilot\\App\\Slug' => __DIR__ . '/../..' . '/src/App/Slug.php',
