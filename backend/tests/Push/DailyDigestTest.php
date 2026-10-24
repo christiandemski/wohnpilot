@@ -40,6 +40,13 @@ final class DailyDigestTest extends TestCase
         );
     }
 
+    public function testNamesWhoTakesCareOfIt(): void
+    {
+        $task = self::item(['ref' => ['type' => 'wartung', 'id' => 'rauchmelder'], 'name' => 'Rauchmelder testen', 'kind' => 'wartung', 'person' => ['id' => 'alex', 'name' => 'Alex']]);
+
+        self::assertSame('Rauchmelder testen (Alex)', (new DailyDigest())->build([$task], self::TODAY)['title']);
+    }
+
     public function testRequestedReadingPushesWhenItsWindowOpens(): void
     {
         $reading = self::item(['ref' => ['type' => 'frist', 'id' => 'strom-ablesung'], 'name' => 'Zählerstand Strom melden', 'kind' => 'frist', 'date' => '2026-11-08', 'daysUntil' => 15, 'status' => 'ok', 'from' => self::TODAY, 'meterIds' => ['strom-haupt']]);

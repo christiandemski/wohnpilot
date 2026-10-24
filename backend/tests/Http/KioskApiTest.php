@@ -44,7 +44,7 @@ final class KioskApiTest extends ApiTestCase
         $board = $this->request('GET', '/api/kiosk/board', cookies: ['wohnpilot_kiosk' => $token]);
         self::assertSame(200, $board->getStatusCode());
         $data = self::decode($board);
-        self::assertSame(['id' => 'christian', 'name' => 'Christian'], $data['user']);
+        self::assertSame(['id' => 'christian', 'name' => 'Christian', 'role' => 'verwalter'], $data['user']);
         self::assertSame('2026-10-24', $data['today']);
         self::assertSame(['strom-haupt', 'wasser-haupt'], array_column($data['meters'], 'id'));
         self::assertNotContains('muell', array_column($data['items'], 'kind'));

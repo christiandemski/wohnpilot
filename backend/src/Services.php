@@ -21,6 +21,7 @@ use Wohnpilot\App\LeaseService;
 use Wohnpilot\App\MaintenanceService;
 use Wohnpilot\App\MeterService;
 use Wohnpilot\App\NoteRepository;
+use Wohnpilot\App\PeopleService;
 use Wohnpilot\App\ObjectNotes;
 use Wohnpilot\App\PhotoService;
 use Wohnpilot\App\SearchService;
@@ -136,6 +137,11 @@ class Services
         return $this->instances[__FUNCTION__] ??= new Clock();
     }
 
+    public function people(): PeopleService
+    {
+        return $this->instances[__FUNCTION__] ??= new PeopleService($this->notes(), $this->household(), $this->accounts());
+    }
+
     public function household(): HouseholdService
     {
         return $this->instances[__FUNCTION__] ??= new HouseholdService($this->notes(), $this->config->list('WOHNPILOT_USERS'));
@@ -173,7 +179,7 @@ class Services
 
     public function appointments(): AppointmentService
     {
-        return $this->instances[__FUNCTION__] ??= new AppointmentService($this->notes(), $this->objectNotes(), $this->clock());
+        return $this->instances[__FUNCTION__] ??= new AppointmentService($this->notes(), $this->objectNotes(), $this->clock(), $this->household());
     }
 
     public function defects(): DefectService
@@ -236,6 +242,7 @@ class Services
             $this->devices(),
             $this->waste(),
             $this->utilities(),
+            $this->household(),
         );
     }
 

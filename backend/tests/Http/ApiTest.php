@@ -33,7 +33,7 @@ final class ApiTest extends ApiTestCase
 
         $response = $this->request('GET', '/api/me', cookies: $this->bearIdCookie());
 
-        self::assertSame(['user' => ['id' => 'christian', 'name' => 'Christian']], self::decode($response));
+        self::assertSame(['user' => ['id' => 'christian', 'name' => 'Christian', 'role' => 'verwalter']], self::decode($response));
         self::assertSame('bearid:42', $this->session->get('identity')['subject']);
         self::assertSame(1, $this->session->regenerated);
     }
@@ -102,7 +102,7 @@ final class ApiTest extends ApiTestCase
 
         self::assertSame('/', $callback->getHeaderLine('Location'));
         self::assertSame(1, $this->session->regenerated);
-        self::assertSame(['user' => ['id' => 'christian', 'name' => 'Christian']], self::decode($this->request('GET', '/api/me')));
+        self::assertSame(['user' => ['id' => 'christian', 'name' => 'Christian', 'role' => 'verwalter']], self::decode($this->request('GET', '/api/me')));
     }
 
     public function testPasswordLogin(): void
@@ -110,7 +110,7 @@ final class ApiTest extends ApiTestCase
         $response = $this->request('POST', '/api/auth/password', ['email' => 'Christian@example.org', 'password' => 'richtig-langes-passwort']);
 
         self::assertSame(200, $response->getStatusCode(), (string) $response->getBody());
-        self::assertSame(['user' => ['id' => 'christian', 'name' => 'Christian']], self::decode($response));
+        self::assertSame(['user' => ['id' => 'christian', 'name' => 'Christian', 'role' => 'verwalter']], self::decode($response));
         self::assertSame(1, $this->session->regenerated);
         self::assertSame(200, $this->request('GET', '/api/overview')->getStatusCode());
     }

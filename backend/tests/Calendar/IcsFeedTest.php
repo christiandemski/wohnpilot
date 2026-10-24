@@ -110,6 +110,17 @@ final class IcsFeedTest extends TestCase
         self::assertContains('URL:https://wohnpilot.example.org/geraete/waschmaschine', $lines);
     }
 
+    public function testNamesWhoTakesCareOfIt(): void
+    {
+        $lines = self::unfold(self::feed([
+            self::item(['kind' => 'wartung', 'ref' => ['type' => 'wartung', 'id' => 'rauchmelder'], 'name' => 'Rauchmelder testen', 'date' => '2026-11-08', 'person' => ['id' => 'alex', 'name' => 'Alex']]),
+            self::item(['kind' => 'frist', 'ref' => ['type' => 'frist', 'id' => 'strom'], 'name' => 'Zählerstand melden', 'date' => '2026-11-08', 'person' => ['id' => 'christian', 'name' => 'Christian']]),
+        ]));
+
+        self::assertContains('SUMMARY:Wartung: Rauchmelder testen (Alex)', $lines);
+        self::assertContains('SUMMARY:Zählerstand melden (Christian)', $lines);
+    }
+
     public function testBinsRemindOnlyIfYouPutThemOut(): void
     {
         $bin = static fn (bool $fullService): array => self::item(['kind' => 'muell', 'ref' => ['type' => 'muell', 'id' => 'gelb'], 'name' => 'Gelbe Tonne', 'date' => '2026-10-27', 'fullService' => $fullService]);

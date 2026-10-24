@@ -17,6 +17,7 @@ final class AppointmentService
         private readonly NoteRepository $notes,
         private readonly ObjectNotes $objects,
         private readonly Clock $clock,
+        private readonly ?HouseholdService $household = null,
     ) {
     }
 
@@ -59,6 +60,7 @@ final class AppointmentService
     public function create(array $input, User $user): array
     {
         $fields = self::validate($input, true);
+        $this->household?->checkPerson($fields);
         $stored = $this->objects->create('termin', 'termine', $fields['titel'] . ' ' . substr($fields['datum'], 0, 7), $fields, $user);
         return $this->detail((string) NoteDocument::parse($stored->content)->frontmatter()->get('id'));
     }
@@ -69,7 +71,9 @@ final class AppointmentService
      */
     public function update(string $id, array $changes, array $original, string $etag, User $user): array
     {
-        $this->notes->updateFields($this->objects->find('termin', $id, 'Termin'), self::validate($changes, false), $original, $etag, $user->id);
+        $changes = self::validate($changes, false);
+        $this->household?->checkPerson($changes);
+        $this->notes->updateFields($this->objects->find('termin', $id, 'Termin'), $changes, $original, $etag, $user->id);
         return $this->detail($id);
     }
 
@@ -106,6 +110,7 @@ final class AppointmentService
             ->time('uhrzeit')
             ->time('bis')
             ->string('ort')
+            ->slug('person')
             ->slugList('bezieht_sich_auf')
             ->slug('kontakt');
         if (is_string($from = $check->value('uhrzeit')) && is_string($to = $check->value('bis')) && $to <= $from) {

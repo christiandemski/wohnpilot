@@ -43,6 +43,7 @@ final class AgendaService
         private readonly ?DeviceService $devices = null,
         private readonly ?WasteService $waste = null,
         private readonly ?UtilityService $utilities = null,
+        private readonly ?HouseholdService $household = null,
     ) {
     }
 
@@ -54,6 +55,7 @@ final class AgendaService
     public function forOverview(array $meters, int $pickupDays = self::PICKUP_DAYS): array
     {
         $today = $this->clock->today();
+        $this->names = $this->household?->names() ?? [];
         $items = [];
         $monthly = 0.0;
         $nextNotice = null;
@@ -98,7 +100,7 @@ final class AgendaService
             $open = array_values(array_column(array_filter($evaluation['meters'], static fn (array $m): bool => $m['readOn'] === null), 'id'));
             $items[] = ['ref' => ['type' => 'frist', 'id' => $deadline['id']], 'name' => $deadline['title'], 'category' => null]
                 + self::dated('frist', $deadline['fields']['datum'], $evaluation['daysUntil'], $evaluation['status'])
-                + ['from' => $deadline['windowStart'], 'meterIds' => $open];
+                + ['from' => $deadline['windowStart'], 'meterIds' => $open, 'person' => $this->person($deadline['fields'])];
         }
 
         $voluntary = array_values(array_filter($meters, static fn (array $m): bool => $m['request'] === null && $m['schedule']['status'] === ReadingSchedule::STATUS_OPEN));
@@ -130,6 +132,16 @@ final class AgendaService
         ];
     }
 
+    /** @var array<string, string> person id => name while building the list */
+    private array $names = [];
+
+    /** @return array{id: string, name: string}|null who takes care of it; a person who left keeps their id as name */
+    private function person(array $fields): ?array
+    {
+        $id = $fields['person'] ?? null;
+        return is_string($id) && $id !== '' ? ['id' => $id, 'name' => $this->names[$id] ?? $id] : null;
+    }
+
     /**
      * Maintenance (not the ones checked by radio), appointments from today,
      * defects with a follow-up day, warranties ending within 30 days, and
@@ -147,7 +159,7 @@ final class AgendaService
             }
             $items[] = ['ref' => ['type' => 'wartung', 'id' => $task['id']], 'name' => $task['title'], 'category' => null]
                 + self::dated('wartung', $e['dueDate'], $e['daysUntil'], $e['status'])
-                + ['from' => $e['from'], 'lastDone' => $e['lastDone'], 'appointment' => ($task['fields']['ausfuehrung'] ?? null) === 'termin', 'responsible' => $task['fields']['zustaendig'] ?? 'mieter'];
+                + ['from' => $e['from'], 'lastDone' => $e['lastDone'], 'appointment' => ($task['fields']['ausfuehrung'] ?? null) === 'termin', 'responsible' => $task['fields']['zustaendig'] ?? 'mieter', 'person' => $this->person($task['fields'])];
         }
 
         foreach ($this->appointments?->all() ?? [] as $appointment) {
@@ -156,7 +168,7 @@ final class AgendaService
             }
             $items[] = ['ref' => ['type' => 'termin', 'id' => $appointment['id']], 'name' => $appointment['title'], 'category' => null]
                 + self::dated('termin', $appointment['date'], $appointment['daysUntil'], Urgency::OK)
-                + ['time' => $appointment['time'], 'until' => $appointment['fields']['bis'] ?? null, 'place' => $appointment['fields']['ort'] ?? null];
+                + ['time' => $appointment['time'], 'until' => $appointment['fields']['bis'] ?? null, 'place' => $appointment['fields']['ort'] ?? null, 'person' => $this->person($appointment['fields'])];
         }
 
         $openDefects = null;

@@ -92,10 +92,11 @@ final class DailyDigest
         };
     }
 
-    /** "Stadtwerke kündigen", "Mieterhöhung zustimmen" */
+    /** "Stadtwerke kündigen", "Mieterhöhung zustimmen", "Rauchmelder testen (Alex)" */
     private static function subject(array $item): string
     {
         $name = (string) ($item['name'] ?? '');
+        $who = is_array($item['person'] ?? null) ? ' (' . $item['person']['name'] . ')' : '';
         return match ($item['kind']) {
             'kuendigung' => "$name kündigen",
             'vertragsende' => empty($item['cancelled']) ? "$name läuft aus" : "$name endet",
@@ -107,7 +108,7 @@ final class DailyDigest
             'nachzahlung' => "Nachzahlung $name überweisen",
             'einwand' => "Einwände gegen $name",
             'abrechnung' => "$name fehlt noch",
-            default => $name,
+            default => $name . $who,
         };
     }
 
