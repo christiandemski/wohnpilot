@@ -138,7 +138,7 @@ class Services
 
     public function meters(): MeterService
     {
-        return $this->instances[__FUNCTION__] ??= new MeterService($this->notes(), $this->household(), $this->clock());
+        return $this->instances[__FUNCTION__] ??= new MeterService($this->notes(), $this->household(), $this->clock(), $this->files());
     }
 
     public function contracts(): ContractService

@@ -15,6 +15,7 @@ use Wohnpilot\Domain\Reading;
 use Wohnpilot\Domain\ReadingSchedule;
 use Wohnpilot\Domain\Urgency;
 use Wohnpilot\Note\NoteDocument;
+use Wohnpilot\Storage\AttachmentStore;
 use Wohnpilot\Storage\StoredNote;
 
 /**
@@ -34,6 +35,7 @@ final class MeterService
         private readonly NoteRepository $notes,
         private readonly HouseholdService $household,
         private readonly Clock $clock,
+        private readonly AttachmentStore $files,
     ) {
     }
 
@@ -158,10 +160,12 @@ final class MeterService
     /**
      * Adds a reading to the newest version of the note. Sending the same
      * reading twice (e.g. after a lost answer) does not add it twice.
+     * A photo of the meter goes to anhaenge/zaehler/<id>/<date>-<n>.jpg and
+     * into the reading's "Foto" column, as proof of the value.
      *
      * @param array<string, mixed> $input date, value, occasion
      */
-    public function addReading(string $id, array $input, User $user): array
+    public function addReading(string $id, array $input, User $user, ?string $photo = null): array
     {
         $date = (string) ($input['date'] ?? $this->clock->today());
         $value = $input['value'] ?? null;
@@ -180,23 +184,64 @@ final class MeterService
         if (!in_array($occasion, self::OCCASIONS, true)) {
             $errors['occasion'] = 'unknown';
         }
+        $extension = null;
+        if ($photo !== null) {
+            $extension = PhotoService::extension($photo);
+            if (strlen($photo) > PhotoService::MAX_BYTES) {
+                $errors['foto'] = 'too_large';
+            } elseif ($extension === null) {
+                $errors['foto'] = 'not_an_image';
+            }
+        }
         if ($errors !== []) {
             throw AppException::validation($errors);
         }
 
         $stored = $this->find($id);
         $reading = new Reading($date, (float) $value, $occasion);
-        $this->notes->modifyLatest($stored->path, static function (NoteDocument $note) use ($reading, $user): NoteDocument {
+        $isDuplicate = static function (NoteDocument $note) use ($reading): bool {
             $decimals = (int) $note->frontmatter()->get('nachkommastellen', 0);
             foreach (Meter::fromNote($note)->readings as $existing) {
                 if ($existing->date === $reading->date
                     && round($existing->value, $decimals) === round($reading->value, $decimals)
                     && $existing->occasion === $reading->occasion) {
-                    return $note;
+                    return true;
                 }
             }
-            return MeterNote::addReading($note, $reading, $user->id);
-        });
+            return false;
+        };
+
+        $path = '';
+        $current = NoteDocument::parse($stored->content);
+        if ($photo !== null && !$isDuplicate($current)) {
+            $headers = $current->body()->table()?->headers();
+            if ($headers !== null && !in_array('Foto', $headers, true)) {
+                throw AppException::validation(['foto' => 'no_column']);
+            }
+            $taken = array_map(static fn (Reading $r): string => $r->photo, Meter::fromNote($current)->readings);
+            $folder = AttachmentStore::FOLDER . "/zaehler/$id";
+            for ($n = 1; in_array($path = "$folder/$date-$n.$extension", $taken, true); $n++) {
+            }
+            $this->files->putFile($path, $photo);
+            $reading = new Reading($date, (float) $value, $occasion, $path);
+        }
+
+        $added = false;
+        try {
+            $this->notes->modifyLatest($stored->path, static function (NoteDocument $note) use ($reading, $user, $isDuplicate, &$added): NoteDocument {
+                $added = !$isDuplicate($note);
+                return $added ? MeterNote::addReading($note, $reading, $user->id) : $note;
+            });
+        } catch (\Throwable $e) {
+            if ($path !== '') {
+                $this->files->deleteFile($path);
+            }
+            throw $e;
+        }
+        // Someone else wrote the same reading meanwhile: their row stays, the photo goes.
+        if (!$added && $path !== '') {
+            $this->files->deleteFile($path);
+        }
 
         return $this->detail($id);
     }
