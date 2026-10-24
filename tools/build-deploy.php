@@ -111,6 +111,7 @@ $template = [
     'BEARID_APP' => 'wohnpilot',
     'ACCOUNTS_FILE' => 'var/accounts.sqlite',
     'SETTINGS_FILE' => 'var/settings.sqlite',
+    'CACHE_DIR' => 'var/cache',
     'WOHNPILOT_USERS' => $local['WOHNPILOT_USERS'] ?? '',
     'DEV_LOGIN_USER' => '',
     // Push: create the keys on the server with php bin/vapid.php (never from the local .env)
@@ -145,7 +146,8 @@ Erstinstallation
 8. Keinen BearID-Guard vor die ganze Subdomain: Kalender-Apps holen /api/calendar/… ohne Anmeldung.
 
 Update
-Nur public/, src/, bin/, vendor/ und composer.* ersetzen. .env und var/ bleiben stehen.
+Einfacher: Plesk-Git auf Branch "deploy" mit Serverpfad wohnpilot.codekorb.de/httpdocs (siehe README).
+Von Hand: nur public/, src/, bin/, vendor/ und composer.* ersetzen. .env und var/ bleiben stehen.
 Ins Backup: var/accounts.sqlite und var/settings.sqlite (Kalender-Links, Push-Abos).
 TXT);
 

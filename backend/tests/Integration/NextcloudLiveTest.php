@@ -86,6 +86,13 @@ final class NextcloudLiveTest extends TestCase
             'cancelled contract' => ['vertraege/internet-glasfaser.md'],
             'lease' => ['objekte/efh-musterstrasse/mietvertrag/mietvertrag.md'],
             'deadline' => ['objekte/efh-musterstrasse/fristen/strom-ablesung-2026.md'],
+            // stage 3
+            'maintenance with season' => ['objekte/efh-musterstrasse/wartung/heckenschnitt.md'],
+            'maintenance never done' => ['objekte/efh-musterstrasse/wartung/heizungswartung.md'],
+            'appointment' => ['objekte/efh-musterstrasse/termine/schornsteinfeger-2026-11.md'],
+            'waste' => ['objekte/efh-musterstrasse/termine/muell.md'],
+            'defect with photo' => ['objekte/efh-musterstrasse/maengel/fenster-schlafzimmer.md'],
+            'device' => ['objekte/efh-musterstrasse/geraete/waschmaschine.md'],
         ];
     }
 
@@ -152,6 +159,34 @@ final class NextcloudLiveTest extends TestCase
             $dav = new \GuzzleHttp\Client(['base_uri' => rtrim($_ENV['NEXTCLOUD_URL'], '/') . NextcloudFiles::DAV_PATH, 'auth' => [$_ENV['NEXTCLOUD_USER'], $_ENV['NEXTCLOUD_APP_PASSWORD']], 'http_errors' => false]);
             $dav->request('DELETE', implode('/', array_map('rawurlencode', [$settings['notesPath'], $_ENV['NEXTCLOUD_FOLDER'] ?? 'Wohnpilot', 'anhaenge', $folder])));
         }
+    }
+
+    public function testHouseEditsComeBackAsWritten(): void
+    {
+        $root = dirname(__DIR__, 3) . '/fixtures/Wohnpilot';
+        $folder = '_test/' . bin2hex(random_bytes(3));
+
+        // A status row and a new follow-up day, as DefectService::addStatus writes them
+        $defectPath = $this->track("$folder/maengel/fenster-schlafzimmer.md");
+        $defect = $this->adapter->create($defectPath, file_get_contents("$root/objekte/efh-musterstrasse/maengel/fenster-schlafzimmer.md"));
+        $note = NoteDocument::parse($defect->content);
+        HistoryTable::insertNewestFirst($note->body()->table(), 'Datum', ['Datum' => '2026-10-24', 'Status' => 'termin', 'Kanal' => 'Telefon', 'Notiz' => 'Fensterbauer am 03.11.']);
+        $note->frontmatter()->set('nachfassen', '2026-11-04');
+        $this->adapter->update($defectPath, $note->toString(), $defect->etag);
+        self::assertSame($note->toString(), $this->adapter->get($defectPath)->content);
+        self::assertSame('termin', \Wohnpilot\Domain\Defect::fromNote(NoteDocument::parse($note->toString()))->status());
+
+        // A setting written into the block, as SettingsService does
+        $householdPath = $this->track("$folder/haushalt.md");
+        $household = $this->adapter->create($householdPath, file_get_contents("$root/_haushalt.md"));
+        $note = NoteDocument::parse($household->content);
+        $note->frontmatter()->setIn('einstellungen', 'paperless_url', 'https://paperless.example.org');
+        $this->adapter->update($householdPath, $note->toString(), $household->etag);
+        $read = $this->adapter->get($householdPath)->content;
+        self::assertSame($note->toString(), $read);
+        self::assertStringContainsString("  tonnen_selbst_rausstellen: false
+  paperless_url: https://paperless.example.org
+", $read);
     }
 
     private function track(string $path): string

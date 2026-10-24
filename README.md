@@ -2,7 +2,7 @@
 
 Selbst gehostete PWA für alle haushaltsrelevanten Daten eines Mietobjekts. Die Daten liegen als Markdown-Notizen in der eigenen Nextcloud. Konzept: [`docs/konzept.md`](docs/konzept.md), Designsystem: [`docs/design/README.md`](docs/design/README.md), Regeln für die Arbeit am Code: [`CLAUDE.md`](CLAUDE.md).
 
-Stand: **Ausbaustufe 2** – Fristen und Verträge (auf Stufe 1: Fundament und Zähler).
+Stand: **Ausbaustufe 3** – Haus im Griff: Wartung, Termine und Müll, Mängel, Geräte (auf Stufe 1: Zähler, Stufe 2: Fristen und Verträge).
 
 ## Aufbau
 
@@ -10,9 +10,9 @@ Stand: **Ausbaustufe 2** – Fristen und Verträge (auf Stufe 1: Fundament und Z
 | --- | --- |
 | `backend/` | PHP 8.3+ mit Slim 4: JSON-API unter `/api`, Login, Nextcloud-Anbindung, Berechnungen, SQLite-Index |
 | `backend/src/Note/` | Verlustfreier Parser für Frontmatter und Markdown-Tabellen |
-| `backend/src/Storage/` | `StorageAdapter` mit Nextcloud-Notes- und Dateisystem-Adapter |
-| `backend/src/Domain/` | Verbrauch, Plausibilität, Fälligkeit, Kosten-Hochrechnung, Vertragslaufzeit, Kündigungs- und Zustimmungsfristen – nur berechnet, nie gespeichert |
-| `backend/src/Calendar/` | ICS-Feed und geheime Kalender-Links |
+| `backend/src/Storage/` | `StorageAdapter` mit Nextcloud-Notes- und Dateisystem-Adapter, Fotos per WebDAV (`AttachmentStore`) |
+| `backend/src/Domain/` | Verbrauch, Plausibilität, Fälligkeit, Kosten-Hochrechnung, Vertragslaufzeit, Kündigungs- und Zustimmungsfristen, Wartung mit Saison, Mängel und Kleinreparaturen, Garantie – nur berechnet, nie gespeichert |
+| `backend/src/Calendar/` | ICS-Feed, geheime Kalender-Links, Abfuhrkalender lesen und abrufen |
 | `backend/src/Push/` | Web Push: Abos, tägliche Zusammenfassung, Versand |
 | `backend/src/Auth/` | Anmeldung: BearID-Cookie, E-Mail-Konten als Notzugang, Entwicklungs-Login |
 | `frontend/` | Svelte 5 + Vite + TypeScript, baut nach `backend/public/` |
@@ -37,7 +37,7 @@ cd frontend && npm install && npm run dev                               # App au
 ```sh
 cd backend && composer test        # Parser, Berechnungen, Adapter, API
 cd backend && composer test-live   # gegen die echte Nextcloud aus .env (legt Notizen unter Wohnpilot/_test an und löscht sie)
-cd frontend && npm test            # Zahlenformat, Rollenzähler, Plausibilität, Frist- und Vertragstexte
+cd frontend && npm test            # Zahlenformat, Rollenzähler, Plausibilität, Frist-, Vertrags- und Haustexte
 cd frontend && npm run check       # Svelte- und TypeScript-Prüfung
 ```
 
@@ -88,6 +88,6 @@ In Plesk (Git bei `wohnpilot.codekorb.de`):
 
 Den Kalender-Feed unter `/api/calendar/…` holen Kalender-Apps ohne Anmeldung ab. Schalte deshalb keinen BearID-Guard (`protect.php`) vor die ganze Subdomain; Wohnpilot prüft die Anmeldung selbst.
 
-Bei späteren Updates nur `public/`, `src/`, `bin/`, `vendor/` und `composer.*` ersetzen; `.env` und `var/` bleiben. Ins Backup gehören `var/accounts.sqlite` (Notzugang) und `var/settings.sqlite` (Kalender-Links, Push-Abos).
+Bei späteren Updates nur `public/`, `src/`, `bin/`, `vendor/` und `composer.*` ersetzen; `.env` und `var/` bleiben. Ins Backup gehören `var/accounts.sqlite` (Notzugang) und `var/settings.sqlite` (Kalender-Links, Push-Abos). `var/cache/` (Abfuhrkalender) und `var/index.sqlite` sind nur Cache. Fotos liegen in der Nextcloud unter `Wohnpilot/anhaenge/`.
 
 Der SQLite-Index ist nur ein Cache: Löschen von `var/index.sqlite` oder `php bin/reindex.php --full` baut ihn aus der Nextcloud neu auf.

@@ -185,15 +185,15 @@ Wohnpilot/
       fristen/            einmalige Fristen dieses Zuhauses
       mietvertrag/
       nebenkosten/
-      geraete/
-      wartung/
-      termine/
-      maengel/
+      geraete/            Geräte mit Kauf, Garantie, Eigentum
+      wartung/            wiederkehrende Aufgaben mit Erledigt-Verlauf
+      termine/            einmalige Termine; muell.md mit Abfuhrkalender und Tonnen
+      maengel/            Mängel mit Statusverlauf
       wissen/
   vertraege/              haushaltsgebunden, ziehen mit um
   fristen/                einmalige Fristen des Haushalts
   kontakte/
-  anhaenge/               Fotos, Belege
+  anhaenge/               Fotos: anhaenge/<bereich>/<id>/<datum>-<n>.jpg
 ```
 
 Beispiel Zähler:
@@ -253,6 +253,23 @@ datum: 2026-12-20
 vorlauf_tage: 14
 bezieht_sich_auf: [strom-haupt]
 ---
+```
+
+Beispiel Wartung (der Verlauf steht als Tabelle in der Notiz, neueste Zeile oben):
+
+```markdown
+---
+typ: wartung
+id: heckenschnitt
+objekt: efh-musterstrasse
+titel: Hecke zurückschneiden
+intervall_monate: 12
+saison: { von: 10, bis: 2 }
+zustaendig: mieter
+---
+| Datum      | Erledigt von | Notiz               |
+|------------|--------------|---------------------|
+| 2026-02-14 | christian    | Thuja an der Straße |
 ```
 
 Regeln: `id` ist stabil und dient für Verweise und QR-Codes; Datumsangaben immer ISO; abgeleitete Werte (Fristende, Verbrauch) werden nie gespeichert, sondern berechnet; unbekannte Felder bleiben beim Speichern erhalten.
@@ -336,13 +353,29 @@ Stufe 1 liefert mit Zählern und Übersicht schon im ersten Monat Alltagsnutzen;
 - **Kalender:** ICS-Abo statt CalDAV. Jede Person bekommt einen geheimen Link (`/api/calendar/<token>.ics`); gespeichert wird nur sein Hash in `var/settings.sqlite` (kein Cache, gehört ins Backup). Ein neuer Link ersetzt den alten. Termine sind ganztägig mit Erinnerung eine Woche und einen Tag vorher um 9 Uhr. Der Pfad muss ohne BearID-Anmeldung erreichbar sein, weil Kalender-Apps sich nicht anmelden können.
 - **Push:** Web Push mit VAPID, höchstens eine Nachricht am Morgen (Cron `bin/notify.php` um 8 Uhr). Sie kommt nur, wenn eine Frist 30, 14, 7, 3, 1 oder 0 Tage entfernt ist, seit 1, 3 oder 7 Tagen überfällig ist oder ein Ablesezeitraum beginnt, und nennt dann alles der nächsten 14 Tage. Abos je Gerät in `var/settings.sqlite`; abgemeldete Geräte werden vergessen.
 
+## Festlegungen aus Stufe 3
+
+- **Wartung:** Fällig am Tag der letzten Erledigung plus Intervall (`intervall_monate` oder `intervall_wochen`); noch nie erledigt heißt fällig am `ab`-Datum oder sofort. Mit `saison: { von, bis }` ist die Aufgabe einmal pro Saison dran: möglich ab Fensterbeginn, fällig bis Fensterende; eine verpasste Saison springt ins aktuelle oder nächste Fenster statt überfällig zu bleiben. Erledigungen sind Zeilen im Verlauf (`Datum | Erledigt von | Notiz`); „Rückgängig“ nimmt die eigene Zeile eines Tages wieder heraus.
+- **Wie eine Aufgabe erledigt wird** (`ausfuehrung`): `selbst` (Standard, nicht geschrieben), `termin` (ein Dienstleister kommt; Termin eintragen, danach abhaken) oder `funk` (z. B. Rauchwarnmelder, die der Messdienst aus der Ferne prüft): nie fällig, keine Erinnerung, nicht in „Was steht an“. Aufgaben in Zuständigkeit des Vermieters sind reine Info: in der Liste, aber nicht „Als Nächstes“ und ohne Mitteilung.
+- **Vorschläge:** Aus `heizung` und `mieterpflichten` im Objekt (beide in „Zuhause bearbeiten“ einstellbar) schlägt die App Aufgaben vor; eine übernommene behält die Id des Vorschlags und wird nicht noch einmal vorgeschlagen.
+- **Termine:** `typ: termin` mit `datum`, optional `uhrzeit` und `bis` (`08:00`), `ort`. Im Kalender mit Uhrzeit (Europe/Berlin) und Ort, Erinnerung am Vorabend; Mitteilung am Vortag und am Tag.
+- **Müll:** Statt Rhythmus von Hand der Abfuhrkalender des Entsorgers (ICS-Adresse `kalender_url` in `termine/muell.md`); Tonnen mit Farbe und `stichwort`, das die Kalendereinträge zuordnet. Der Server lädt höchstens alle sechs Stunden, nach einem Fehlschlag frühestens nach 30 Minuten wieder, und nur von öffentlichen Adressen (auch nach Weiterleitungen). Die Kopie liegt im Cache (`CACHE_DIR`). Bei `vollservice: true` ist die Abholung nur Info; wer selbst rausstellt, bekommt die Tonne am Vortag in die Morgen-Mitteilung und im Kalender eine Erinnerung um 18 Uhr.
+- **Mängel:** Der Status ist die oberste Zeile des Verlaufs (`entdeckt`, `gemeldet`, `bestaetigt`, `termin`, `behoben`), nicht ein Feld im Kopf. `nachfassen` setzt den Tag zum Nachhaken. Kleinreparaturen (`kleinreparatur: true`, `kosten_eur`) zählen je Kalenderjahr gegen die Grenzen des Objekts (`kleinreparatur_grenze_eur`, `kleinreparatur_jahresgrenze_eur`); ein Fall über der Einzelgrenze zählt nicht, weil ihn dann der Vermieter ganz zahlt.
+- **Geräte:** Gewährleistung zwei Jahre ab `kaufdatum`, Garantie aus `garantie_bis` oder `garantie_monate`; Geräte des Vermieters haben für dich beides nicht. Endet eins davon in 30 Tagen, steht es in „Was steht an“.
+- **Fotos:** Liegen per WebDAV neben den Notizen unter `anhaenge/<bereich>/<id>/<datum>-<n>.jpg`; die Notiz enthält ein Markdown-Bild mit Pfad relativ zur Notiz, damit auch die Notes-App es zeigt. Die App verkleinert vor dem Hochladen auf 2000 px (JPEG); der Server prüft die ersten Bytes und gibt Fotos nur Angemeldeten aus.
+- **Paperless:** Optional über `einstellungen.paperless_url` in `_haushalt.md` (Mehr › Einstellungen); ohne Adresse sind alle Paperless-Felder ausgeblendet. Einstellungen werden zeilenweise in den Block `einstellungen:` geschrieben, der Block bleibt lesbar.
+- **Bedienung:** Das „+“ heißt „Erfassen“ und öffnet eine Auswahl (Ablesen, Mangel, Wartung erledigt, Termin, Frist, Gerät), die zuletzt genutzte oben. „Zuhause“ ist der Einstieg für alles am Haus.
+- **Bereitstellung:** Eine GitHub Action testet bei jedem Push auf `main`, baut die App und legt den Inhalt von `httpdocs` in den Branch `deploy`; Plesk zieht diesen Branch nach `httpdocs` (Document Root `public/`). `main` gehört nie auf den Server.
+
 ## Offene Fragen
 
 - [x] Name: Wohnpilot
 - [x] Backend: PHP 8.3+ mit Slim 4 auf dem Netcup Webhosting, SQLite als Index-Cache (entschieden 24.10.2026)
 - [x] BearID: kein OIDC, sondern Single Sign-on über das Cookie `bearid` mit Ed25519-signiertem JWT; Wohnpilot läuft dafür auf `wohnpilot.codekorb.de` mit Kürzel `wohnpilot` (geklärt 24.10.2026)
-- [ ] Welche Heizform(en) und Zähler gibt es im Haus genau? (wird im Einrichtungsassistenten abgefragt)
-- [ ] Welche Pflichten regelt dein Mietvertrag für Garten, Winterdienst und Kleinreparaturen?
+- [x] Heizform und Mieterpflichten: in „Zuhause bearbeiten“ einstellbar, daraus kommen die Wartungsvorschläge (Stufe 3); ein Einrichtungsassistent für den ersten Start fehlt noch
+- [x] Rauchwarnmelder: werden bei uns per Funk geprüft, dafür gibt es `ausfuehrung: funk` (entschieden 24.10.2026)
+- [x] Müll: Abfuhrkalender des Entsorgers als ICS, Vollservice (entschieden 24.10.2026)
+- [x] Paperless: optional, aus bis eine Adresse eingetragen ist (entschieden 24.10.2026)
 - [x] Frontend: Svelte 5 mit Vite (entschieden 24.10.2026)
 - [x] Kalender: ICS-Abo mit geheimem Link je Person; CalDAV-Schreiben bleibt eine spätere Option (entschieden 24.10.2026)
 - [x] Zählerstände: monatlich freiwillig, Pflicht nur auf Aufforderung des Versorgers als Frist (entschieden 24.10.2026)
