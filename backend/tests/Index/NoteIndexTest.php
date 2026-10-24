@@ -18,7 +18,7 @@ final class NoteIndexTest extends TestCase
         $index = new NoteIndex(new PDO('sqlite::memory:'));
         $storage = InMemoryStorage::fromFixtures();
 
-        self::assertSame(['fetched' => 6, 'removed' => 0, 'unchanged' => 0], $index->sync($storage));
+        self::assertSame(['fetched' => count(Fixtures::allNotes()), 'removed' => 0, 'unchanged' => 0], $index->sync($storage));
 
         $meters = $index->byType('zaehler', 'efh-musterstrasse');
         self::assertSame(
@@ -38,7 +38,7 @@ final class NoteIndexTest extends TestCase
         unset($storage->notes['vertraege/strom-stadtwerke.md']);
         $storage->gets = 0;
 
-        self::assertSame(['fetched' => 1, 'removed' => 1, 'unchanged' => 4], $index->sync($storage));
+        self::assertSame(['fetched' => 1, 'removed' => 1, 'unchanged' => count(Fixtures::allNotes()) - 2], $index->sync($storage));
         self::assertSame(1, $storage->gets);
         self::assertStringEndsWith("Neue Zeile\n", $index->get('objekte/efh-musterstrasse/zaehler/strom-haupt.md')->content);
         self::assertNull($index->get('vertraege/strom-stadtwerke.md'));
@@ -62,6 +62,6 @@ final class NoteIndexTest extends TestCase
         $index->rebuild(InMemoryStorage::fromFixtures());
 
         self::assertNull($index->get('alt/weg.md'));
-        self::assertSame(6, $index->count());
+        self::assertSame(count(Fixtures::allNotes()), $index->count());
     }
 }

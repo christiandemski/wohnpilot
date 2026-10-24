@@ -8,7 +8,8 @@ use Symfony\Component\Yaml\Yaml;
 
 /**
  * Formats values as single-line YAML in the style of the notes:
- * ISO dates unquoted, lists as [a, b], maps as { k: v }.
+ * ISO dates unquoted, lists as [a, b], maps as { k: v }, strings that
+ * need quoting in double quotes (as in `zaehlernummer: "[Nummer]"`).
  */
 final class YamlInline
 {
@@ -32,12 +33,25 @@ final class YamlInline
         if (is_float($value)) {
             return self::formatFloat($value);
         }
+        if (is_string($value)) {
+            return self::formatString($value);
+        }
         return Yaml::dump($value);
     }
 
     private static function formatKey(string $key): string
     {
         return preg_match('/^[A-Za-z_][A-Za-z0-9_-]*$/', $key) ? $key : Yaml::dump($key);
+    }
+
+    private static function formatString(string $value): string
+    {
+        $plain = Yaml::dump($value);
+        if ($plain === '' || ($plain[0] !== "'" && $plain[0] !== '"')) {
+            return $plain;
+        }
+        // A JSON string is a valid YAML double-quoted scalar.
+        return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
     }
 
     private static function formatFloat(float $value): string

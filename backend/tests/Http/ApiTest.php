@@ -334,7 +334,7 @@ final class ApiTest extends TestCase
         self::assertSame('strom-keller', self::decode($meter)['id']);
 
         self::assertSame(
-            "---\ntyp: zaehler\nid: strom-keller\nobjekt: wohnung-hauptstrasse\nmedium: strom\nzaehlernummer: '1ESY 123'\neinheit: kWh\n"
+            "---\ntyp: zaehler\nid: strom-keller\nobjekt: wohnung-hauptstrasse\nmedium: strom\nzaehlernummer: \"1ESY 123\"\neinheit: kWh\n"
             . "stellen: 6\nnachkommastellen: 1\nraum: keller\nablese_intervall: monatlich\nerstellt_von: christian\n---\n"
             . "| Datum      | Stand | Anlass  | Foto | Von |\n|------------|-------|---------|------|-----|\n",
             file_get_contents("$this->root/objekte/wohnung-hauptstrasse/zaehler/strom-keller.md"),
