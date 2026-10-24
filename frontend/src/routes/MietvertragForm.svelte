@@ -3,6 +3,7 @@
   import { DEPOSIT_TYPES, RENT_TYPES } from '../lib/contracts'
   import { EditForm, numberField, numberText, textField } from '../lib/form.svelte'
   import { router } from '../lib/router.svelte'
+  import { settings } from '../lib/settings.svelte'
   import type { Lease, ObjectData } from '../lib/types'
   import ConflictPanel from '../components/ConflictPanel.svelte'
   import PageHeader from '../components/PageHeader.svelte'
@@ -186,12 +187,14 @@
       </div>
     </fieldset>
 
-    <div class="card fields">
-      <div class="field">
-        <label for="paperless">Paperless-Dokument <span class="optional">(optional)</span></label>
-        <input id="paperless" class="input num" inputmode="numeric" bind:value={form.paperless} />
+    {#if settings.paperless}
+      <div class="card fields">
+        <div class="field">
+          <label for="paperless">Paperless-Dokument <span class="optional">(optional)</span></label>
+          <input id="paperless" class="input num" inputmode="numeric" bind:value={form.paperless} />
+        </div>
       </div>
-    </div>
+    {/if}
 
     {#if edit.error}
       <p class="save-error" role="alert">{edit.error.text}</p>

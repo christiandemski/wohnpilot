@@ -5,6 +5,8 @@
   import { days, formatDate, parseNumber } from '../lib/format'
   import { categoryName, contractChip, costText, countdownShare, euro, months, noticePeriodText, termText } from '../lib/contracts'
   import { meterTitle } from '../lib/meters'
+  import { settings } from '../lib/settings.svelte'
+  import { paperlessLink } from '../lib/house'
   import type { ContractDetail, MeterSummary } from '../lib/types'
   import FristLineal from '../components/FristLineal.svelte'
   import FristRing from '../components/FristRing.svelte'
@@ -234,7 +236,9 @@
                 </dd>
               </div>
             {/if}
-            {#if f.paperless}<div><dt>Paperless</dt><dd class="num">Dokument {f.paperless}</dd></div>{/if}
+            {#if paperlessLink(settings.paperlessUrl, f.paperless)}
+              <div><dt>Paperless</dt><dd class="num"><a href={paperlessLink(settings.paperlessUrl, f.paperless)} target="_blank" rel="noopener">Dokument {f.paperless}</a></dd></div>
+            {/if}
           </dl>
           {#if c.notes}<p class="notes">{c.notes}</p>{/if}
           {#if c.modifiedBy}<p class="muted small">Zuletzt geändert von {c.modifiedBy}</p>{/if}

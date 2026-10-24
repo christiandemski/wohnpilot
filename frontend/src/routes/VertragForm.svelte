@@ -4,6 +4,7 @@
   import { EditForm, numberField, numberText, textField } from '../lib/form.svelte'
   import { meterTitle } from '../lib/meters'
   import { router } from '../lib/router.svelte'
+  import { settings } from '../lib/settings.svelte'
   import type { ContractDetail, MeterSummary } from '../lib/types'
   import CategoryIcon from '../components/CategoryIcon.svelte'
   import ConflictPanel from '../components/ConflictPanel.svelte'
@@ -300,12 +301,14 @@
       </fieldset>
     {/if}
 
-    <div class="card fields">
-      <div class="field">
-        <label for="paperless">Paperless-Dokument <span class="optional">(optional)</span></label>
-        <input id="paperless" class="input num" inputmode="numeric" bind:value={form.paperless} placeholder="Nummer des Vertrags in Paperless" />
+    {#if settings.paperless}
+      <div class="card fields">
+        <div class="field">
+          <label for="paperless">Paperless-Dokument <span class="optional">(optional)</span></label>
+          <input id="paperless" class="input num" inputmode="numeric" bind:value={form.paperless} placeholder="Nummer des Vertrags in Paperless" />
+        </div>
       </div>
-    </div>
+    {/if}
 
     {#if edit.error}
       <p class="save-error" role="alert">{edit.error.text}</p>

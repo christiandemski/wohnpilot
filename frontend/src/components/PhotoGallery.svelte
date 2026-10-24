@@ -20,6 +20,9 @@
   let open = $state<Photo | null>(null)
   let confirming = $state(false)
   let input: HTMLInputElement | undefined = $state()
+  let viewer: HTMLDialogElement | undefined = $state()
+  /** Paths whose file is not there (e.g. moved in Nextcloud) */
+  let missing = $state<string[]>([])
 
   async function add(event: Event) {
     const files = [...((event.currentTarget as HTMLInputElement).files ?? [])]
@@ -41,7 +44,7 @@
     error = ''
     try {
       photos = await deletePhoto(type, id, photo.path)
-      open = null
+      viewer?.close()
     } catch (e) {
       error = e instanceof ApiError ? e.text : ''
     } finally {
@@ -53,6 +56,8 @@
   function show(photo: Photo) {
     open = photo
     confirming = false
+    // A native dialog: Escape closes it, focus stays inside.
+    queueMicrotask(() => viewer?.showModal())
   }
 </script>
 
@@ -61,7 +66,11 @@
     {#each photos as photo (photo.path)}
       <li>
         <button type="button" class="thumb" onclick={() => show(photo)} aria-label={photo.alt ? `Foto: ${photo.alt}` : 'Foto ansehen'}>
-          <img src={photo.url} alt="" loading="lazy" />
+          {#if missing.includes(photo.path)}
+            <span class="missing">Foto fehlt</span>
+          {:else}
+            <img src={photo.url} alt="" loading="lazy" onerror={() => (missing = [...missing, photo.path])} />
+          {/if}
         </button>
       </li>
     {/each}
@@ -76,8 +85,8 @@
   {#if error}<p class="error" role="alert">{error}</p>{/if}
 </div>
 
-{#if open}
-  <div class="viewer" role="dialog" aria-modal="true" aria-label={open.alt || 'Foto'}>
+<dialog bind:this={viewer} class="viewer" aria-label={open?.alt || 'Foto'} onclose={() => (open = null)}>
+  {#if open}
     <div class="bar">
       {#if confirming}
         <button type="button" class="btn btn-secondary danger" disabled={busy} onclick={() => remove(open!)}>Wirklich löschen</button>
@@ -86,14 +95,18 @@
           <Trash2 size={20} strokeWidth={1.75} aria-hidden="true" />
         </button>
       {/if}
-      <button type="button" class="btn btn-icon on-dark" aria-label="Schließen" onclick={() => (open = null)}>
+      <button type="button" class="btn btn-icon on-dark" aria-label="Schließen" onclick={() => viewer?.close()}>
         <X size={20} strokeWidth={2} aria-hidden="true" />
       </button>
     </div>
-    <img src={open.url} alt={open.alt} />
+    {#if missing.includes(open.path)}
+      <p class="caption">Die Datei {open.path} ist nicht (mehr) da. Du kannst den Eintrag löschen.</p>
+    {:else}
+      <img src={open.url} alt={open.alt} />
+    {/if}
     {#if open.alt}<p class="caption">{open.alt}</p>{/if}
-  </div>
-{/if}
+  {/if}
+</dialog>
 
 <style>
   .gallery {
@@ -163,11 +176,24 @@
     color: var(--due);
   }
 
+  .missing {
+    padding: var(--space-2);
+    font-size: 12px;
+    color: var(--ink-muted);
+    text-align: center;
+  }
+
   /* Full view: always dark, like a photo viewer */
   .viewer {
-    position: fixed;
-    inset: 0;
-    z-index: 20;
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    border: 0;
+  }
+
+  .viewer[open] {
     display: flex;
     flex-direction: column;
     align-items: center;

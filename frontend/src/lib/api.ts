@@ -57,6 +57,10 @@ const FIELD_PROBLEMS: Record<string, string> = {
   one_of: 'Bitte nur Wochen oder Monate.',
   after_date: 'Muss vor dem Stichtag liegen.',
   too_large: 'Das Foto ist zu groß.',
+  time: 'Bitte eine Uhrzeit wie 08:30.',
+  url: 'Bitte eine Adresse mit https://.',
+  season: 'Bitte zwei Monate auswählen.',
+  after_start: 'Muss nach dem Beginn liegen.',
   not_an_image: 'Das ist kein Foto (JPEG, PNG oder WebP).',
 }
 

@@ -3,6 +3,7 @@
   import { ArrowDown, ArrowUp, Plus, X } from '@lucide/svelte'
   import { api, ApiError } from '../lib/api'
   import { parseNumber } from '../lib/format'
+  import { DUTIES, HEATING } from '../lib/house'
   import { ROOMS, roomName } from '../lib/meters'
   import { router } from '../lib/router.svelte'
   import type { ObjectData } from '../lib/types'
@@ -13,7 +14,17 @@
   /** Create the home (first setup) or edit the active one. */
   let { edit = false }: { edit?: boolean } = $props()
 
-  const LABELS: Record<string, string> = { art: 'Art', adresse: 'Adresse', einzug: 'Einzug', wohnflaeche_m2: 'Wohnfläche', raeume: 'Räume' }
+  const LABELS: Record<string, string> = {
+    art: 'Art',
+    adresse: 'Adresse',
+    einzug: 'Einzug',
+    wohnflaeche_m2: 'Wohnfläche',
+    raeume: 'Räume',
+    heizung: 'Heizung',
+    mieterpflichten: 'Mieterpflichten',
+    kleinreparatur_grenze_eur: 'Kleinreparatur je Fall',
+    kleinreparatur_jahresgrenze_eur: 'Kleinreparatur im Jahr',
+  }
 
   let art = $state('haus')
   let bezeichnung = $state('')
@@ -22,6 +33,10 @@
   let flaeche = $state('')
   let raeume = $state<string[]>(['keller', 'kueche', 'bad', 'wohnzimmer', 'schlafzimmer', 'flur'])
   let customRoom = $state('')
+  let heizung = $state<string[]>([])
+  let pflichten = $state<string[]>([])
+  let grenzeFall = $state('')
+  let grenzeJahr = $state('')
   // The page is created per route, so reading the initial value is intended.
   const editing = untrack(() => edit)
   let loading = $state(editing)
@@ -48,6 +63,10 @@
       einzug = o.einzug ?? ''
       flaeche = o.wohnflaeche_m2 ? String(o.wohnflaeche_m2).replace('.', ',') : ''
       raeume = [...o.raeume]
+      heizung = Array.isArray(o.heizung) ? [...(o.heizung as string[])] : []
+      pflichten = Array.isArray(o.mieterpflichten) ? [...(o.mieterpflichten as string[])] : []
+      grenzeFall = typeof o.kleinreparatur_grenze_eur === 'number' ? String(o.kleinreparatur_grenze_eur).replace('.', ',') : ''
+      grenzeJahr = typeof o.kleinreparatur_jahresgrenze_eur === 'number' ? String(o.kleinreparatur_jahresgrenze_eur).replace('.', ',') : ''
       original = payload()
     } catch (e) {
       error = e instanceof ApiError ? e : new ApiError(0, 'internal')
@@ -64,6 +83,10 @@
       einzug: einzug || null,
       wohnflaeche_m2: flaeche.trim() === '' ? null : (parseNumber(flaeche) ?? flaeche),
       raeume,
+      heizung: heizung.length ? heizung : null,
+      mieterpflichten: pflichten.length ? pflichten : null,
+      kleinreparatur_grenze_eur: grenzeFall.trim() === '' ? null : (parseNumber(grenzeFall) ?? grenzeFall),
+      kleinreparatur_jahresgrenze_eur: grenzeJahr.trim() === '' ? null : (parseNumber(grenzeJahr) ?? grenzeJahr),
     }
   }
 
@@ -225,6 +248,37 @@
           <button type="button" class="btn btn-inverse" onclick={addCustomRoom} disabled={customRoom.trim() === ''}>Hinzufügen</button>
         </div>
       </div>
+    </fieldset>
+
+    <fieldset class="card fields">
+      <legend>Heizung</legend>
+      <div class="choice-chips">
+        {#each Object.entries(HEATING) as [value, label] (value)}
+          <label><input type="checkbox" {value} bind:group={heizung} /><span>{label}</span></label>
+        {/each}
+      </div>
+      <span class="hint">Mehrere möglich, etwa Gas und Kaminofen. Daraus schlägt Wohnpilot Wartungen vor.</span>
+      {#if fieldErrors.heizung}<span class="error">{fieldErrors.heizung}</span>{/if}
+    </fieldset>
+
+    <fieldset class="card fields">
+      <legend>Laut Mietvertrag deine Sache</legend>
+      <div class="choice-chips">
+        {#each Object.entries(DUTIES) as [value, label] (value)}
+          <label><input type="checkbox" {value} bind:group={pflichten} /><span>{label}</span></label>
+        {/each}
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="grenze-fall">Kleinreparatur je Fall €</label>
+          <input id="grenze-fall" class="input num" inputmode="decimal" bind:value={grenzeFall} placeholder="z. B. 100" aria-invalid={fieldErrors.kleinreparatur_grenze_eur !== undefined} />
+        </div>
+        <div class="field">
+          <label for="grenze-jahr">Kleinreparatur im Jahr €</label>
+          <input id="grenze-jahr" class="input num" inputmode="decimal" bind:value={grenzeJahr} placeholder="z. B. 300" aria-invalid={fieldErrors.kleinreparatur_jahresgrenze_eur !== undefined} />
+        </div>
+      </div>
+      <span class="hint">Steht im Mietvertrag unter „Kleinreparaturen“. Ohne Klausel trägt alles der Vermieter.</span>
     </fieldset>
 
     {#if error}

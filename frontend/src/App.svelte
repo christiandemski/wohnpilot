@@ -2,6 +2,7 @@
   import { api, ApiError } from './lib/api'
   import { router } from './lib/router.svelte'
   import { theme } from './lib/theme.svelte'
+  import { settings } from './lib/settings.svelte'
   import type { User } from './lib/types'
   import Navigation from './components/Navigation.svelte'
   import Login from './routes/Login.svelte'
@@ -22,6 +23,20 @@
   import FristDetail from './routes/FristDetail.svelte'
   import FristForm from './routes/FristForm.svelte'
   import NichtGefunden from './routes/NichtGefunden.svelte'
+  import Wartung from './routes/Wartung.svelte'
+  import WartungDetail from './routes/WartungDetail.svelte'
+  import WartungForm from './routes/WartungForm.svelte'
+  import Termine from './routes/Termine.svelte'
+  import TerminDetail from './routes/TerminDetail.svelte'
+  import TerminForm from './routes/TerminForm.svelte'
+  import Muell from './routes/Muell.svelte'
+  import Maengel from './routes/Maengel.svelte'
+  import MangelDetail from './routes/MangelDetail.svelte'
+  import MangelForm from './routes/MangelForm.svelte'
+  import Geraete from './routes/Geraete.svelte'
+  import GeraetDetail from './routes/GeraetDetail.svelte'
+  import GeraetForm from './routes/GeraetForm.svelte'
+  import Einstellungen from './routes/Einstellungen.svelte'
 
   theme.apply()
 
@@ -31,7 +46,10 @@
 
   api
     .get<{ user: User }>('/me')
-    .then((data) => (user = data.user))
+    .then((data) => {
+      user = data.user
+      void settings.load()
+    })
     .catch((e) => (authError = e instanceof ApiError ? e : new ApiError(0, 'internal')))
     .finally(() => (checked = true))
 
@@ -42,7 +60,7 @@
 {#if !checked}
   <p class="splash" aria-live="polite">Wohnpilot lädt …</p>
 {:else if user === null}
-  <Login error={authError} reason={router.query.get('login')} onSignedIn={(u) => { user = u; router.go('/', true) }} />
+  <Login error={authError} reason={router.query.get('login')} onSignedIn={(u) => { user = u; void settings.load(); router.go("/", true) }} />
 {:else}
   <div class="layout" class:focused>
     {#if !focused}<Navigation />{/if}
@@ -88,6 +106,42 @@
           <FristDetail id={router.current.params.id} />
         {:else if router.current.name === 'frist-bearbeiten'}
           <FristForm id={router.current.params.id} />
+        {:else if router.current.name === 'wartung'}
+          <Wartung />
+        {:else if router.current.name === 'wartung-neu'}
+          <WartungForm />
+        {:else if router.current.name === 'wartung-detail'}
+          <WartungDetail id={router.current.params.id} />
+        {:else if router.current.name === 'wartung-bearbeiten'}
+          <WartungForm id={router.current.params.id} />
+        {:else if router.current.name === 'termine'}
+          <Termine />
+        {:else if router.current.name === 'termin-neu'}
+          <TerminForm />
+        {:else if router.current.name === 'muell'}
+          <Muell />
+        {:else if router.current.name === 'termin-detail'}
+          <TerminDetail id={router.current.params.id} />
+        {:else if router.current.name === 'termin-bearbeiten'}
+          <TerminForm id={router.current.params.id} />
+        {:else if router.current.name === 'maengel'}
+          <Maengel />
+        {:else if router.current.name === 'mangel-neu'}
+          <MangelForm />
+        {:else if router.current.name === 'mangel-detail'}
+          <MangelDetail id={router.current.params.id} />
+        {:else if router.current.name === 'mangel-bearbeiten'}
+          <MangelForm id={router.current.params.id} />
+        {:else if router.current.name === 'geraete'}
+          <Geraete />
+        {:else if router.current.name === 'geraet-neu'}
+          <GeraetForm />
+        {:else if router.current.name === 'geraet-detail'}
+          <GeraetDetail id={router.current.params.id} />
+        {:else if router.current.name === 'geraet-bearbeiten'}
+          <GeraetForm id={router.current.params.id} />
+        {:else if router.current.name === 'einstellungen'}
+          <Einstellungen />
         {:else if router.current.name === 'mehr'}
           <Mehr {user} />
         {:else}

@@ -81,6 +81,16 @@ final class HouseApiTest extends ApiTestCase
         self::assertSame(['dunstabzug-filter-wechseln', '2026-10-24', 'due'], [$own['id'], $own['evaluation']['dueDate'], $own['evaluation']['status']]);
     }
 
+    public function testSmokeDetectorsCheckedByRadio(): void
+    {
+        $task = self::decode($this->request('GET', '/api/maintenance/rauchmelder'));
+        $saved = self::decode($this->request('PUT', '/api/maintenance/rauchmelder', ['etag' => $task['etag'], 'changes' => ['ausfuehrung' => 'funk'], 'original' => []]));
+
+        self::assertSame(['funk', true, 'ok'], [$saved['fields']['ausfuehrung'], $saved['evaluation']['automatic'], $saved['evaluation']['status']]);
+        self::assertSame('rauchmelder', end(self::decode($this->request('GET', '/api/maintenance'))['tasks'])['id'], 'nothing to do: last in the list');
+        self::assertSame(['ausfuehrung' => 'unknown'], self::decode($this->request('PUT', '/api/maintenance/rauchmelder', ['etag' => $saved['etag'], 'changes' => ['ausfuehrung' => 'magie'], 'original' => []]))['fields']);
+    }
+
     public function testAppointments(): void
     {
         $list = self::decode($this->request('GET', '/api/appointments'));

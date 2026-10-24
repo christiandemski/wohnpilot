@@ -306,6 +306,8 @@ export interface MaintenanceEvaluation {
   lastDone: string | null
   inSeason: boolean | null
   missedSeason: boolean
+  /** Checked by radio: never due */
+  automatic: boolean
 }
 
 export interface MaintenanceSummary {
@@ -323,6 +325,7 @@ export interface MaintenanceSummary {
     raum?: string
     vorlauf_tage?: number
     pflicht?: string
+    ausfuehrung?: 'selbst' | 'termin' | 'funk'
     bezieht_sich_auf?: string[]
     [key: string]: unknown
   }

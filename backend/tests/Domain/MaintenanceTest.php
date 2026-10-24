@@ -46,6 +46,29 @@ final class MaintenanceTest extends TestCase
         self::assertSame([self::TODAY, 0, 'due'], [$now['dueDate'], $now['daysUntil'], $now['status']]);
     }
 
+    public function testRadioCheckedTaskIsNeverDue(): void
+    {
+        $note = NoteDocument::parse("---
+typ: wartung
+id: rauchmelder
+titel: Rauchmelder
+intervall_monate: 12
+ausfuehrung: funk
+---
+| Datum | Erledigt von | Notiz |
+|---|---|---|
+| 2024-01-10 | christian | |
+");
+        $radio = MaintenanceTask::fromNote($note)->evaluate(self::TODAY);
+
+        self::assertTrue($radio['automatic']);
+        self::assertSame('ok', $radio['status'], 'two years past the interval, still nothing to do');
+        self::assertSame('selbst', MaintenanceTask::fromNote(NoteDocument::parse("---
+ausfuehrung: irgendwie
+---
+"))->execution, 'unknown values mean yourself');
+    }
+
     public function testWeeklyIntervalAndUnsortedHistory(): void
     {
         self::assertSame('2026-11-04', self::task(['2026-10-21'], months: null, weeks: 2)->evaluate(self::TODAY)['dueDate']);

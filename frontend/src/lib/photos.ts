@@ -30,7 +30,11 @@ export async function shrink(file: File): Promise<Blob> {
   const canvas = document.createElement('canvas')
   canvas.width = size.width
   canvas.height = size.height
-  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, size.width, size.height)
+  const context = canvas.getContext('2d')!
+  // JPEG has no transparency: white behind it instead of black.
+  context.fillStyle = '#ffffff'
+  context.fillRect(0, 0, size.width, size.height)
+  context.drawImage(bitmap, 0, 0, size.width, size.height)
   bitmap.close()
   return new Promise((resolve, reject) =>
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob'))), 'image/jpeg', QUALITY),

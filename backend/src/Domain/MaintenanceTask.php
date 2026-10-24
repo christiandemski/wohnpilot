@@ -13,12 +13,20 @@ use Wohnpilot\Note\NoteDocument;
  * With a season the task is due within a window of months: it may be done
  * from the start of the window that holds (or follows) that date and is due
  * by its end – once per season, e.g. hedge cutting October to February.
+ *
+ * How it gets done (`ausfuehrung`): yourself (default), by a service that
+ * comes by appointment, or automatically by radio (e.g. smoke detectors read
+ * remotely by the meter service) – then it is never due.
  */
 final readonly class MaintenanceTask
 {
     public const DEFAULT_LEAD_DAYS = 14;
     public const HISTORY_COLUMNS = ['Datum', 'Erledigt von', 'Notiz'];
     public const RESPONSIBLE = ['mieter', 'vermieter', 'dienstleister'];
+    public const SELF = 'selbst';
+    public const APPOINTMENT = 'termin';
+    public const RADIO = 'funk';
+    public const EXECUTIONS = [self::SELF, self::APPOINTMENT, self::RADIO];
 
     /**
      * @param list<string> $done dates the task was done, newest first
@@ -36,7 +44,14 @@ final readonly class MaintenanceTask
         public array $done = [],
         public array $refersTo = [],
         public string $object = '',
+        public string $execution = self::SELF,
     ) {
+    }
+
+    /** Done by radio: nothing to do, never due. */
+    public function isAutomatic(): bool
+    {
+        return $this->execution === self::RADIO;
     }
 
     public static function fromNote(NoteDocument $note): self
@@ -65,6 +80,7 @@ final readonly class MaintenanceTask
             done: $done,
             refersTo: is_array($refersTo) ? array_values(array_map('strval', $refersTo)) : [(string) $refersTo],
             object: (string) $fm->get('objekt', ''),
+            execution: in_array($fm->get('ausfuehrung'), self::EXECUTIONS, true) ? (string) $fm->get('ausfuehrung') : self::SELF,
         );
     }
 
@@ -87,9 +103,9 @@ final readonly class MaintenanceTask
     }
 
     /**
-     * @return array{dueDate: string, from: ?string, daysUntil: int, status: string, lastDone: ?string, inSeason: ?bool, missedSeason: bool}
+     * @return array{dueDate: string, from: ?string, daysUntil: int, status: string, lastDone: ?string, inSeason: ?bool, missedSeason: bool, automatic: bool}
      *   from: first day it may be done (season start), inSeason: whether today lies in a window,
-     *   missedSeason: the season it was due in passed without it
+     *   missedSeason: the season it was due in passed without it, automatic: done by radio (status always ok)
      */
     public function evaluate(string $today): array
     {
@@ -111,10 +127,11 @@ final readonly class MaintenanceTask
             'dueDate' => $next,
             'from' => $from,
             'daysUntil' => $days,
-            'status' => Urgency::of($days, $this->leadDays),
+            'status' => $this->isAutomatic() ? Urgency::OK : Urgency::of($days, $this->leadDays),
             'lastDone' => $this->lastDone(),
             'inSeason' => $inSeason,
             'missedSeason' => $missedSeason,
+            'automatic' => $this->isAutomatic(),
         ];
     }
 }

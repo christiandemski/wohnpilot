@@ -4,6 +4,8 @@
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { days, formatDate, parseNumber } from '../lib/format'
   import { DEPOSIT_TYPES, RENT_TYPES, euro, months } from '../lib/contracts'
+  import { settings } from '../lib/settings.svelte'
+  import { paperlessLink } from '../lib/house'
   import type { Lease } from '../lib/types'
   import LoadState from '../components/LoadState.svelte'
   import NextCard from '../components/NextCard.svelte'
@@ -212,7 +214,9 @@
             <div><dt>Beginn</dt><dd class="num">{f.beginn ? formatDate(f.beginn) : '–'}</dd></div>
             <div><dt>Mietart</dt><dd>{RENT_TYPES[f.mietart ?? 'standard'] ?? f.mietart}</dd></div>
             <div><dt>Kündigungsfrist</dt><dd class="num">{months(f.kuendigungsfrist_monate ?? 3)}</dd></div>
-            {#if f.paperless}<div><dt>Paperless</dt><dd class="num">Dokument {f.paperless}</dd></div>{/if}
+            {#if paperlessLink(settings.paperlessUrl, f.paperless)}
+              <div><dt>Paperless</dt><dd class="num"><a href={paperlessLink(settings.paperlessUrl, f.paperless)} target="_blank" rel="noopener">Dokument {f.paperless}</a></dd></div>
+            {/if}
           </dl>
         </section>
 

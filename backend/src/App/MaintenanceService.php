@@ -29,7 +29,8 @@ final class MaintenanceService
     {
         $today = $this->clock->today();
         $tasks = array_map(fn (StoredNote $s): array => $this->summary($s, $today), $this->objects->all('wartung'));
-        usort($tasks, static fn (array $a, array $b): int => [$a['evaluation']['dueDate'], $a['title']] <=> [$b['evaluation']['dueDate'], $b['title']]);
+        // Tasks done by radio need nothing from you: last.
+        usort($tasks, static fn (array $a, array $b): int => [$a['evaluation']['automatic'], $a['evaluation']['dueDate'], $a['title']] <=> [$b['evaluation']['automatic'], $b['evaluation']['dueDate'], $b['title']]);
         return $tasks;
     }
 
@@ -180,6 +181,7 @@ final class MaintenanceService
             ->season('saison')
             ->date('ab')
             ->enum('zustaendig', MaintenanceTask::RESPONSIBLE, default: 'mieter')
+            ->enum('ausfuehrung', MaintenanceTask::EXECUTIONS)
             ->string('raum')
             ->int('vorlauf_tage', 0, 365)
             ->string('pflicht')
