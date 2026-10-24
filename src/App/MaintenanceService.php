@@ -162,10 +162,15 @@ final class MaintenanceService
         ];
     }
 
-    /** Text below the history, without image lines (those are the photos). */
+    /** Text below the history, without image and PDF link lines (those are photos and documents). */
     public static function freeText(NoteDocument $note): string
     {
-        return trim((string) preg_replace('/^\s*!\[[^\]\n]*\]\([^)]*\)\s*$/m', '', $note->body()->text()));
+        $text = (string) preg_replace(
+            ['/^[ \t]*!\[[^\]\n]*\]\([^)\n]*\)[ \t]*\r?$/m', '/^[ \t]*\[[^\]\n]*\]\(\s*<?[^)\s>]+\.pdf>?\s*\)[ \t]*\r?$/im'],
+            '',
+            $note->body()->text(),
+        );
+        return trim((string) preg_replace('/(\r?\n){3,}/', "\n\n", $text));
     }
 
     /**

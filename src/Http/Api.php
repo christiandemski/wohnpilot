@@ -369,6 +369,10 @@ final class Api
             });
 
             // Documents (PDF), e.g. a letter shared from the phone
+            $api->get('/documents/{type}/{id}', fn (Request $r, Response $response, array $args) => self::json(
+                $response,
+                $services->documents()->files($args['type'], $args['id']),
+            ));
             $api->post('/documents/{type}/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
                 $file = $request->getUploadedFiles()['dokument'] ?? null;
                 if (!$file instanceof UploadedFileInterface || $file->getError() !== UPLOAD_ERR_OK) {

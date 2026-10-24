@@ -66,7 +66,7 @@ final class DeadlineService
         $meters = $object === '' ? [] : $this->meters->metersById($object);
         $note = NoteDocument::parse($stored->content);
         return ($this->data($stored, $meters, $this->clock->today()) ?? throw new AppException('invalid_note', 409, 'Deadline note without a valid date'))
-            + ['notes' => trim($note->body()->text())];
+            + ['notes' => MaintenanceService::freeText($note)];
     }
 
     /** @param array<string, mixed> $input titel, datum, ab, vorlauf_tage, bezieht_sich_auf, haushalt (not bound to the object) */

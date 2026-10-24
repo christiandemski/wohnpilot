@@ -13,14 +13,15 @@ use Wohnpilot\Storage\NotFoundException;
 use Wohnpilot\Storage\StoredNote;
 
 /**
- * Photos of defects, devices and maintenance tasks. The file goes to
+ * Photos of defects, devices, maintenance tasks and knowledge pages, and of
+ * letters for contracts, the lease and deadlines. The file goes to
  * anhaenge/<folder>/<id>/<day>-<n>.<ext>, the note gets an image line with
  * the path relative to it, so the Notes app shows the photo too.
  */
 final class PhotoService
 {
     /** Note type => folder below anhaenge/ */
-    public const TYPES = ['mangel' => 'maengel', 'geraet' => 'geraete', 'wartung' => 'wartung', 'wissen' => 'wissen'];
+    public const TYPES = ['mangel' => 'maengel', 'geraet' => 'geraete', 'wartung' => 'wartung', 'wissen' => 'wissen', 'vertrag' => 'vertraege', 'mietvertrag' => 'mietvertrag', 'frist' => 'fristen'];
     public const MAX_BYTES = 10 * 1024 * 1024;
     private const SIGNATURES = ['jpg' => "\xFF\xD8\xFF", 'png' => "\x89PNG\r\n\x1A\n"];
 

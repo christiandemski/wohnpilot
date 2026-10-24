@@ -46,6 +46,17 @@ final class DocumentService
         return $documents;
     }
 
+    /**
+     * Everything filed with an entry: its documents and its photos.
+     *
+     * @return array{documents: list<array{path: string, title: string, url: string}>, photos: list<array{path: string, alt: string, url: string}>}
+     */
+    public function files(string $type, string $id): array
+    {
+        $stored = $this->find($type, $id);
+        return ['documents' => self::of($stored), 'photos' => PhotoService::of($stored)];
+    }
+
     /** @return list<array{path: string, title: string, url: string}> the note's documents afterwards */
     public function add(string $type, string $id, string $bytes, string $title, User $user): array
     {

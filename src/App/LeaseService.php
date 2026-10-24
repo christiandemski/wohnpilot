@@ -158,7 +158,7 @@ final class LeaseService
             'history' => array_map(static fn ($c): array => (array) $c, $lease->history),
             'consentDeadlines' => $lease->consentDeadlines($today),
             'tenantNotice' => $lease->tenantNotice($today),
-            'notes' => trim($note->body()->text()),
+            'notes' => MaintenanceService::freeText($note),
             'modifiedBy' => $fm->get('geaendert_von') ?? $fm->get('erstellt_von'),
         ];
     }
