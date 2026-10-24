@@ -46,7 +46,7 @@ tonnen:
         self::assertSame('[Nummer]', $wasser->get('zaehlernummer'));
         self::assertSame('m³', $wasser->get('einheit'));
         self::assertSame(['gas', 'kamin'], $objekt->get('heizung'));
-        self::assertSame([['id' => 'christian', 'name' => 'Christian', 'rolle' => 'verwalter']], $haushalt->get('personen'));
+        self::assertSame([['id' => 'christian', 'name' => 'Christian', 'rolle' => 'verwalter'], ['id' => 'alex', 'name' => 'Alex', 'rolle' => 'mitglied']], $haushalt->get('personen'));
         self::assertSame(1, $haushalt->get('einstellungen')['ablesetag']);
     }
 

@@ -6,6 +6,9 @@ personen:
   - id: christian
     name: Christian
     rolle: verwalter
+  - id: alex
+    name: Alex
+    rolle: mitglied
 aktives_objekt: efh-musterstrasse
 speicher: nextcloud
 einstellungen:

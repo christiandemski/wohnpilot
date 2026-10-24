@@ -5,6 +5,7 @@ objekt: efh-musterstrasse
 titel: Rauchmelder testen
 intervall_monate: 12
 zustaendig: mieter
+person: alex
 raum: flur
 vorlauf_tage: 14
 erstellt_von: christian
