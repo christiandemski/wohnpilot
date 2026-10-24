@@ -8,6 +8,7 @@
   import LoadState from '../components/LoadState.svelte'
   import PageHeader from '../components/PageHeader.svelte'
   import StatusChip from '../components/StatusChip.svelte'
+  import DeleteEntry from '../components/DeleteEntry.svelte'
 
   let { id }: { id: string } = $props()
 
@@ -57,6 +58,7 @@
     </dl>
     {#if a.notes}<p class="notes-text">{a.notes}</p>{/if}
     {#if a.modifiedBy}<p class="text-muted text-small">Zuletzt geändert von {a.modifiedBy}</p>{/if}
+    <DeleteEntry type="termin" id={a.id} etag={a.etag} what="Termin" title={a.title} back="/termine" hint={''} onChanged={() => appointment.reload()} />
   </section>
 {/if}
 

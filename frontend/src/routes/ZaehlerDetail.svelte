@@ -12,6 +12,7 @@
   import { isPlaceholder } from '../lib/knowledge'
   import Segmentschalter from '../components/Segmentschalter.svelte'
   import StatusChip from '../components/StatusChip.svelte'
+  import DeleteEntry from '../components/DeleteEntry.svelte'
 
   let { id }: { id: string } = $props()
 
@@ -233,6 +234,7 @@
             QR-Aufkleber drucken
           </a>
           {#if m.modifiedBy}<p class="muted small">Zuletzt geändert von {m.modifiedBy}</p>{/if}
+          <DeleteEntry type="zaehler" id={m.id} etag={m.etag} what="Zähler" title={meterTitle(m)} back="/zaehler" hint={'Mit allen Ablesungen und Belegfotos.'} onChanged={() => meter.reload()} />
         </section>
       </div>
     </div>

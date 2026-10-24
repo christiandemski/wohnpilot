@@ -11,6 +11,7 @@
   import PhotoGallery from '../components/PhotoGallery.svelte'
   import StatusChip from '../components/StatusChip.svelte'
   import Unterlagen from '../components/Unterlagen.svelte'
+  import DeleteEntry from '../components/DeleteEntry.svelte'
 
   let { id }: { id: string } = $props()
 
@@ -61,6 +62,7 @@
             QR-Aufkleber drucken
           </a>
           {#if p.modifiedBy}<p class="text-muted text-small">Zuletzt geändert von {p.modifiedBy}</p>{/if}
+          <DeleteEntry type="wissen" id={p.id} etag={p.etag} what="Seite" title={p.title} back="/wissen" hint={'Mit Fotos und Unterlagen.'} onChanged={() => page.reload()} />
     </section>
 
     <section class="card stack" aria-labelledby="fotos">

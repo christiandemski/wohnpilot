@@ -11,6 +11,7 @@
   import PageHeader from '../components/PageHeader.svelte'
   import StatusChip from '../components/StatusChip.svelte'
   import Unterlagen from '../components/Unterlagen.svelte'
+  import DeleteEntry from '../components/DeleteEntry.svelte'
 
   let { id }: { id: string } = $props()
 
@@ -124,6 +125,7 @@
       {#if error}<p class="save-error" role="alert">{error.text}</p>{/if}
       {#if d.notes}<p class="notes">{d.notes}</p>{/if}
       {#if d.modifiedBy}<p class="muted small">Zuletzt geändert von {d.modifiedBy}</p>{/if}
+      <DeleteEntry type="frist" id={d.id} etag={d.etag} what="Frist" title={d.title} back="/fristen" hint={''} onChanged={() => deadline.reload()} />
     </section>
   </div>
 

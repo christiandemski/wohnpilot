@@ -15,6 +15,7 @@
   import PageHeader from '../components/PageHeader.svelte'
   import StatusChip from '../components/StatusChip.svelte'
   import Unterlagen from '../components/Unterlagen.svelte'
+  import DeleteEntry from '../components/DeleteEntry.svelte'
 
   let { id }: { id: string } = $props()
 
@@ -245,6 +246,7 @@
           </dl>
           {#if c.notes}<p class="notes">{c.notes}</p>{/if}
           {#if c.modifiedBy}<p class="muted small">Zuletzt geändert von {c.modifiedBy}</p>{/if}
+          <DeleteEntry type="vertrag" id={c.id} etag={c.etag} what="Vertrag" title={c.name} back="/vertraege" hint={'Mit Preisverlauf und Unterlagen.'} onChanged={() => contract.reload()} />
         </section>
       </div>
     </div>

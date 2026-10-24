@@ -13,6 +13,7 @@
   import PhotoGallery from '../components/PhotoGallery.svelte'
   import StatusChip from '../components/StatusChip.svelte'
   import Unterlagen from '../components/Unterlagen.svelte'
+  import DeleteEntry from '../components/DeleteEntry.svelte'
 
   let { id }: { id: string } = $props()
 
@@ -161,6 +162,7 @@
       </dl>
       {#if d.notes}<p class="notes-text">{d.notes}</p>{/if}
       {#if d.modifiedBy}<p class="text-muted text-small">Zuletzt geändert von {d.modifiedBy}</p>{/if}
+      <DeleteEntry type="mangel" id={d.id} etag={d.etag} what="Mangel" title={d.title} back="/maengel" hint={'Mit Verlauf, Fotos und Unterlagen.'} onChanged={() => defect.reload()} />
     </section>
   </div>
 

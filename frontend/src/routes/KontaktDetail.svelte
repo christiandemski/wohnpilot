@@ -7,6 +7,7 @@
   import LoadState from '../components/LoadState.svelte'
   import PageHeader from '../components/PageHeader.svelte'
   import StatusChip from '../components/StatusChip.svelte'
+  import DeleteEntry from '../components/DeleteEntry.svelte'
 
   let { id }: { id: string } = $props()
 
@@ -68,6 +69,7 @@
       </dl>
       {#if c.notes}<p class="notes-text">{c.notes}</p>{/if}
       {#if c.modifiedBy}<p class="text-muted text-small">Zuletzt geändert von {c.modifiedBy}</p>{/if}
+      <DeleteEntry type="kontakt" id={c.id} etag={c.etag} what="Kontakt" title={c.name} back="/kontakte" hint={c.usedIn.length ? `Er steht noch in ${c.usedIn.length === 1 ? 'einem Eintrag' : `${c.usedIn.length} Einträgen`}, dort fehlt er danach.` : ''} onChanged={() => contact.reload()} />
     </section>
 
     <section class="card list-card" aria-labelledby="vorkommen">

@@ -81,12 +81,12 @@ final class HouseApiTest extends ApiTestCase
         $etag = self::decode($this->request('GET', '/api/maintenance/kamin-kehren'))['etag'];
 
         file_put_contents("$this->root/" . self::OBJECT . '/wartung/kamin-kehren.md', "Notiz aus der Notes-App\n", FILE_APPEND);
-        $stale = $this->request('DELETE', '/api/maintenance/kamin-kehren?etag=' . rawurlencode($etag));
+        $stale = $this->request('DELETE', '/api/entries/wartung/kamin-kehren?etag=' . rawurlencode($etag));
         self::assertSame(409, $stale->getStatusCode(), 'changed elsewhere: not deleted');
         self::assertFileExists("$this->root/" . self::OBJECT . '/wartung/kamin-kehren.md');
 
         $fresh = self::decode($this->request('GET', '/api/maintenance/kamin-kehren'))['etag'];
-        self::assertSame(200, $this->request('DELETE', '/api/maintenance/kamin-kehren?etag=' . rawurlencode($fresh))->getStatusCode());
+        self::assertSame(200, $this->request('DELETE', '/api/entries/wartung/kamin-kehren?etag=' . rawurlencode($fresh))->getStatusCode());
         self::assertFileDoesNotExist("$this->root/" . self::OBJECT . '/wartung/kamin-kehren.md');
         self::assertFileDoesNotExist("$this->root/anhaenge/wartung/kamin-kehren/2026-10-24-1.jpg", 'its photo goes too');
         self::assertSame(404, $this->request('GET', '/api/maintenance/kamin-kehren')->getStatusCode());

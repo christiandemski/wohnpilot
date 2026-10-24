@@ -14,6 +14,7 @@ use Wohnpilot\App\DeadlineService;
 use Wohnpilot\App\DefectService;
 use Wohnpilot\App\DeviceService;
 use Wohnpilot\App\DocumentService;
+use Wohnpilot\App\EntryService;
 use Wohnpilot\App\HouseholdService;
 use Wohnpilot\App\KnowledgeService;
 use Wohnpilot\App\LeaseService;
@@ -164,7 +165,7 @@ class Services
 
     public function maintenance(): MaintenanceService
     {
-        return $this->instances[__FUNCTION__] ??= new MaintenanceService($this->notes(), $this->objectNotes(), $this->household(), $this->clock(), $this->files());
+        return $this->instances[__FUNCTION__] ??= new MaintenanceService($this->notes(), $this->objectNotes(), $this->household(), $this->clock());
     }
 
     public function appointments(): AppointmentService
@@ -202,6 +203,11 @@ class Services
     public function settings(): SettingsService
     {
         return $this->instances[__FUNCTION__] ??= new SettingsService($this->notes(), $this->household());
+    }
+
+    public function entries(): EntryService
+    {
+        return $this->instances[__FUNCTION__] ??= new EntryService($this->notes(), $this->files());
     }
 
     public function utilities(): UtilityService
