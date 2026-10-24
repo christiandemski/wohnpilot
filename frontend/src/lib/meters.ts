@@ -1,4 +1,4 @@
-import type { DueStatus, MeterSummary } from './types'
+import type { MeterSummary, ReadingRequest } from './types'
 import { days, formatDay } from './format'
 
 export const MEDIA: Record<string, string> = {
@@ -77,10 +77,29 @@ export function groupMeterNumber(number: string): string {
   return number.replace(/\s+/g, '').replace(/(.{4})(?=.)/g, '$1 ')
 }
 
-/** Chip text and status for the next reading. */
-export function dueChip(schedule: { dueDate: string; daysUntil: number; status: DueStatus }, today: string): string {
-  if (schedule.daysUntil < 0) return `Überfällig · ${days(-schedule.daysUntil)}`
-  if (schedule.daysUntil === 0) return schedule.dueDate === today ? 'Heute fällig' : 'Fällig'
-  if (schedule.status === 'soon') return `noch ${days(schedule.daysUntil)}`
-  return `ab ${formatDay(schedule.dueDate)}`
+export type ChipTone = 'ok' | 'soon' | 'due' | 'neutral'
+
+/**
+ * Chip for a meter: a reading the supplier asks for warns like a deadline;
+ * the voluntary rhythm stays neutral ("Ablesen möglich", "ab 01.11.").
+ */
+export function meterChip(meter: Pick<MeterSummary, 'schedule' | 'request'>, today: string): { text: string; tone: ChipTone } {
+  if (meter.request) return requestChip(meter.request, today)
+  return meter.schedule.status === 'open'
+    ? { text: 'Ablesen möglich', tone: 'neutral' }
+    : { text: `ab ${formatDay(meter.schedule.dueDate)}`, tone: 'neutral' }
+}
+
+/** Chip for a requested reading: before its window "ab 05.12.", then like a deadline. */
+export function requestChip(
+  request: Pick<ReadingRequest, 'from' | 'date' | 'daysUntil' | 'status'>,
+  today: string,
+): { text: string; tone: ChipTone } {
+  if (request.daysUntil < 0) return { text: `Überfällig · ${days(-request.daysUntil)}`, tone: 'due' }
+  if (request.daysUntil === 0) return { text: 'Heute melden', tone: 'due' }
+  const tone = request.status === 'ok' ? 'neutral' : request.status
+  if (today < request.from) return { text: `ab ${formatDay(request.from)}`, tone }
+  return request.status === 'soon'
+    ? { text: `noch ${days(request.daysUntil)}`, tone }
+    : { text: `bis ${formatDay(request.date)}`, tone }
 }

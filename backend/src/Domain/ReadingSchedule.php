@@ -5,20 +5,22 @@ declare(strict_types=1);
 namespace Wohnpilot\Domain;
 
 /**
- * When the next reading of a meter is due.
+ * When the next voluntary reading of a meter is suggested.
  *
- * Readings are scheduled on the reading day of the household (`ablesetag`)
+ * Readings are suggested on the reading day of the household (`ablesetag`)
  * in every month, quarter or year. A reading taken up to EARLY_DAYS before a
- * scheduled date counts for that date.
+ * suggested date counts for that date. The rhythm is your own choice, so it
+ * never warns: from the date on it is just "open". Readings the supplier asks
+ * for are deadlines (`typ: frist`) linked to the meter.
  */
 final class ReadingSchedule
 {
     public const EARLY_DAYS = 5;
-    public const SOON_DAYS = 7;
 
+    /** Next suggested date still ahead. */
     public const STATUS_OK = 'ok';
-    public const STATUS_SOON = 'soon';
-    public const STATUS_DUE = 'due';
+    /** Suggested date reached: reading possible. */
+    public const STATUS_OPEN = 'open';
 
     private const MONTHS_PER_INTERVAL = [
         'monatlich' => 1,
@@ -32,7 +34,7 @@ final class ReadingSchedule
     {
         $last = $meter->latest();
         if ($last === null) {
-            return ['dueDate' => $today, 'daysUntil' => 0, 'status' => self::STATUS_DUE];
+            return ['dueDate' => $today, 'daysUntil' => 0, 'status' => self::STATUS_OPEN];
         }
 
         $step = self::MONTHS_PER_INTERVAL[$meter->interval] ?? 1;
@@ -48,11 +50,7 @@ final class ReadingSchedule
         }
 
         $daysUntil = Day::between($today, $due);
-        $status = match (true) {
-            $daysUntil <= 0 => self::STATUS_DUE,
-            $daysUntil <= self::SOON_DAYS => self::STATUS_SOON,
-            default => self::STATUS_OK,
-        };
+        $status = $daysUntil <= 0 ? self::STATUS_OPEN : self::STATUS_OK;
 
         return ['dueDate' => $due, 'daysUntil' => $daysUntil, 'status' => $status];
     }

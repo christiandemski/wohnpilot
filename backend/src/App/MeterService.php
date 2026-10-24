@@ -7,11 +7,13 @@ namespace Wohnpilot\App;
 use Wohnpilot\Domain\Consumption;
 use Wohnpilot\Domain\CostEstimate;
 use Wohnpilot\Domain\Day;
+use Wohnpilot\Domain\Deadline;
 use Wohnpilot\Domain\Meter;
 use Wohnpilot\Domain\MeterNote;
 use Wohnpilot\Domain\Plausibility;
 use Wohnpilot\Domain\Reading;
 use Wohnpilot\Domain\ReadingSchedule;
+use Wohnpilot\Domain\Urgency;
 use Wohnpilot\Note\NoteDocument;
 use Wohnpilot\Storage\ConflictException;
 use Wohnpilot\Storage\StoredNote;
@@ -47,9 +49,17 @@ final class MeterService
         $readingDay = $this->household->readingDay();
         $today = $this->clock->today();
 
+        $stored = $this->notes->byType('zaehler', $object['id']);
+        $parsed = [];
+        foreach ($stored as $note) {
+            $meter = Meter::fromNote(NoteDocument::parse($note->content));
+            $parsed[$meter->id] = $meter;
+        }
+        $requests = $this->requests($object['id'], $parsed, $today);
+
         $meters = array_map(
-            fn (StoredNote $stored): array => $this->summary($stored, $readingDay, $today),
-            $this->notes->byType('zaehler', $object['id']),
+            fn (StoredNote $note): array => $this->summary($note, $readingDay, $today, $requests),
+            $stored,
         );
         usort($meters, static fn (array $a, array $b): int => [$rooms[$a['room']] ?? PHP_INT_MAX, $a['id']] <=> [$rooms[$b['room']] ?? PHP_INT_MAX, $b['id']]);
         return $meters;
@@ -59,32 +69,66 @@ final class MeterService
     {
         $object = $this->household->activeObject();
         $meters = $this->list();
-        $due = array_values(array_filter($meters, static fn (array $m): bool => $m['schedule']['status'] !== ReadingSchedule::STATUS_OK));
-        usort($due, static fn (array $a, array $b): int => $a['schedule']['dueDate'] <=> $b['schedule']['dueDate']);
-
-        $next = null;
-        if ($meters !== []) {
-            $first = $due[0] ?? null;
-            if ($first === null) {
-                $byDate = $meters;
-                usort($byDate, static fn (array $a, array $b): int => $a['schedule']['dueDate'] <=> $b['schedule']['dueDate']);
-                $first = $byDate[0];
-            }
-            $next = [
-                'kind' => 'ablesung',
-                'dueDate' => $first['schedule']['dueDate'],
-                'daysUntil' => $first['schedule']['daysUntil'],
-                'status' => $first['schedule']['status'],
-                'meterCount' => max(count($due), 1),
-            ];
-        }
 
         return [
             'today' => $this->clock->today(),
             'household' => ['name' => $this->household->household()['name'] ?? null],
             'object' => $object,
-            'next' => $next,
+            'next' => self::next($meters),
             'meters' => $meters,
+        ];
+    }
+
+    /**
+     * What the "next" card shows for the meters, most important first:
+     * a reading the supplier asks for that is soon or due, then voluntary
+     * readings that are open, then a requested reading further ahead,
+     * then the next voluntary date.
+     */
+    private static function next(array $meters): ?array
+    {
+        if ($meters === []) {
+            return null;
+        }
+        $requested = array_values(array_filter($meters, static fn (array $m): bool => $m['request'] !== null));
+        usort($requested, static fn (array $a, array $b): int => [$a['request']['date'], $a['request']['id']] <=> [$b['request']['date'], $b['request']['id']]);
+        $urgent = array_values(array_filter($requested, static fn (array $m): bool => $m['request']['status'] !== Urgency::OK));
+
+        $first = $urgent[0] ?? null;
+        if ($first === null) {
+            $open = array_values(array_filter($meters, static fn (array $m): bool => $m['schedule']['status'] === ReadingSchedule::STATUS_OPEN));
+            if ($open !== []) {
+                return self::voluntary($open);
+            }
+            $first = $requested[0] ?? null;
+        }
+        if ($first !== null) {
+            $request = $first['request'];
+            $same = array_filter($requested, static fn (array $m): bool => $m['request']['id'] === $request['id']);
+            return [
+                'kind' => 'meldung',
+                'deadlineId' => $request['id'],
+                'title' => $request['title'],
+                'from' => $request['from'],
+                'dueDate' => $request['date'],
+                'daysUntil' => $request['daysUntil'],
+                'status' => $request['status'],
+                'meterIds' => array_values(array_column($same, 'id')),
+            ];
+        }
+        return self::voluntary($meters);
+    }
+
+    /** The earliest voluntary date among $meters, for all of them. */
+    private static function voluntary(array $meters): array
+    {
+        usort($meters, static fn (array $a, array $b): int => $a['schedule']['dueDate'] <=> $b['schedule']['dueDate']);
+        return [
+            'kind' => 'ablesung',
+            'dueDate' => $meters[0]['schedule']['dueDate'],
+            'daysUntil' => $meters[0]['schedule']['daysUntil'],
+            'status' => $meters[0]['schedule']['status'],
+            'meterIds' => array_column($meters, 'id'),
         ];
     }
 
@@ -95,7 +139,9 @@ final class MeterService
         $consumption = new Consumption($meter);
         $today = $this->clock->today();
 
-        return $this->summary($stored, $this->household->readingDay(), $today) + [
+        $requests = $this->requests($meter->object, [$meter->id => $meter], $today);
+
+        return $this->summary($stored, $this->household->readingDay(), $today, $requests) + [
             'readings' => array_map(self::readingData(...), array_reverse($meter->readings)),
             'months' => $consumption->monthly($today, 12),
             'years' => $consumption->yearly(),
@@ -200,7 +246,44 @@ final class MeterService
         return $this->notes->findById('zaehler', $id) ?? throw AppException::notFound("Zähler $id");
     }
 
-    private function summary(StoredNote $stored, int $readingDay, string $today): array
+    /**
+     * Open readings the supplier asks for: for each meter the earliest open
+     * deadline (`typ: frist`) that links it and that it has no reading for yet.
+     *
+     * @param array<string, Meter> $meters by id
+     * @return array<string, array{id: string, title: string, date: string, from: string, daysUntil: int, status: string}>
+     */
+    private function requests(string $objectId, array $meters, string $today): array
+    {
+        $requests = [];
+        foreach ($this->notes->byType('frist') as $stored) {
+            $deadline = Deadline::fromNote(NoteDocument::parse($stored->content));
+            if ($deadline === null || ($deadline->object !== '' && $deadline->object !== $objectId)) {
+                continue;
+            }
+            $result = $deadline->evaluate($today, $meters);
+            if ($result['status'] === Deadline::DONE) {
+                continue;
+            }
+            foreach ($result['meters'] as $linked) {
+                $current = $requests[$linked['id']] ?? null;
+                if ($linked['readOn'] !== null || ($current !== null && $current['date'] <= $deadline->date)) {
+                    continue;
+                }
+                $requests[$linked['id']] = [
+                    'id' => $deadline->id,
+                    'title' => $deadline->title,
+                    'date' => $deadline->date,
+                    'from' => $deadline->windowStart(),
+                    'daysUntil' => $result['daysUntil'],
+                    'status' => $result['status'],
+                ];
+            }
+        }
+        return $requests;
+    }
+
+    private function summary(StoredNote $stored, int $readingDay, string $today, array $requests = []): array
     {
         $note = NoteDocument::parse($stored->content);
         $fm = $note->frontmatter();
@@ -224,6 +307,7 @@ final class MeterService
             'tariff' => $fm->get('tarif'),
             'latest' => $latest === null ? null : self::readingData($latest),
             'schedule' => ReadingSchedule::next($meter, $readingDay, $today),
+            'request' => $requests[$meter->id] ?? null,
             'check' => [
                 'typicalDailyRate' => $latest === null ? null : $consumption->typicalDailyRate($latest->date),
                 'highFactor' => Plausibility::HIGH_FACTOR,

@@ -2,6 +2,19 @@
 
 export type DueStatus = 'ok' | 'soon' | 'due'
 
+/** Voluntary reading rhythm: never warns, from the suggested date on it is "open". */
+export type ScheduleStatus = 'ok' | 'open'
+
+/** A reading the supplier asks for (a deadline linked to the meter). */
+export interface ReadingRequest {
+  id: string
+  title: string
+  date: string
+  from: string
+  daysUntil: number
+  status: DueStatus
+}
+
 export interface Reading {
   date: string
   value: number
@@ -45,7 +58,8 @@ export interface MeterSummary {
   interval: string
   tariff: Tariff | null
   latest: Reading | null
-  schedule: { dueDate: string; daysUntil: number; status: DueStatus }
+  schedule: { dueDate: string; daysUntil: number; status: ScheduleStatus }
+  request: ReadingRequest | null
   check: { typicalDailyRate: number | null; highFactor: number }
   currentMonth: MonthValue
   recentMonths: MonthValue[]
@@ -85,9 +99,22 @@ export interface Overview {
   today: string
   household: { name: string | null }
   object: ObjectData | null
-  next: { kind: 'ablesung'; dueDate: string; daysUntil: number; status: DueStatus; meterCount: number } | null
+  next: NextReading | null
   meters: MeterSummary[]
 }
+
+export type NextReading =
+  | { kind: 'ablesung'; dueDate: string; daysUntil: number; status: ScheduleStatus; meterIds: string[] }
+  | {
+      kind: 'meldung'
+      deadlineId: string
+      title: string
+      from: string
+      dueDate: string
+      daysUntil: number
+      status: DueStatus
+      meterIds: string[]
+    }
 
 export interface User {
   id: string

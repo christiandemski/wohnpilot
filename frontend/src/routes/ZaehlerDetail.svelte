@@ -3,7 +3,7 @@
   import { api } from '../lib/api'
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { formatDate, formatEuro, formatNumber, monthName, previousDay } from '../lib/format'
-  import { dueChip, groupMeterNumber, INTERVALS, mediumName, meterTitle, roomName } from '../lib/meters'
+  import { groupMeterNumber, meterChip, INTERVALS, mediumName, meterTitle, roomName } from '../lib/meters'
   import type { Estimate, MeterDetail } from '../lib/types'
   import LoadState from '../components/LoadState.svelte'
   import MonthChart from '../components/MonthChart.svelte'
@@ -66,7 +66,8 @@
         {#if m.latest?.date === todayIso()}
           <StatusChip tone="ok">Heute erfasst</StatusChip>
         {:else}
-          <StatusChip tone={m.schedule.status === 'ok' ? 'neutral' : m.schedule.status}>{dueChip(m.schedule, todayIso())}</StatusChip>
+          {@const chip = meterChip(m, todayIso())}
+          <StatusChip tone={chip.tone}>{chip.text}</StatusChip>
         {/if}
       </span>
       <h1>{meterTitle(m)}</h1>

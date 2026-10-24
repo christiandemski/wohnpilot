@@ -207,10 +207,56 @@ final class ApiTest extends TestCase
         self::assertSame('2026-10-24', $data['today']);
         self::assertSame('efh-musterstrasse', $data['object']['id']);
         self::assertSame(['strom-haupt', 'wasser-haupt'], array_column($data['meters'], 'id'));
-        self::assertSame(['kind' => 'ablesung', 'dueDate' => '2026-11-01', 'daysUntil' => 8, 'status' => 'ok', 'meterCount' => 1], $data['next']);
+        self::assertSame(
+            [
+                'kind' => 'meldung',
+                'deadlineId' => 'strom-ablesung-2026',
+                'title' => 'Zählerstand Strom an die Stadtwerke melden',
+                'from' => '2026-12-05',
+                'dueDate' => '2026-12-20',
+                'daysUntil' => 57,
+                'status' => 'ok',
+                'meterIds' => ['strom-haupt'],
+            ],
+            $data['next'],
+            'a requested reading wins over the voluntary rhythm',
+        );
+        self::assertSame('strom-ablesung-2026', $data['meters'][0]['request']['id']);
+        self::assertNull($data['meters'][1]['request']);
+        self::assertSame(['dueDate' => '2026-11-01', 'daysUntil' => 8, 'status' => 'ok'], $data['meters'][0]['schedule']);
         self::assertEqualsWithDelta(246.0, $data['meters'][0]['currentMonth']['amount'], 1e-9);
         self::assertSame(23702.0, $data['meters'][0]['latest']['value']);
         self::assertSame('2026-11-01', $data['meters'][1]['schedule']['dueDate'], 'water read on the reading day 01.10. counts for October');
+    }
+
+    public function testUrgentRequestNamesOnlyMetersStillToRead(): void
+    {
+        @mkdir("$this->root/objekte/efh-musterstrasse/fristen", 0775, true);
+        file_put_contents(
+            "$this->root/objekte/efh-musterstrasse/fristen/ablesung-vermieter.md",
+            "---\ntyp: frist\nid: ablesung-vermieter\nobjekt: efh-musterstrasse\ntitel: Zählerstände an Vermieter\nab: 2026-10-20\ndatum: 2026-10-30\nbezieht_sich_auf: [strom-haupt, wasser-haupt]\n---\n",
+        );
+        $this->signIn();
+
+        $data = self::decode($this->request('GET', '/api/overview'));
+
+        self::assertSame('ablesung-vermieter', $data['next']['deadlineId']);
+        self::assertSame('soon', $data['next']['status']);
+        self::assertSame(['wasser-haupt'], $data['next']['meterIds'], 'electricity was read on 2026-10-24');
+        self::assertSame('strom-ablesung-2026', $data['meters'][0]['request']['id']);
+        self::assertSame('ablesung-vermieter', $data['meters'][1]['request']['id']);
+    }
+
+    public function testDoneRequestFallsBackToVoluntaryRhythm(): void
+    {
+        $path = "$this->root/objekte/efh-musterstrasse/fristen/strom-ablesung-2026.md";
+        file_put_contents($path, str_replace("erstellt_von: christian\n", "erstellt_von: christian\nerledigt: 2026-10-24\n", file_get_contents($path)));
+        $this->signIn();
+
+        $data = self::decode($this->request('GET', '/api/overview'));
+
+        self::assertSame(['kind' => 'ablesung', 'dueDate' => '2026-11-01', 'daysUntil' => 8, 'status' => 'ok', 'meterIds' => ['strom-haupt', 'wasser-haupt']], $data['next']);
+        self::assertNull($data['meters'][0]['request']);
     }
 
     public function testMeterDetail(): void

@@ -68,15 +68,15 @@ final class CheckAndScheduleTest extends TestCase
         self::assertSame($expected, ReadingSchedule::next($meter, $readingDay, $today)['dueDate']);
     }
 
-    public function testDueStatus(): void
+    public function testVoluntaryRhythmNeverWarns(): void
     {
         $meter = MeterFactory::strom();
 
         self::assertSame(['dueDate' => '2026-11-01', 'daysUntil' => 8, 'status' => 'ok'], ReadingSchedule::next($meter, 1, '2026-10-24'));
-        self::assertSame('soon', ReadingSchedule::next($meter, 1, '2026-10-26')['status']);
-        self::assertSame('due', ReadingSchedule::next($meter, 1, '2026-11-01')['status']);
-        self::assertSame(-1, ReadingSchedule::next($meter, 1, '2026-11-02')['daysUntil']);
-        self::assertSame(['dueDate' => '2026-10-24', 'daysUntil' => 0, 'status' => 'due'], ReadingSchedule::next(MeterFactory::withRows([]), 1, '2026-10-24'));
+        self::assertSame('ok', ReadingSchedule::next($meter, 1, '2026-10-31')['status'], 'no "soon" for your own rhythm');
+        self::assertSame('open', ReadingSchedule::next($meter, 1, '2026-11-01')['status']);
+        self::assertSame(['dueDate' => '2026-11-01', 'daysUntil' => -60, 'status' => 'open'], ReadingSchedule::next($meter, 1, '2026-12-31'), 'missed months stay just open');
+        self::assertSame(['dueDate' => '2026-10-24', 'daysUntil' => 0, 'status' => 'open'], ReadingSchedule::next(MeterFactory::withRows([]), 1, '2026-10-24'));
     }
 
     public function testCostEstimateAgainstInstalments(): void

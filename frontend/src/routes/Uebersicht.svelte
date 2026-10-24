@@ -2,8 +2,8 @@
   import { Gauge, House, Plus } from '@lucide/svelte'
   import { api } from '../lib/api'
   import { Resource } from '../lib/resource.svelte'
-  import { days, formatChipDay, formatDay, formatLongDay, formatNumber, formatPercent, greeting, monthName } from '../lib/format'
-  import { dueChip, mediumName, roomName } from '../lib/meters'
+  import { formatChipDay, formatDay, formatLongDay, formatNumber, formatPercent, greeting, monthName } from '../lib/format'
+  import { mediumName, meterChip, requestChip, roomName } from '../lib/meters'
   import type { MeterSummary, Overview, User } from '../lib/types'
   import IconTile from '../components/IconTile.svelte'
   import Kennzahlkachel from '../components/Kennzahlkachel.svelte'
@@ -21,27 +21,42 @@
     return items.length <= 1 ? (items[0] ?? '') : items.slice(0, -1).join(', ') + ' und ' + items[items.length - 1]
   }
 
+  /**
+   * The "next" card: a reading the supplier asks for warns like a deadline,
+   * the voluntary rhythm only offers the reading round.
+   */
   function nextCard(data: Overview) {
     const next = data.next!
-    const meters = next.status === 'ok' ? data.meters : data.meters.filter((m) => m.schedule.status !== 'ok')
+    const meters = data.meters.filter((m) => next.meterIds.includes(m.id))
     const rooms = [...new Set(meters.map((m) => roomName(m.room)).filter(Boolean))]
     const minutes = Math.max(1, Math.round(meters.length * 0.75))
-    const chip =
-      next.daysUntil < 0
-        ? { text: `Überfällig · ${days(-next.daysUntil)}`, tone: 'due' as const }
-        : next.daysUntil === 0
-          ? { text: 'Heute fällig', tone: 'due' as const }
-          : next.status === 'soon'
-            ? { text: `noch ${days(next.daysUntil)}`, tone: 'soon' as const }
-            : { text: `ab ${formatChipDay(next.dueDate)}`, tone: 'neutral' as const }
+    const round = `${meters.length} Zähler${rooms.length ? ' · ' + joinGerman(rooms) : ''} · ca. ${minutes} ${minutes === 1 ? 'Minute' : 'Minuten'}`
+
+    if (next.kind === 'meldung') {
+      const early = data.today < next.from
+      return {
+        title: next.title,
+        meta: early
+          ? `Ablesen ab ${formatDay(next.from)}, melden bis ${formatDay(next.dueDate)} · ${round}`
+          : `Melden bis ${formatDay(next.dueDate)} · ${round}`,
+        chip: requestChip({ ...next, date: next.dueDate }, data.today),
+        // A reading before the window would not count for the request.
+        action: early ? null : { href: '/ablesen', text: 'Ablese-Runde starten' },
+      }
+    }
+    if (next.status === 'open') {
+      return {
+        title: 'Ablesen möglich',
+        meta: `Freiwillig, seit ${formatDay(next.dueDate)} · ${round}`,
+        chip: { text: 'Freiwillig', tone: 'neutral' as const },
+        action: { href: '/ablesen', text: 'Ablese-Runde starten' },
+      }
+    }
     return {
-      title: next.status === 'ok' ? 'Nächste Ablesung' : 'Zählerstände ablesen',
-      meta: `${meters.length} ${meters.length === 1 ? 'Zähler' : 'Zähler'}${rooms.length ? ' · ' + joinGerman(rooms) : ''} · ca. ${minutes} ${minutes === 1 ? 'Minute' : 'Minuten'}`,
-      chip,
-      action:
-        next.status === 'ok'
-          ? { href: '/ablesen', text: 'Jetzt schon ablesen' }
-          : { href: '/ablesen', text: 'Ablese-Runde starten' },
+      title: 'Nächste Ablesung',
+      meta: `Freiwillig · ${round}`,
+      chip: { text: `ab ${formatChipDay(next.dueDate)}`, tone: 'neutral' as const },
+      action: { href: '/ablesen', text: 'Jetzt schon ablesen' },
     }
   }
 
@@ -111,6 +126,7 @@
           <a href="/zaehler">Alle</a>
         </div>
         {#each data.meters as meter (meter.id)}
+          {@const chip = meterChip(meter, data.today)}
           <a class="row" href="/zaehler/{meter.id}">
             <IconTile><MediumIcon medium={meter.medium} /></IconTile>
             <span class="row-text">
@@ -120,9 +136,7 @@
                 {#if meter.latest}zuletzt {formatDay(meter.latest.date)}{:else}noch nicht abgelesen{/if}
               </span>
             </span>
-            <StatusChip tone={meter.schedule.status === 'ok' ? 'neutral' : meter.schedule.status}>
-              {dueChip(meter.schedule, data.today)}
-            </StatusChip>
+            <StatusChip tone={chip.tone}>{chip.text}</StatusChip>
           </a>
         {/each}
       </section>

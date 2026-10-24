@@ -3,7 +3,7 @@
   import { api } from '../lib/api'
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { formatDate, formatNumber } from '../lib/format'
-  import { dueChip, meterTitle, roomName } from '../lib/meters'
+  import { meterChip, meterTitle, roomName } from '../lib/meters'
   import type { MeterSummary } from '../lib/types'
   import IconTile from '../components/IconTile.svelte'
   import LoadState from '../components/LoadState.svelte'
@@ -31,6 +31,7 @@
   {:else}
     <ul class="card list">
       {#each meters.data as meter (meter.id)}
+        {@const chip = meterChip(meter, todayIso())}
         <li>
           <a class="row" href="/zaehler/{encodeURIComponent(meter.id)}">
             <IconTile><MediumIcon medium={meter.medium} /></IconTile>
@@ -45,7 +46,7 @@
                 {/if}
               </span>
             </span>
-            <StatusChip tone={meter.schedule.status === 'ok' ? 'neutral' : meter.schedule.status}>{dueChip(meter.schedule, todayIso())}</StatusChip>
+            <StatusChip tone={chip.tone}>{chip.text}</StatusChip>
             <ChevronRight size={18} strokeWidth={1.75} aria-hidden="true" class="chevron" />
           </a>
         </li>
