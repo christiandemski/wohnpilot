@@ -8,8 +8,9 @@ use Symfony\Component\Yaml\Yaml;
 
 /**
  * Formats values as single-line YAML in the style of the notes:
- * ISO dates unquoted, lists as [a, b], maps as { k: v }, strings that
- * need quoting in double quotes (as in `zaehlernummer: "[Nummer]"`).
+ * ISO dates unquoted, lists as [a, b], maps as { k: v }. Text stays
+ * unquoted where YAML reads it back unchanged (`titel: Strom melden`),
+ * else it goes in double quotes (as in `zaehlernummer: "[Nummer]"`).
  */
 final class YamlInline
 {
@@ -46,12 +47,36 @@ final class YamlInline
 
     private static function formatString(string $value): string
     {
-        $plain = Yaml::dump($value);
-        if ($plain === '' || ($plain[0] !== "'" && $plain[0] !== '"')) {
-            return $plain;
+        if (self::isPlain($value)) {
+            return $value;
         }
         // A JSON string is a valid YAML double-quoted scalar.
         return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * Plain (unquoted) is safe for single-line text without flow characters
+     * (the value may sit inside [a, b] or { k: v }), comments or leading
+     * indicators, and only if it does not read back as something else
+     * (true, 12, null).
+     */
+    private static function isPlain(string $value): bool
+    {
+        if ($value === '' || $value !== trim($value) || preg_match('/[\x00-\x1f,\[\]{}"]|: |:$| #/u', $value)) {
+            return false;
+        }
+        if (strpbrk($value[0], "-?:#&*!|>'%@`") !== false) {
+            return false;
+        }
+        // Booleans in YAML 1.1, which other tools may still use.
+        if (in_array(strtolower($value), ['yes', 'no', 'on', 'off', 'y', 'n'], true)) {
+            return false;
+        }
+        try {
+            return Yaml::parse('v: ' . $value) === ['v' => $value];
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private static function formatFloat(float $value): string
