@@ -217,6 +217,10 @@ final class Api
                 $body = self::body($request);
                 return self::json($response, $services->utilities()->setPositions($args['id'], (array) ($body['positionen'] ?? []), (array) ($body['original'] ?? []), self::user($request)));
             });
+            $api->post('/utilities/{id}/prepayment', fn (Request $request, Response $response, array $args) => self::json(
+                $response,
+                $services->utilities()->adoptPrepayment($args['id'], self::user($request)),
+            ));
             $api->put('/utilities/{id}/paid', function (Request $request, Response $response, array $args) use ($services): Response {
                 $date = self::body($request)['datum'] ?? null;
                 return self::json($response, $services->utilities()->setPaid($args['id'], is_string($date) ? $date : null, self::user($request)));

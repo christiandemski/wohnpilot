@@ -163,6 +163,23 @@ final class UtilityService
         return $this->detail($id);
     }
 
+    /** Puts the statement's new prepayment into the lease (LeaseService::changeUtilities). */
+    public function adoptPrepayment(string $id, User $user): array
+    {
+        $this->find($id);
+        $statement = null;
+        foreach ($this->all() as $s) {
+            if ($s->id === $id) {
+                $statement = $s;
+            }
+        }
+        if ($statement?->newPrepayment === null || $statement->newPrepaymentFrom === null) {
+            throw AppException::validation(['neue_vorauszahlung_eur' => 'required']);
+        }
+        $this->lease->changeUtilities($statement->newPrepaymentFrom, $statement->newPrepayment, $statement->title(), $user);
+        return $this->detail($id);
+    }
+
     /**
      * Dates for "Was steht an": back payment due, objection deadline in its
      * last 30 days, and the next statement of a kind when it is late.
