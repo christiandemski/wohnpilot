@@ -73,6 +73,7 @@ final class DeadlineService
     public function create(array $input, User $user): array
     {
         $fields = self::validate($input, true);
+        $this->household->checkPerson($fields);
         $object = empty($input['haushalt']) ? ($this->household->activeObject()['id'] ?? null) : null;
         $folder = $object === null ? 'fristen' : "objekte/$object/fristen";
         $id = Slug::unique(
@@ -93,6 +94,7 @@ final class DeadlineService
     {
         $stored = $this->find($id);
         $changes = self::validate($changes, false, NoteDocument::parse($stored->content)->frontmatter()->all());
+        $this->household->checkPerson($changes);
         $this->notes->updateFields($stored, $changes, $original, $etag, $user->id);
         return $this->detail($id);
     }
@@ -155,6 +157,7 @@ final class DeadlineService
             ->date('ab')
             ->int('vorlauf_tage', 0, 365)
             ->slugList('bezieht_sich_auf')
+            ->slug('person')
             ->date('erledigt');
         $date = $check->has('datum') ? $check->value('datum') : ($current['datum'] ?? null);
         $from = $check->has('ab') ? $check->value('ab') : ($current['ab'] ?? null);

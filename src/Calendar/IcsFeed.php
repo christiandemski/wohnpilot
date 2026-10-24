@@ -93,6 +93,10 @@ final class IcsFeed
     private function event(array $item): ?array
     {
         $name = (string) ($item['name'] ?? '');
+        if (is_array($item['person'] ?? null)) {
+            // Everyone gets everything, with the name of who takes care of it
+            $name .= ' (' . $item['person']['name'] . ')';
+        }
         $contract = '/vertraege/' . rawurlencode((string) ($item['ref']['id'] ?? ''));
         $both = [self::WEEK_BEFORE, self::DAY_BEFORE];
 

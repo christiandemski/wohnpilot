@@ -46,7 +46,7 @@ final class HouseholdService
                 return null;
             }
             $id = $username ?: Slug::from($identity->name) ?: Slug::from((string) strstr($email, '@', true)) ?: 'person';
-            return new User($id, $identity->name ?: ucfirst($id), $identity->subject, $email);
+            return new User($id, $identity->name ?: ucfirst($id), $identity->subject, $email, Roles::ADMIN);
         }
         $bearId = str_starts_with($identity->subject, 'bearid:') ? substr($identity->subject, 7) : null;
         foreach ($household['personen'] as $person) {
@@ -54,7 +54,7 @@ final class HouseholdService
                 || ($email !== '' && mb_strtolower((string) ($person['email'] ?? '')) === $email)
                 || ($username !== '' && ($person['id'] ?? null) === $username);
             if ($matches) {
-                return new User((string) $person['id'], (string) ($person['name'] ?? $person['id']), $identity->subject, $email);
+                return new User((string) $person['id'], (string) ($person['name'] ?? $person['id']), $identity->subject, $email, Roles::of($person['rolle'] ?? null));
             }
         }
         return null;
@@ -65,10 +65,31 @@ final class HouseholdService
     {
         foreach ($this->household()['personen'] ?? [] as $person) {
             if (($person['id'] ?? null) === $id) {
-                return new User($id, (string) ($person['name'] ?? $id), $subject, (string) ($person['email'] ?? ''));
+                return new User($id, (string) ($person['name'] ?? $id), $subject, (string) ($person['email'] ?? ''), Roles::of($person['rolle'] ?? null));
             }
         }
         return null;
+    }
+
+    /** @return array<string, string> person id => name, for "who is responsible" */
+    public function names(): array
+    {
+        $names = [];
+        foreach ($this->household()['personen'] ?? [] as $person) {
+            if (is_array($person) && is_string($person['id'] ?? null)) {
+                $names[$person['id']] = (string) ($person['name'] ?? $person['id']);
+            }
+        }
+        return $names;
+    }
+
+    /** A responsible `person` must be someone of the household (one who left may stay where they are). */
+    public function checkPerson(array $fields): void
+    {
+        $person = $fields['person'] ?? null;
+        if (is_string($person) && !array_key_exists($person, $this->names())) {
+            throw AppException::validation(['person' => 'unknown']);
+        }
     }
 
     /** @return array<string, mixed>|null the household frontmatter, null before setup */
@@ -233,7 +254,7 @@ final class HouseholdService
     /** The first person of a new household, with what lets them sign in again. */
     private static function person(User $user): array
     {
-        $person = ['id' => $user->id, 'name' => $user->name, 'rolle' => 'verwalter'];
+        $person = ['id' => $user->id, 'name' => $user->name, 'rolle' => Roles::ADMIN];
         if ($user->email !== '') {
             $person['email'] = $user->email;
         }

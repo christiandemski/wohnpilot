@@ -81,6 +81,7 @@ final class MaintenanceService
             $stored = $this->objects->create('wartung', 'wartung', $suggestion['id'], $fields, $user);
         } else {
             $fields = self::validate($input, true);
+            $this->household->checkPerson($fields);
             $stored = $this->objects->create('wartung', 'wartung', (string) $fields['titel'], $fields, $user);
         }
         return $this->detail((string) NoteDocument::parse($stored->content)->frontmatter()->get('id'));
@@ -92,7 +93,9 @@ final class MaintenanceService
      */
     public function update(string $id, array $changes, array $original, string $etag, User $user): array
     {
-        $this->notes->updateFields($this->find($id), self::validate($changes, false), $original, $etag, $user->id);
+        $changes = self::validate($changes, false);
+        $this->household->checkPerson($changes);
+        $this->notes->updateFields($this->find($id), $changes, $original, $etag, $user->id);
         return $this->detail($id);
     }
 
@@ -186,6 +189,7 @@ final class MaintenanceService
             ->season('saison')
             ->date('ab')
             ->enum('zustaendig', MaintenanceTask::RESPONSIBLE, default: 'mieter')
+            ->slug('person')
             ->enum('ausfuehrung', MaintenanceTask::EXECUTIONS)
             ->string('raum')
             ->int('vorlauf_tage', 0, 365)

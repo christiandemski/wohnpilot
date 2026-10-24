@@ -14,6 +14,7 @@ use Slim\Routing\RouteCollectorProxy;
 use Throwable;
 use Wohnpilot\App\AppException;
 use Wohnpilot\App\WasteService;
+use Wohnpilot\App\Roles;
 use Wohnpilot\App\User;
 use Wohnpilot\Auth\BearId;
 use Wohnpilot\Auth\Identity;
@@ -176,6 +177,10 @@ final class Api
             if ($user === null) {
                 throw new AppException('unauthorized', 401, 'Not paired');
             }
+            // A guest's tablet only shows the board
+            if ($user->role === Roles::GUEST && str_contains($request->getUri()->getPath(), '/maintenance/')) {
+                throw Roles::forbidden($user->role);
+            }
             return $handler->handle($request->withAttribute('user', $user)->withAttribute('kiosk', $device));
         });
 
@@ -219,6 +224,12 @@ final class Api
                 }
                 return self::json($response, $services->meters()->addReading($args['id'], $body, self::user($request), $photo), 201);
             });
+
+            // People of the household: everyone sees them, administrators change them
+            $api->get('/people', fn (Request $request, Response $response) => self::json($response, ['people' => $services->people()->list(self::user($request))]));
+            $api->post('/people', fn (Request $request, Response $response) => self::json($response, ['people' => $services->people()->create(self::body($request), self::user($request))], 201));
+            $api->put('/people/{id}', fn (Request $request, Response $response, array $args) => self::json($response, ['people' => $services->people()->update($args['id'], self::body($request), self::user($request))]));
+            $api->delete('/people/{id}', fn (Request $request, Response $response, array $args) => self::json($response, ['people' => $services->people()->remove($args['id'], self::user($request))]));
 
             $api->get('/objects/active', fn (Request $r, Response $response) => self::json($response, ['object' => $services->household()->activeObject()]));
             $api->post('/objects', fn (Request $request, Response $response) => self::json(
@@ -551,6 +562,9 @@ final class Api
             }
             if ($user === null) {
                 throw new AppException('forbidden', 403, 'Not a member of this household');
+            }
+            if (!Roles::allows($user->role, $request->getMethod(), $request->getUri()->getPath())) {
+                throw Roles::forbidden($user->role);
             }
             return $handler->handle($request->withAttribute('user', $user));
         });
