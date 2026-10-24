@@ -51,6 +51,9 @@
   import Suche from './routes/Suche.svelte'
   import Aufkleber from './routes/Aufkleber.svelte'
   import Eingang from './routes/Eingang.svelte'
+  import Nebenkosten from './routes/Nebenkosten.svelte'
+  import NebenkostenDetail from './routes/NebenkostenDetail.svelte'
+  import NebenkostenForm from './routes/NebenkostenForm.svelte'
 
   theme.apply()
 
@@ -189,6 +192,14 @@
           <Notfall />
         {:else if router.current.name === 'suche'}
           <Suche />
+        {:else if router.current.name === 'nebenkosten'}
+          <Nebenkosten />
+        {:else if router.current.name === 'nebenkosten-neu'}
+          <NebenkostenForm />
+        {:else if router.current.name === 'nebenkosten-detail'}
+          <NebenkostenDetail id={router.current.params.id} />
+        {:else if router.current.name === 'nebenkosten-bearbeiten'}
+          <NebenkostenForm id={router.current.params.id} />
         {:else if router.current.name === 'eingang'}
           <Eingang />
         {:else if router.current.name === 'aufkleber'}

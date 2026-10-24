@@ -7,6 +7,7 @@ namespace Wohnpilot\App;
 use Wohnpilot\Domain\Day;
 use Wohnpilot\Domain\Lease;
 use Wohnpilot\Domain\Reading;
+use Wohnpilot\Domain\RentChange;
 use Wohnpilot\Note\HistoryTable;
 use Wohnpilot\Note\NoteDocument;
 use Wohnpilot\Storage\StoredNote;
@@ -102,6 +103,46 @@ final class LeaseService
                 return $note;
             }
             HistoryTable::insertNewestFirst($table, 'Gültig ab', $row);
+            $note->frontmatter()->set('geaendert_von', $user->id);
+            return $note;
+        });
+        return $this->get();
+    }
+
+    /**
+     * A new utilities prepayment from $from on, e.g. after a statement: a row
+     * with the cold rent in force then. Later rows that still carry the old
+     * prepayment (copied along, e.g. with a rent increase) get the new one
+     * too, so it does not jump back. Applying it twice changes nothing.
+     */
+    public function changeUtilities(string $from, float $amount, string $reason, User $user): array
+    {
+        if (!Day::isValid($from)) {
+            throw AppException::validation(['gueltig_ab' => 'date']);
+        }
+        $stored = $this->find() ?? throw AppException::notFound('Mietvertrag');
+        $this->notes->modifyLatest($stored->path, static function (NoteDocument $note) use ($from, $amount, $reason, $user): NoteDocument {
+            $lease = Lease::fromNote($note);
+            $before = $lease->rentOn($from);
+            if ($before['validFrom'] === $from && $before['utilities'] !== null && abs($before['utilities'] - $amount) < 0.005) {
+                return $note;
+            }
+            $old = $before['utilities'];
+            $row = self::rentRow($from, $before['cold'], $amount, $reason, null);
+            $note = HistoryTable::ensure($note, Lease::COLUMNS, $row);
+            $table = $note->body()->table();
+            $same = HistoryTable::find($table, 'Gültig ab', $from);
+            if ($same !== null) {
+                $table->replaceRow($same, ['Nebenkosten €' => $row['Nebenkosten €']]);
+            } else {
+                HistoryTable::insertNewestFirst($table, 'Gültig ab', $row);
+            }
+            foreach ($table->rows() as $index => $later) {
+                $change = RentChange::fromRow($later);
+                if ($change !== null && $change->validFrom > $from && $old !== null && $change->utilities !== null && abs($change->utilities - $old) < 0.005) {
+                    $table->replaceRow($index, ['Nebenkosten €' => $row['Nebenkosten €']]);
+                }
+            }
             $note->frontmatter()->set('geaendert_von', $user->id);
             return $note;
         });

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BookOpen, CalendarDays, ChevronRight, House, KeyRound, Pencil, QrCode, Siren, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
+  import { BookOpen, CalendarDays, ChevronRight, House, KeyRound, Pencil, QrCode, ReceiptText, Siren, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
   import type { Component } from 'svelte'
   import { api } from '../lib/api'
   import { Resource } from '../lib/resource.svelte'
@@ -80,6 +80,7 @@
 
   const links: { href: string; label: string; icon: Component; module: string; meta: (a: Areas) => string }[] = [
     { href: '/mietvertrag', label: 'Mietvertrag', icon: KeyRound, module: 'miete', meta: leaseMeta },
+    { href: '/nebenkosten', label: 'Nebenkosten', icon: ReceiptText, module: 'miete', meta: () => 'Abrechnungen, Vergleich und Fristen' },
     { href: '/wartung', label: 'Wartung', icon: Wrench, module: 'wartung', meta: maintenanceMeta },
     { href: '/termine', label: 'Termine und Müll', icon: CalendarDays, module: 'termine', meta: datesMeta },
     { href: '/maengel', label: 'Mängel', icon: TriangleAlert, module: 'maengel', meta: defectsMeta },

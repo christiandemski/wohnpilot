@@ -1,6 +1,6 @@
 import { api } from './api'
 import { inStore } from './idb'
-import type { ContractSummary, Deadline, DefectSummary, DeviceSummary, KnowledgePage, Lease } from './types'
+import type { ContractSummary, Deadline, DefectSummary, DeviceSummary, KnowledgePage, Lease, UtilitySummary } from './types'
 
 /**
  * The inbox ("Eingang"): photos, PDFs and texts shared to the app (Android
@@ -19,7 +19,7 @@ export interface InboxItem {
 
 /** Where a file can go: the entry types with documents and photos (backend DocumentService, PhotoService) */
 export interface Target {
-  type: 'mangel' | 'geraet' | 'vertrag' | 'mietvertrag' | 'wissen' | 'frist'
+  type: 'mangel' | 'geraet' | 'vertrag' | 'mietvertrag' | 'wissen' | 'frist' | 'nebenkosten'
   label: string
   href: (id: string) => string
   load: () => Promise<{ id: string; title: string }[]>
@@ -37,6 +37,7 @@ export const TARGETS: Target[] = [
       return lease ? [{ id: lease.id, title: 'Mietvertrag' }] : []
     },
   },
+  { type: 'nebenkosten', label: 'Nebenkosten', href: (id) => `/nebenkosten/${encodeURIComponent(id)}`, load: async () => (await api.get<{ statements: UtilitySummary[] }>('/utilities')).statements.map((s) => ({ id: s.id, title: s.title })) },
   { type: 'geraet', label: 'Gerät', href: (id) => `/geraete/${encodeURIComponent(id)}`, load: async () => (await api.get<{ devices: DeviceSummary[] }>('/devices')).devices.map((d) => ({ id: d.id, title: d.name })) },
   { type: 'frist', label: 'Frist', href: (id) => `/fristen/${encodeURIComponent(id)}`, load: async () => (await api.get<{ open: Deadline[] }>('/deadlines')).open.map((d) => ({ id: d.id, title: d.title })) },
   { type: 'wissen', label: 'Wissen', href: (id) => `/wissen/${encodeURIComponent(id)}`, load: async () => (await api.get<{ pages: KnowledgePage[] }>('/knowledge')).pages.map((p) => ({ id: p.id, title: p.title })) },

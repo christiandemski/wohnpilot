@@ -549,3 +549,58 @@ export interface SearchResult {
   snippet: string
   score: number
 }
+
+/** Utility statement (UtilityService): landlord's operating costs or the metering service's heating costs */
+export interface UtilityPosition {
+  kind: string
+  amount: number
+  taxKind: 'haushaltsnah' | 'handwerker' | null
+  taxAmount: number | null
+}
+
+export interface UtilitySummary {
+  id: string
+  path: string
+  etag: string
+  title: string
+  kind: 'betriebskosten' | 'heizkosten'
+  fields: {
+    art: 'betriebskosten' | 'heizkosten'
+    von: string
+    bis: string
+    zugang?: string
+    kontakt?: string
+    abrechner?: string
+    abrechnung?: string
+    vorauszahlungen_eur?: number
+    neue_vorauszahlung_eur?: number
+    neue_vorauszahlung_ab?: string
+    bezahlt?: string
+    verbrauch?: Record<string, number>
+    paperless?: string
+    [key: string]: unknown
+  }
+  from: string
+  to: string
+  days: number
+  received: string | null
+  total: number
+  balance: number | null
+  billedIn: string | null
+  deliveryDeadline: string | null
+  deliveredLate: boolean
+  objection: { date: string; daysUntil: number } | null
+  payment: { date: string; daysUntil: number } | null
+  modifiedBy: string | null
+}
+
+export interface UtilityDetail extends UtilitySummary {
+  positions: UtilityPosition[]
+  comparison: { kind: string; amount: number; perYear: number; previousPerYear: number | null; change: number | null }[]
+  previous: { id: string; title: string; days: number } | null
+  checks: { key: string; unit: string; billed: number; meterId: string | null; measured: number | null; coveredDays: number; days: number; difference: number | null }[]
+  heating: { id: string; title: string; total: number }[]
+  taxShares: { kind: string; taxKind: 'haushaltsnah' | 'handwerker'; amount: number }[]
+  prepaymentAdopted: boolean | null
+  notes: string
+}

@@ -79,6 +79,19 @@ final class UtilityApiTest extends ApiTestCase
         self::assertSame([['Betriebskosten 2026', '2027-12-31', 21, '2026-01-01', '2026-12-31']], array_map(static fn (array $i): array => [$i['name'], $i['date'], $i['daysUntil'], $i['periodFrom'], $i['periodTo']], $missing));
     }
 
+    public function testNewPrepaymentGoesIntoTheLease(): void
+    {
+        $adopted = self::decode($this->request('POST', '/api/utilities/betriebskosten-2025/prepayment'));
+        self::assertTrue($adopted['prepaymentAdopted']);
+        $lease = file_get_contents("$this->root/objekte/efh-musterstrasse/mietvertrag/mietvertrag.md");
+        self::assertStringContainsString("| 2026-11-01 | 1450        | 310           | Betriebskosten 2025      |            |            |\n", $lease);
+        self::assertStringContainsString("| 2027-01-01 | 1495        | 310           | Mieterhöhung Mietspiegel | 2026-10-15 |            |\n", $lease, 'the later row does not jump back to 280');
+
+        $this->request('POST', '/api/utilities/betriebskosten-2025/prepayment');
+        self::assertSame($lease, file_get_contents("$this->root/objekte/efh-musterstrasse/mietvertrag/mietvertrag.md"), 'twice is once');
+        self::assertSame(422, $this->request('POST', '/api/utilities/heizkosten-2025/prepayment')->getStatusCode());
+    }
+
     public function testCreateWithPositions(): void
     {
         $response = $this->request('POST', '/api/utilities', [

@@ -18,7 +18,7 @@
       icon: House,
       module: 'miete',
       // Everything about the house itself
-      prefixes: ['zuhause', 'mietvertrag', 'wartung', 'termine', 'termin', 'muell', 'maengel', 'mangel', 'geraete', 'geraet', 'wissen', 'notfall', 'aufkleber'],
+      prefixes: ['zuhause', 'mietvertrag', 'wartung', 'termine', 'termin', 'muell', 'maengel', 'mangel', 'geraete', 'geraet', 'wissen', 'notfall', 'aufkleber', 'nebenkosten'],
     },
     { href: '/mehr', label: 'Mehr', icon: Ellipsis, module: 'wissen', prefixes: ['mehr', 'vertraege', 'vertrag', 'fristen', 'frist', 'einstellungen', 'kontakte', 'kontakt', 'eingang'] },
   ]
