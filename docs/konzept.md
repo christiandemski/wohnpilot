@@ -166,9 +166,9 @@ Zum Start nutzt nur du die App, aber Datenmodell und Ablage sind so angelegt, da
 
 - **Haushalt-Ordner:** Alle Daten liegen in einem Nextcloud-Ordner, der später per Nextcloud-Freigabe mit anderen geteilt werden kann.
 - **Personen:** Jede Person hat eine BearID-Kennung. Einträge tragen `erstellt_von` und `geaendert_von`.
-- **Rollen (später):** Verwalter (alles), Mitglied (eintragen und abhaken), Gast (nur lesen, z. B. für Haussitter das Notfallblatt).
-- **Zuständigkeit:** Aufgaben und Wartungen können einer Person zugewiesen werden, Erinnerungen gehen an diese Person.
-- **Private Einträge:** Ein Flag `privat: true` hält z. B. den eigenen Handyvertrag aus der gemeinsamen Ansicht.
+- **Rollen:** Verwalter (alles), Mitglied (eintragen und abhaken), Gast (nur lesen, z. B. für Haussitter das Notfallblatt). Seit Stufe 6, siehe Festlegungen.
+- **Zuständigkeit:** Aufgaben und Wartungen können einer Person zugewiesen werden; Erinnerungen gehen an alle, mit ihrem Namen.
+- **Private Einträge:** entfallen, alle im Haushalt sehen alles.
 
 ## Datenformat in Nextcloud
 
@@ -185,6 +185,7 @@ Wohnpilot/
       fristen/            einmalige Fristen dieses Zuhauses
       mietvertrag/
       nebenkosten/        Abrechnungen von Vermieter und Messdienst mit Positionen
+      umzug/              Auszugs- und Einzugs-Checkliste
       geraete/            Geräte mit Kauf, Garantie, Eigentum
       wartung/            wiederkehrende Aufgaben mit Erledigt-Verlauf
       termine/            einmalige Termine; muell.md mit Abfuhrkalender und Tonnen
@@ -393,6 +394,16 @@ Stufe 1 liefert mit Zählern und Übersicht schon im ersten Monat Alltagsnutzen;
 - **Löschen:** Wartung, Termine, Mängel, Geräte, Fristen, Verträge, Kontakte, Wissensseiten, Zähler und Abrechnungen lassen sich auf ihrer Detailseite löschen, nur in dem Stand, der angezeigt wird (ETag), mit ihren eigenen Fotos und PDFs. Nextcloud legt die Notiz in den Papierkorb. Mietvertrag, Zuhause und Haushalt sind nicht löschbar.
 - **Bear Cave:** bleibt eine normale Kachel ohne Zahl.
 
+## Festlegungen aus Stufe 6
+
+- **Personen:** stehen in `_haushalt.md` unter `personen` mit `id`, `name`, `rolle` und dem, womit sie sich anmelden: `email` (BearID-Konto mit dieser Adresse oder Notzugang) und/oder `bearid` (Kennung bei BearID). Verwalten lassen sie sich unter Mehr › Personen. Wer geht, wird aus der Liste entfernt; Einträge behalten seine Kennung, und sie wird nicht neu vergeben. Erst einmal nur vorbereitet: Im Haushalt ist bisher nur eine Person.
+- **Rollen:** `verwalter` darf alles; `mitglied` trägt ein und hakt ab, verwaltet aber keine Personen, Einstellungen, Abfuhrkalender und Zuhause, zieht nicht um und löscht nichts; `gast` liest nur. Fehlt `rolle`, gilt Mitglied, ein unbekannter Wert gilt als Gast. Der Server prüft die Rolle bei jeder Anfrage, die Oberfläche blendet nur aus. Kalender-Link, Push-Geräte und „Jetzt einlesen“ darf jede Person für sich. Mindestens eine Person muss verwalten; sich selbst entfernt man nicht.
+- **Private Einträge:** entfallen (entschieden 25.10.2026), alle sehen alles.
+- **Zuständigkeit:** Wartung, Termine und Fristen können `person: <id>` tragen. Alle bekommen weiter alle Erinnerungen; Übersicht, Morgen-Push und Kalender nennen den Namen dazu („Rauchmelder testen (Alex)“).
+- **Umzug:** „Auszug planen“ schreibt `auszug` ins jetzige Zuhause und legt `objekte/<id>/umzug/auszug.md` an (`typ: checkliste`, `art: auszug`, `datum`). Die Aufgaben kommen aus den Daten: Kündigung des Mietvertrags mit dem letzten Tag (dritter Werktag, Kündigungsfrist minus ein Monat vor dem Auszugsmonat), Strom-, Gas- und Internetverträge, Versicherungen, offene Mängel, Endstände je Zähler, Geräte des Vermieters, Kaution und die letzte Nebenkostenabrechnung. Ein späteres Datum ändert die Liste nicht, damit Haken bleiben.
+- **Neues Zuhause und Wechsel:** Ein neues Zuhause wird vorab angelegt (nicht aktiv) und bekommt `umzug/einzug.md`. „Zum neuen Zuhause wechseln“ macht es zum aktiven; das alte behält `auszug` (fehlt es, der Tag vor dem Einzug) und ist damit archiviert: nichts wird gelöscht, die Listen zeigen nur noch das neue. Verträge liegen beim Haushalt und ziehen mit. Zustand eines Zuhauses ist abgeleitet: aktiv, geplant (ohne `auszug`) oder früher.
+- **Checklisten:** Markdown-Aufgaben unter Überschriften (`- [ ] …`), also auch in der Notes-App abhakbar. Wohnpilot ändert beim Abhaken nur das Kästchen dieser einen Zeile und nur, wenn dort noch derselbe Text steht; sonst zeigt es den neuen Stand. Druckbar aus dem Browser, löschbar wie andere Einträge.
+
 ## Offene Fragen
 
 - [x] Name: Wohnpilot
@@ -414,3 +425,7 @@ Stufe 1 liefert mit Zählern und Übersicht schon im ersten Monat Alltagsnutzen;
 - [x] Kiosk: Tablet an der Wand, darf abhaken, eigene Geräte-Kopplung (entschieden 24.10.2026)
 - [x] Steuer-Export: druckbare Übersicht (PDF aus dem Browser) und CSV (entschieden 24.10.2026)
 - [x] Bear Cave: keine Zahl auf der Kachel (entschieden 24.10.2026)
+- [x] Weitere Personen: erst vorbereitet, Rollen vom Server geprüft (entschieden 25.10.2026)
+- [x] Private Einträge: nicht nötig (entschieden 25.10.2026)
+- [x] Erinnerungen bei Zuständigkeit: an alle, mit Namen (entschieden 25.10.2026)
+- [x] Umzug: keiner geplant, Checklisten und Archivieren vorbereitet (entschieden 25.10.2026)

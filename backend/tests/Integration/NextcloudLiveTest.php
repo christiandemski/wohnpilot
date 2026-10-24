@@ -107,6 +107,10 @@ final class NextcloudLiveTest extends TestCase
             // stage 5
             'utility statement' => ['objekte/efh-musterstrasse/nebenkosten/betriebskosten-2025.md'],
             'heating statement' => ['objekte/efh-musterstrasse/nebenkosten/heizkosten-2025.md'],
+            // stage 6
+            'former home' => ['objekte/wohnung-altstadt/_objekt.md'],
+            'move-out checklist' => ['objekte/wohnung-altstadt/umzug/auszug.md'],
+            'move-in checklist' => ['objekte/efh-musterstrasse/umzug/einzug.md'],
         ];
     }
 
@@ -231,6 +235,33 @@ final class NextcloudLiveTest extends TestCase
             $dav = new \GuzzleHttp\Client(['base_uri' => rtrim($_ENV['NEXTCLOUD_URL'], '/') . NextcloudFiles::DAV_PATH, 'auth' => [$_ENV['NEXTCLOUD_USER'], $_ENV['NEXTCLOUD_APP_PASSWORD']], 'http_errors' => false]);
             $dav->request('DELETE', implode('/', array_map('rawurlencode', [$settings['notesPath'], $_ENV['NEXTCLOUD_FOLDER'] ?? 'Wohnpilot', 'anhaenge', $dir])));
         }
+    }
+
+    public function testPeopleAndATickedChecklistComeBackAsWritten(): void
+    {
+        $root = dirname(__DIR__, 3) . '/fixtures/Wohnpilot';
+        $folder = '_test/' . bin2hex(random_bytes(3));
+
+        // A new person as PeopleService writes the list
+        $householdPath = $this->track("$folder/haushalt.md");
+        $household = $this->adapter->create($householdPath, file_get_contents("$root/_haushalt.md"));
+        $note = NoteDocument::parse($household->content);
+        $people = $note->frontmatter()->get('personen');
+        $people[] = ['id' => 'oma-inge', 'name' => 'Oma Inge', 'rolle' => 'gast', 'email' => 'inge@example.org'];
+        $note->frontmatter()->set('personen', $people);
+        $this->adapter->update($householdPath, $note->toString(), $household->etag);
+        $read = $this->adapter->get($householdPath)->content;
+        self::assertSame($note->toString(), $read);
+        self::assertSame('gast', NoteDocument::parse($read)->frontmatter()->get('personen')[2]['rolle']);
+
+        // One box ticked as MoveService::tick does it
+        $listPath = $this->track("$folder/objekte/wohnung-altstadt/umzug/auszug.md");
+        $list = $this->adapter->create($listPath, file_get_contents("$root/objekte/wohnung-altstadt/umzug/auszug.md"));
+        $ticked = \Wohnpilot\Domain\Checklist::tick($list->content, 9, 'Kaution zurückfordern', true);
+        $this->adapter->update($listPath, $ticked, $list->etag);
+        $read = $this->adapter->get($listPath)->content;
+        self::assertSame($ticked, $read);
+        self::assertSame(['done' => 10, 'total' => 11], \Wohnpilot\Domain\Checklist::progress($read));
     }
 
     public function testDeleteOnlyAtTheVersionSeen(): void
