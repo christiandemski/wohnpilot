@@ -184,7 +184,7 @@ Wohnpilot/
       zaehler/
       fristen/            einmalige Fristen dieses Zuhauses
       mietvertrag/
-      nebenkosten/
+      nebenkosten/        Abrechnungen von Vermieter und Messdienst mit Positionen
       geraete/            Geräte mit Kauf, Garantie, Eigentum
       wartung/            wiederkehrende Aufgaben mit Erledigt-Verlauf
       termine/            einmalige Termine; muell.md mit Abfuhrkalender und Tonnen
@@ -380,6 +380,19 @@ Stufe 1 liefert mit Zählern und Übersicht schon im ersten Monat Alltagsnutzen;
 - **Eingang und Teilen:** Android: Wohnpilot steht im Teilen-Menü (Manifest `share_target`); der Service Worker legt Fotos, PDFs und Text in den Eingang auf dem Gerät. iPhone kann das für Web-Apps nicht; dort wählst du auf der Seite „Eingang“ Dateien aus oder fügst Text und Bilder ein. Aus dem Eingang geht ein Foto oder PDF zu einem Mangel, Gerät, Vertrag, dem Mietvertrag, einer Frist oder einer Wissensseite (auch offline über die Warteschlange); ein Text beginnt einen Mangel oder eine Wissensseite. Bis zum Zuordnen verlässt nichts das Gerät.
 - **Dokumente:** PDFs liegen wie Fotos unter `anhaenge/<bereich>/<id>/<datum>-<titel>.pdf`, die Notiz bekommt eine Link-Zeile `[Titel](…pdf)`. Detailseiten zeigen sie unter „Unterlagen“; Verträge, Mietvertrag und Fristen haben dort auch Fotos (z. B. ein abfotografierter Brief). Im Notiztext der App stehen Bild- und PDF-Zeilen nicht mehr als Markdown.
 
+## Festlegungen aus Stufe 5
+
+- **Nebenkosten:** Eine Notiz je Abrechnung in `objekte/<id>/nebenkosten/` (`typ: nebenkosten`, `art: betriebskosten` vom Vermieter oder `heizkosten` vom Messdienst) mit `von`, `bis`, `zugang`, `vorauszahlungen_eur`, `neue_vorauszahlung_eur` und `_ab`, `bezahlt`, `verbrauch: { wasser_m3, waerme_kwh, … }` und der Tabelle `Kostenart | Betrag € | § 35a | davon § 35a €`. Summe, Nachzahlung oder Guthaben werden berechnet. Rechnet der Vermieter die Heizkosten des Messdienstes als einen Posten ab, zeigt die Heizkostenabrechnung mit `abrechnung: <id>` auf seine; gezählt wird sie nur dort, und eine eigene Einwendungsfrist hat sie nicht.
+- **Fristen (§ 556 Abs. 3 BGB):** Der Vermieter muss bis zum Ablauf des zwölften Monats nach Ende des Zeitraums abrechnen, sonst darf er keine Nachzahlung mehr verlangen. Einwände sind bis zum Ablauf des zwölften Monats nach Zugang möglich. Eine Nachzahlung ist 30 Tage nach Zugang fällig (Prüfzeit). In „Was steht an“, in der Mitteilung und im Kalender: die fällige Nachzahlung, die Einwendungsfrist in ihren letzten 30 Tagen und eine fehlende Abrechnung ab 30 Tage vor der Frist des Vermieters.
+- **Vergleich und Abgleich:** Kostenarten werden je Jahr hochgerechnet mit der vorigen Abrechnung derselben Art verglichen, aber nur, wenn diese mindestens 300 Tage umfasst; ein hochgerechneter Einzugsmonat würde vor allem bei Heizkosten täuschen. Der abgerechnete Verbrauch wird mit den eigenen Ablesungen verglichen, wenn sie den ganzen Zeitraum abdecken; über 5 % Abweichung ist auffällig.
+- **Neue Vorauszahlung:** Mit einem Tipp in den Mietvertrag; die Kaltmiete des Tages wird übernommen, und spätere Zeilen mit der alten Vorauszahlung bekommen die neue, damit sie nicht zurückspringt.
+- **Positionen bearbeiten:** Zeilen bis zur ersten Änderung bleiben so stehen, wie sie geschrieben sind; wurden die Positionen woanders geändert, schreibt Wohnpilot nicht, sondern zeigt beide Stände.
+- **Jahresbericht:** Je Kalenderjahr Verbrauch gegen das Vorjahr (Kosten nach heutigem Tarif nur bei lückenlosen Ablesungen), Miete Monat für Monat aus dem Mietverlauf, Verträge mit heutigem Preis für die Monate, in denen sie liefen, Abrechnungen, erledigte Wartungen, behobene Mängel und Kleinreparaturen. Druckbar als PDF aus dem Browser.
+- **§ 35a:** Gesammelt werden die Arbeitsanteile aus Abrechnungen, die im Jahr angekommen sind (für Mieter zulässig), und Kleinreparaturen, die du selbst bezahlt hast. Ein Mangel kann dafür `arbeitskosten_eur` tragen; fehlt es, steht der ganze Betrag mit „Arbeitsanteil prüfen“. Ermäßigung 20 %, höchstens 4.000 € für haushaltsnahe Dienstleistungen und 1.200 € für Handwerkerleistungen. Export als CSV mit Semikolon, deutschen Zahlen und BOM.
+- **Kiosk:** Ein Tablet an der Wand, gekoppelt mit einem sechsstelligen Code aus „Mehr“ (10 Minuten, einmal gültig). Es bekommt ein eigenes Cookie (`HttpOnly`, nur für `/api/kiosk`, ein Jahr, bei Nutzung erneuert) und handelt im Namen der Person, die es gekoppelt hat, kann aber nur die Tafel lesen und Wartung abhaken. Codes und Geheimnisse liegen nur als Hash in `var/settings.sqlite`; falsche Codes sind auf 10 je Adresse in 15 Minuten begrenzt. Die Tafel ist immer dunkel, hält den Bildschirm an, lädt jede Minute neu und zeigt ohne Netz den letzten Stand.
+- **Löschen:** Wartung, Termine, Mängel, Geräte, Fristen, Verträge, Kontakte, Wissensseiten, Zähler und Abrechnungen lassen sich auf ihrer Detailseite löschen, nur in dem Stand, der angezeigt wird (ETag), mit ihren eigenen Fotos und PDFs. Nextcloud legt die Notiz in den Papierkorb. Mietvertrag, Zuhause und Haushalt sind nicht löschbar.
+- **Bear Cave:** bleibt eine normale Kachel ohne Zahl.
+
 ## Offene Fragen
 
 - [x] Name: Wohnpilot
@@ -397,3 +410,7 @@ Stufe 1 liefert mit Zählern und Übersicht schon im ersten Monat Alltagsnutzen;
 - [x] OCR: im Handy ohne Cloud, nur als Vorschlag (entschieden 24.10.2026)
 - [x] Kontakte: als Wohnpilot-Notizen, nicht aus dem Nextcloud-Adressbuch (entschieden 24.10.2026)
 - [x] Offline: Lesen aus dem Cache; Ablesungen, Haken und Mängel mit Foto in der Warteschlange (entschieden 24.10.2026)
+- [x] Nebenkosten: Betriebskosten vom Vermieter, Heizkosten getrennt vom Messdienst (entschieden 24.10.2026)
+- [x] Kiosk: Tablet an der Wand, darf abhaken, eigene Geräte-Kopplung (entschieden 24.10.2026)
+- [x] Steuer-Export: druckbare Übersicht (PDF aus dem Browser) und CSV (entschieden 24.10.2026)
+- [x] Bear Cave: keine Zahl auf der Kachel (entschieden 24.10.2026)

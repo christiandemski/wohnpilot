@@ -104,6 +104,9 @@ final class NextcloudLiveTest extends TestCase
             'knowledge place' => ['objekte/efh-musterstrasse/wissen/haupthahn.md'],
             'knowledge how-to' => ['objekte/efh-musterstrasse/wissen/heizung-umstellen.md'],
             'emergency steps' => ['objekte/efh-musterstrasse/wissen/notfall-wasser.md'],
+            // stage 5
+            'utility statement' => ['objekte/efh-musterstrasse/nebenkosten/betriebskosten-2025.md'],
+            'heating statement' => ['objekte/efh-musterstrasse/nebenkosten/heizkosten-2025.md'],
         ];
     }
 
@@ -228,6 +231,23 @@ final class NextcloudLiveTest extends TestCase
             $dav = new \GuzzleHttp\Client(['base_uri' => rtrim($_ENV['NEXTCLOUD_URL'], '/') . NextcloudFiles::DAV_PATH, 'auth' => [$_ENV['NEXTCLOUD_USER'], $_ENV['NEXTCLOUD_APP_PASSWORD']], 'http_errors' => false]);
             $dav->request('DELETE', implode('/', array_map('rawurlencode', [$settings['notesPath'], $_ENV['NEXTCLOUD_FOLDER'] ?? 'Wohnpilot', 'anhaenge', $dir])));
         }
+    }
+
+    public function testDeleteOnlyAtTheVersionSeen(): void
+    {
+        $path = $this->track('_test/' . bin2hex(random_bytes(3)) . '/loeschen.md');
+        $first = $this->adapter->create($path, "---\ntyp: test\nid: loeschen\n---\nEins\n");
+        $second = $this->adapter->update($path, "---\ntyp: test\nid: loeschen\n---\nZwei\n", $first->etag);
+
+        try {
+            $this->adapter->delete($path, $first->etag);
+            self::fail('deleted a version nobody saw');
+        } catch (ConflictException $e) {
+            self::assertSame($second->etag, $e->current->etag);
+        }
+        $this->adapter->delete($path, $second->etag);
+        $this->expectException(NotFoundException::class);
+        $this->adapter->get($path);
     }
 
     private function track(string $path): string

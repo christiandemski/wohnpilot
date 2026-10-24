@@ -2,7 +2,7 @@
 
 Selbst gehostete PWA für alle haushaltsrelevanten Daten eines Mietobjekts. Die Daten liegen als Markdown-Notizen in der eigenen Nextcloud. Konzept: [`docs/konzept.md`](docs/konzept.md), Designsystem: [`docs/design/README.md`](docs/design/README.md), Regeln für die Arbeit am Code: [`CLAUDE.md`](CLAUDE.md).
 
-Stand: **Ausbaustufe 4** – Wissen und Komfort: Kontakte, Wissen und Notfallblatt, Suche, QR-Aufkleber, Zählerstand per Foto (OCR im Handy), offline ablesen und abhaken, Eingang zum Teilen von Fotos, PDFs und Texten (auf Stufe 1: Zähler, Stufe 2: Fristen und Verträge, Stufe 3: Haus im Griff).
+Stand: **Ausbaustufe 5** – Auswertung: Nebenkostenabrechnungen mit Vorjahresvergleich und Fristen, Jahresbericht mit § 35a-Liste (PDF und CSV), Kiosk-Tafel fürs Tablet an der Wand, Löschen von Einträgen (davor Stufe 1: Zähler, 2: Fristen und Verträge, 3: Haus im Griff, 4: Wissen und Komfort).
 
 ## Aufbau
 
@@ -37,7 +37,7 @@ cd frontend && npm install && npm run dev                               # App au
 ```sh
 cd backend && composer test        # Parser, Berechnungen, Adapter, API
 cd backend && composer test-live   # gegen die echte Nextcloud aus .env (legt Notizen unter Wohnpilot/_test an und löscht sie)
-cd frontend && npm test            # Zahlenformat, Rollenzähler, Plausibilität, Texte, OCR-Auswahl, Warteschlange, Aufkleber
+cd frontend && npm test            # Zahlenformat, Rollenzähler, Plausibilität, Texte, OCR-Auswahl, Warteschlange, Aufkleber, Nebenkosten, Bericht, Kiosk
 cd frontend && npm run check       # Svelte- und TypeScript-Prüfung
 ```
 
@@ -88,7 +88,9 @@ In Plesk (Git bei `wohnpilot.codekorb.de`):
 
 Den Kalender-Feed unter `/api/calendar/…` holen Kalender-Apps ohne Anmeldung ab. Schalte deshalb keinen BearID-Guard (`protect.php`) vor die ganze Subdomain; Wohnpilot prüft die Anmeldung selbst.
 
-Bei späteren Updates nur `public/`, `src/`, `bin/`, `vendor/` und `composer.*` ersetzen; `.env` und `var/` bleiben. Ins Backup gehören `var/accounts.sqlite` (Notzugang) und `var/settings.sqlite` (Kalender-Links, Push-Abos, Idempotenz-Schlüssel der letzten 7 Tage). `var/cache/` (Abfuhrkalender) und `var/index.sqlite` sind nur Cache. Fotos und PDFs liegen in der Nextcloud unter `Wohnpilot/anhaenge/`.
+Bei späteren Updates nur `public/`, `src/`, `bin/`, `vendor/` und `composer.*` ersetzen; `.env` und `var/` bleiben. Ins Backup gehören `var/accounts.sqlite` (Notzugang) und `var/settings.sqlite` (Kalender-Links, Push-Abos, gekoppelte Kiosk-Tablets, Idempotenz-Schlüssel der letzten 7 Tage). `var/cache/` (Abfuhrkalender) und `var/index.sqlite` sind nur Cache. Fotos und PDFs liegen in der Nextcloud unter `Wohnpilot/anhaenge/`.
+
+Kiosk-Tablet: In Wohnpilot unter Mehr › Kiosk-Tablet einen Code erzeugen, auf dem Tablet `https://wohnpilot.codekorb.de/kiosk` öffnen und den Code eingeben; danach am besten „Zum Startbildschirm hinzufügen“ (ein gekoppeltes Tablet startet direkt auf der Tafel) und in den Tablet-Einstellungen das automatische Sperren aus.
 
 Teilen aus anderen Apps (Android) und der Offline-Cache brauchen den Service Worker, also HTTPS. Auf Android einmal „Zum Startbildschirm hinzufügen“, danach steht Wohnpilot im Teilen-Menü. Für den Upload großer PDFs sollten `upload_max_filesize` und `post_max_size` in PHP mindestens 20 MB sein.
 
