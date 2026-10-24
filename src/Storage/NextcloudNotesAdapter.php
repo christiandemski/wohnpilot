@@ -126,10 +126,16 @@ final class NextcloudNotesAdapter implements StorageAdapter
         return $this->toStored($path, $note);
     }
 
-    /** Not part of StorageAdapter yet; used to clean up after live tests. */
-    public function delete(string $path): void
+    /** Nextcloud keeps the deleted note in its trash bin (if the trash app is on). */
+    public function delete(string $path, ?string $etag = null): void
     {
         $id = $this->idOf($path) ?? throw NotFoundException::forPath($path);
+        if ($etag !== null) {
+            $current = $this->get($path);
+            if (trim($current->etag, '"') !== trim($etag, '"')) {
+                throw new ConflictException($current);
+            }
+        }
         $this->request('DELETE', "notes/$id");
         unset($this->ids[$path]);
     }

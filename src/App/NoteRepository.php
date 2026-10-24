@@ -59,6 +59,23 @@ final class NoteRepository
         return $stored;
     }
 
+    /**
+     * Deletes the note if it is still at $etag; else the newer version goes
+     * into the index and the conflict is reported.
+     */
+    public function delete(string $path, string $etag): void
+    {
+        try {
+            $this->storage->delete($path, $etag);
+        } catch (ConflictException $e) {
+            $this->index->put($e->current);
+            throw new AppException('conflict', 409, 'Changed elsewhere');
+        } catch (NotFoundException) {
+            // Already gone: what was wanted
+        }
+        $this->index->remove($path);
+    }
+
     /** @throws ConflictException if the note changed since $etag */
     public function update(string $path, NoteDocument $note, string $etag): StoredNote
     {

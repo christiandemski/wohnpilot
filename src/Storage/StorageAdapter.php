@@ -32,4 +32,12 @@ interface StorageAdapter
      * @throws NotFoundException
      */
     public function update(string $path, string $content, string $etag): StoredNote;
+
+    /**
+     * Deletes a note. With $etag only if it is still that version.
+     *
+     * @throws ConflictException if the note changed since $etag
+     * @throws NotFoundException
+     */
+    public function delete(string $path, ?string $etag = null): void;
 }
