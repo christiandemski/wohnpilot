@@ -40,7 +40,12 @@ final class KnowledgeApiTest extends ApiTestCase
         $landlord = self::decode($this->request('GET', '/api/contacts/vermieter'));
         self::assertSame('+491701234567', $landlord['mobile'], 'the plus stays');
         self::assertSame(
-            [['mangel', 'fenster-schlafzimmer', 'Fenster im Schlafzimmer zieht'], ['mietvertrag', 'mietvertrag-efh-musterstrasse', 'Mietvertrag']],
+            [
+                ['mangel', 'fenster-schlafzimmer', 'Fenster im Schlafzimmer zieht'],
+                ['mietvertrag', 'mietvertrag-efh-musterstrasse', 'Mietvertrag'],
+                ['nebenkosten', 'betriebskosten-2024', 'Betriebskosten 2024'],
+                ['nebenkosten', 'betriebskosten-2025', 'Betriebskosten 2025'],
+            ],
             array_map(static fn (array $u): array => [$u['type'], $u['id'], $u['title']], $landlord['usedIn']),
         );
         self::assertSame([['vertrag', 'strom-stadtwerke', 'Stadtwerke']], array_map(static fn (array $u): array => array_values($u), self::decode($this->request('GET', '/api/contacts/stadtwerke-stoerung'))['usedIn']));

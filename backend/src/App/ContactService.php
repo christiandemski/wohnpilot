@@ -124,7 +124,11 @@ final class ContactService
                 $used[] = [
                     'type' => (string) $fm->get('typ', ''),
                     'id' => (string) $fm->get('id', ''),
-                    'title' => $fm->get('typ') === 'mietvertrag' ? 'Mietvertrag' : (string) ($fm->get('titel') ?? $fm->get('name') ?? $fm->get('bezeichnung') ?? $fm->get('anbieter') ?? $fm->get('id', '')),
+                    'title' => match ($fm->get('typ')) {
+                        'mietvertrag' => 'Mietvertrag',
+                        'nebenkosten' => ($fm->get('art') === 'heizkosten' ? 'Heizkosten ' : 'Betriebskosten ') . substr((string) $fm->get('bis', ''), 0, 4),
+                        default => (string) ($fm->get('titel') ?? $fm->get('name') ?? $fm->get('bezeichnung') ?? $fm->get('anbieter') ?? $fm->get('id', '')),
+                    },
                 ];
             }
         }
