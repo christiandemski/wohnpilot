@@ -8,17 +8,21 @@ use RuntimeException;
 use Wohnpilot\App\AgendaService;
 use Wohnpilot\App\AppointmentService;
 use Wohnpilot\App\Clock;
+use Wohnpilot\App\ContactService;
 use Wohnpilot\App\ContractService;
 use Wohnpilot\App\DeadlineService;
 use Wohnpilot\App\DefectService;
 use Wohnpilot\App\DeviceService;
+use Wohnpilot\App\DocumentService;
 use Wohnpilot\App\HouseholdService;
+use Wohnpilot\App\KnowledgeService;
 use Wohnpilot\App\LeaseService;
 use Wohnpilot\App\MaintenanceService;
 use Wohnpilot\App\MeterService;
 use Wohnpilot\App\NoteRepository;
 use Wohnpilot\App\ObjectNotes;
 use Wohnpilot\App\PhotoService;
+use Wohnpilot\App\SearchService;
 use Wohnpilot\App\SettingsService;
 use Wohnpilot\App\WasteService;
 use Wohnpilot\Auth\AccountStore;
@@ -30,6 +34,7 @@ use Wohnpilot\Auth\Session;
 use Wohnpilot\Calendar\CalendarFetcher;
 use Wohnpilot\Calendar\CalendarLinks;
 use Wohnpilot\Calendar\IcsFeed;
+use Wohnpilot\Http\IdempotencyStore;
 use Wohnpilot\Index\NoteIndex;
 use Wohnpilot\Push\MorningPush;
 use Wohnpilot\Push\PushSender;
@@ -78,6 +83,32 @@ class Services
             $storage,
             $this->config->get('NEXTCLOUD_FOLDER', 'Wohnpilot'),
         );
+    }
+
+    public function documents(): DocumentService
+    {
+        return $this->instances[__FUNCTION__] ??= new DocumentService($this->notes(), $this->files(), $this->clock());
+    }
+
+    public function contacts(): ContactService
+    {
+        return $this->instances[__FUNCTION__] ??= new ContactService($this->notes(), $this->household());
+    }
+
+    public function knowledge(): KnowledgeService
+    {
+        return $this->instances[__FUNCTION__] ??= new KnowledgeService($this->notes(), $this->objectNotes(), $this->contacts());
+    }
+
+    public function search(): SearchService
+    {
+        return $this->instances[__FUNCTION__] ??= new SearchService($this->notes(), $this->household());
+    }
+
+    /** Answers to repeated writes of the offline queue (settings file, not a cache). */
+    public function idempotency(): IdempotencyStore
+    {
+        return $this->instances[__FUNCTION__] ??= IdempotencyStore::open($this->path($this->config->get('SETTINGS_FILE', 'var/settings.sqlite')));
     }
 
     public function photos(): PhotoService

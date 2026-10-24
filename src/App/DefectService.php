@@ -176,6 +176,7 @@ final class DefectService
             ->bool('kleinreparatur')
             ->number('kosten_eur')
             ->date('nachfassen')
+            ->slug('kontakt')
             ->fields();
     }
 }

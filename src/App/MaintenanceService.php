@@ -185,7 +185,8 @@ final class MaintenanceService
             ->string('raum')
             ->int('vorlauf_tage', 0, 365)
             ->string('pflicht')
-            ->slugList('bezieht_sich_auf');
+            ->slugList('bezieht_sich_auf')
+            ->slug('kontakt');
         if ($check->value('intervall_monate') !== null && $check->value('intervall_wochen') !== null) {
             $check->error('intervall_wochen', 'one_of');
         }

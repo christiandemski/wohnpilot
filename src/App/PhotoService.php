@@ -20,7 +20,7 @@ use Wohnpilot\Storage\StoredNote;
 final class PhotoService
 {
     /** Note type => folder below anhaenge/ */
-    public const TYPES = ['mangel' => 'maengel', 'geraet' => 'geraete', 'wartung' => 'wartung'];
+    public const TYPES = ['mangel' => 'maengel', 'geraet' => 'geraete', 'wartung' => 'wartung', 'wissen' => 'wissen'];
     public const MAX_BYTES = 10 * 1024 * 1024;
     private const SIGNATURES = ['jpg' => "\xFF\xD8\xFF", 'png' => "\x89PNG\r\n\x1A\n"];
 
@@ -41,7 +41,7 @@ final class PhotoService
         $text = NoteDocument::parse($stored->content)->body()->text();
         return array_values(array_map(
             static fn (array $image): array => ['path' => $image['path'], 'alt' => $image['alt'], 'url' => '/api/files/' . implode('/', array_map('rawurlencode', explode('/', $image['path'])))],
-            array_filter(NoteImages::in($text, NotePath::folder($stored->path)), static fn (array $image): bool => AttachmentPath::type($image['path']) !== null),
+            array_filter(NoteImages::in($text, NotePath::folder($stored->path)), static fn (array $image): bool => str_starts_with((string) AttachmentPath::type($image['path']), 'image/')),
         ));
     }
 
@@ -96,7 +96,7 @@ final class PhotoService
         return self::of($stored);
     }
 
-    /** @return array{string, string} bytes and media type of a photo some note shows */
+    /** @return array{string, string} bytes and media type of a photo or document */
     public function file(string $path): array
     {
         try {

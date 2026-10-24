@@ -41,6 +41,12 @@ final class NoteRepository
         return $this->index->byType($typ, $objekt);
     }
 
+    /** @return list<StoredNote> */
+    public function all(): array
+    {
+        return $this->index->all();
+    }
+
     public function exists(string $path): bool
     {
         return $this->index->get($path) !== null;
@@ -103,15 +109,29 @@ final class NoteRepository
      *
      * @param array<string, mixed> $changes
      * @param array<string, mixed> $original
+     * The text below the frontmatter can change in the same write: $text is
+     * ['mine' => new text, 'original' => the text the client saw]. It
+     * conflicts only if it changed elsewhere too (field "text").
+     *
      * @param (callable(StoredNote): array)|null $describe adds the current data to a conflict answer
+     * @param array{mine: string, original: string}|null $text
      * @throws AppException conflict, with the conflicting fields
      */
-    public function updateFields(StoredNote $stored, array $changes, array $original, string $etag, string $by, ?callable $describe = null): StoredNote
+    public function updateFields(StoredNote $stored, array $changes, array $original, string $etag, string $by, ?callable $describe = null, ?array $text = null): StoredNote
     {
         for ($attempt = 0; $attempt < self::MAX_RETRIES; $attempt++) {
             $current = $attempt === 0 && $stored->etag === $etag ? $stored : $this->load($stored->path);
             $note = NoteDocument::parse($current->content);
             $conflicts = FieldMerge::apply($note->frontmatter(), $changes, $original);
+            if ($text !== null) {
+                $theirs = $note->body()->toString();
+                $same = static fn (string $a, string $b): bool => rtrim($a) === rtrim($b);
+                if (!$same($theirs, $text['mine']) && !$same($theirs, $text['original'])) {
+                    $conflicts['text'] = ['mine' => $text['mine'], 'theirs' => $theirs];
+                } elseif (!$same($theirs, $text['mine'])) {
+                    $note = self::withBody($note, $text['mine']);
+                }
+            }
             if ($conflicts !== []) {
                 $details = ['fields' => $conflicts] + ($describe === null ? [] : ['current' => $describe($current)]);
                 throw new AppException('conflict', 409, 'Changed elsewhere', $details);
@@ -124,6 +144,17 @@ final class NoteRepository
             }
         }
         throw new AppException('conflict', 409, 'Changed elsewhere');
+    }
+
+    /** The same note with another text below the frontmatter (ending with a line break). */
+    public static function withBody(NoteDocument $note, string $body): NoteDocument
+    {
+        $all = $note->toString();
+        $head = substr($all, 0, strlen($all) - strlen($note->body()->toString()));
+        $body = str_replace(["\r\n", "\r"], "\n", $body);
+        $body = $note->eol() === "\n" ? $body : str_replace("\n", $note->eol(), $body);
+        $body = rtrim($body) === '' ? '' : rtrim($body) . $note->eol();
+        return NoteDocument::parse($head . $body);
     }
 
     /** Fresh version from storage, bypassing the cache. */

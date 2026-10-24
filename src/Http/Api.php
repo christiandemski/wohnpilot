@@ -327,6 +327,52 @@ final class Api
             $api->get('/settings', fn (Request $r, Response $response) => self::json($response, $services->settings()->get()));
             $api->put('/settings', fn (Request $request, Response $response) => self::json($response, $services->settings()->save(self::body($request), self::user($request))));
 
+            // Contacts, with where they are used, and as vCard for the phone
+            $api->get('/contacts', fn (Request $r, Response $response) => self::json($response, ['contacts' => $services->contacts()->list()]));
+            $api->post('/contacts', fn (Request $request, Response $response) => self::json($response, $services->contacts()->create(self::body($request), self::user($request)), 201));
+            $api->get('/contacts/{id}', fn (Request $r, Response $response, array $args) => self::json($response, $services->contacts()->detail($args['id'])));
+            $api->put('/contacts/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                [$changes, $original, $etag] = self::merge($request);
+                return self::json($response, $services->contacts()->update($args['id'], $changes, $original, $etag, self::user($request)));
+            });
+            $api->get('/contacts/{id}/vcard', function (Request $r, Response $response, array $args) use ($services): Response {
+                [$card, $name] = $services->contacts()->vcard($args['id']);
+                $response->getBody()->write($card);
+                return $response->withHeader('Content-Type', 'text/vcard; charset=utf-8')->withHeader('Content-Disposition', 'attachment; filename="' . $name . '"');
+            });
+
+            // Knowledge pages and the emergency sheet
+            $api->get('/knowledge', fn (Request $r, Response $response) => self::json($response, ['pages' => $services->knowledge()->list()]));
+            $api->post('/knowledge', fn (Request $request, Response $response) => self::json($response, $services->knowledge()->create(self::body($request), self::user($request)), 201));
+            $api->get('/knowledge/{id}', fn (Request $r, Response $response, array $args) => self::json($response, $services->knowledge()->detail($args['id'])));
+            $api->put('/knowledge/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                [$changes, $original, $etag] = self::merge($request);
+                return self::json($response, $services->knowledge()->update($args['id'], $changes, $original, $etag, self::user($request)));
+            });
+            $api->get('/emergency', fn (Request $r, Response $response) => self::json($response, ['scenarios' => $services->knowledge()->emergency()]));
+
+            $api->get('/search', function (Request $request, Response $response) use ($services): Response {
+                $query = $request->getQueryParams();
+                $type = isset($query['typ']) && is_string($query['typ']) && $query['typ'] !== '' ? $query['typ'] : null;
+                return self::json($response, ['results' => $services->search()->search((string) ($query['q'] ?? ''), $type)]);
+            });
+
+            // Documents (PDF), e.g. a letter shared from the phone
+            $api->post('/documents/{type}/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                $file = $request->getUploadedFiles()['dokument'] ?? null;
+                if (!$file instanceof UploadedFileInterface || $file->getError() !== UPLOAD_ERR_OK) {
+                    $tooLarge = $file instanceof UploadedFileInterface && in_array($file->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true);
+                    throw AppException::validation(['dokument' => $tooLarge ? 'too_large' : 'required']);
+                }
+                $title = (string) (((array) $request->getParsedBody())['titel'] ?? pathinfo((string) $file->getClientFilename(), PATHINFO_FILENAME));
+                $documents = $services->documents()->add($args['type'], $args['id'], (string) $file->getStream(), $title, self::user($request));
+                return self::json($response, ['documents' => $documents], 201);
+            });
+            $api->delete('/documents/{type}/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                $path = (string) ($request->getQueryParams()['path'] ?? '');
+                return self::json($response, ['documents' => $services->documents()->remove($args['type'], $args['id'], $path, self::user($request))]);
+            });
+
             // Photos of defects, devices and maintenance tasks
             $api->post('/photos/{type}/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
                 $file = $request->getUploadedFiles()['foto'] ?? null;
@@ -345,6 +391,9 @@ final class Api
             $api->get('/files/{path:.+}', function (Request $request, Response $response, array $args) use ($services): Response {
                 [$bytes, $type] = $services->photos()->file(rawurldecode($args['path']));
                 $response->getBody()->write($bytes);
+                if ($type === 'application/pdf') {
+                    $response = $response->withHeader('Content-Disposition', 'inline; filename="' . basename(rawurldecode($args['path'])) . '"');
+                }
                 return $response
                     ->withHeader('Content-Type', $type)
                     ->withHeader('Cache-Control', 'private, max-age=86400')
@@ -355,6 +404,24 @@ final class Api
                 $services->notes()->refresh(true);
                 return $response->withStatus(204);
             });
+        })->add(function (Request $request, Handler $handler) use ($services): Response {
+            // A write sent again with the same Idempotency-Key gets the first answer (offline queue).
+            $key = trim($request->getHeaderLine('Idempotency-Key'));
+            if ($key === '' || in_array($request->getMethod(), ['GET', 'HEAD', 'OPTIONS'], true) || strlen($key) > 100) {
+                return $handler->handle($request);
+            }
+            $key = self::user($request)->id . ':' . $request->getMethod() . ':' . $request->getUri()->getPath() . ':' . $key;
+            $earlier = $services->idempotency()->find($key);
+            if ($earlier !== null) {
+                $response = (new \Slim\Psr7\Response($earlier['status']))->withHeader('Content-Type', $earlier['contentType'])->withHeader('Idempotent-Replay', 'true');
+                $response->getBody()->write($earlier['body']);
+                return $response;
+            }
+            $response = $handler->handle($request);
+            if ($response->getStatusCode() < 300) {
+                $services->idempotency()->save($key, $response->getStatusCode(), $response->getHeaderLine('Content-Type'), (string) $response->getBody());
+            }
+            return $response;
         })->add(function (Request $request, Handler $handler) use ($services): Response {
             $identity = $services->session()->get('identity');
             $identity = is_array($identity) ? Identity::fromArray($identity) : null;
