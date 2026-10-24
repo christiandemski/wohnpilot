@@ -47,6 +47,16 @@ const routes: [string, string][] = [
   ['geraet-detail', '/geraete/:id'],
   ['geraet-bearbeiten', '/geraete/:id/bearbeiten'],
   ['einstellungen', '/einstellungen'],
+  ['kontakte', '/kontakte'],
+  ['kontakt-neu', '/kontakte/neu'],
+  ['kontakt-detail', '/kontakte/:id'],
+  ['kontakt-bearbeiten', '/kontakte/:id/bearbeiten'],
+  ['wissen', '/wissen'],
+  ['wissen-neu', '/wissen/neu'],
+  ['wissen-detail', '/wissen/:id'],
+  ['wissen-bearbeiten', '/wissen/:id/bearbeiten'],
+  ['notfall', '/notfall'],
+  ['suche', '/suche'],
   ['mehr', '/mehr'],
 ]
 

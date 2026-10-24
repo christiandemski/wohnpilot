@@ -106,7 +106,8 @@ final class AppointmentService
             ->time('uhrzeit')
             ->time('bis')
             ->string('ort')
-            ->slugList('bezieht_sich_auf');
+            ->slugList('bezieht_sich_auf')
+            ->slug('kontakt');
         if (is_string($from = $check->value('uhrzeit')) && is_string($to = $check->value('bis')) && $to <= $from) {
             $check->error('bis', 'after_start');
         }

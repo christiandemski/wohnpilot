@@ -189,7 +189,8 @@ final class LeaseService
             ->number('kaltmiete_eur')
             ->number('nebenkosten_eur')
             ->int('kuendigungsfrist_monate', 1, 24)
-            ->string('paperless');
+            ->string('paperless')
+            ->slug('kontakt');
 
         if (array_key_exists('kaution', $input)) {
             $deposit = is_array($input['kaution']) ? $input['kaution'] : [];

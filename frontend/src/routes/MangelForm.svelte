@@ -7,6 +7,7 @@
   import { router } from '../lib/router.svelte'
   import type { DefectDetail, ObjectData } from '../lib/types'
   import ConflictPanel from '../components/ConflictPanel.svelte'
+  import ContactPicker from '../components/ContactPicker.svelte'
   import PageHeader from '../components/PageHeader.svelte'
 
   /** Report a defect (no id; photos come on the next page) or change its data. */
@@ -14,7 +15,7 @@
 
   const LABELS: Record<string, string> = { titel: 'Was', raum: 'Raum', zustaendig: 'Zuständig', kleinreparatur: 'Kleinreparatur', kosten_eur: 'Kosten', nachfassen: 'Nachfassen' }
 
-  const blank = { titel: '', raum: '', zustaendig: 'vermieter', klein: false, kosten: '', nachfassen: '', entdeckt: todayIso(), notiz: '' }
+  const blank = { kontakt: '', titel: '', raum: '', zustaendig: 'vermieter', klein: false, kosten: '', nachfassen: '', entdeckt: todayIso(), notiz: '' }
   type Form = typeof blank
 
   let form = $state<Form>({ ...blank })
@@ -31,6 +32,7 @@
         const d = await api.get<DefectDetail>(`/defects/${encodeURIComponent(id)}`)
         form = {
           ...blank,
+          kontakt: (typeof d.fields.kontakt === 'string' ? d.fields.kontakt : ''),
           titel: d.fields.titel,
           raum: d.fields.raum ?? '',
           zustaendig: d.fields.zustaendig ?? 'vermieter',
@@ -54,6 +56,7 @@
       titel: textField(f.titel),
       raum: f.raum || null,
       zustaendig: f.zustaendig,
+      kontakt: f.kontakt || null,
       kleinreparatur: f.klein ? true : null,
       kosten_eur: numberField(f.kosten),
       nachfassen: textField(f.nachfassen),
@@ -146,6 +149,10 @@
         </div>
       </div>
     {/if}
+
+    <div class="card fields">
+      <ContactPicker bind:value={form.kontakt} label="Wer kümmert sich?" />
+    </div>
 
     {#if edit.error}<p class="save-error" role="alert">{edit.error.text}</p>{/if}
     <button type="submit" class="btn btn-primary btn-large" disabled={edit.saving}>

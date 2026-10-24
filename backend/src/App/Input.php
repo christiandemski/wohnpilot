@@ -79,6 +79,12 @@ final class Input
         });
     }
 
+    /** One note id, e.g. `kontakt`. */
+    public function slug(string $key): self
+    {
+        return $this->check($key, false, static fn (mixed $v): array => is_string($v) && Slug::isValid(trim($v)) ? [trim($v), null] : [null, 'id']);
+    }
+
     /** A list of note ids, e.g. `bezieht_sich_auf`. */
     public function slugList(string $key): self
     {

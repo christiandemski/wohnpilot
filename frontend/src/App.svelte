@@ -37,6 +37,14 @@
   import GeraetDetail from './routes/GeraetDetail.svelte'
   import GeraetForm from './routes/GeraetForm.svelte'
   import Einstellungen from './routes/Einstellungen.svelte'
+  import Kontakte from './routes/Kontakte.svelte'
+  import KontaktDetail from './routes/KontaktDetail.svelte'
+  import KontaktForm from './routes/KontaktForm.svelte'
+  import Wissen from './routes/Wissen.svelte'
+  import WissenDetail from './routes/WissenDetail.svelte'
+  import WissenForm from './routes/WissenForm.svelte'
+  import Notfall from './routes/Notfall.svelte'
+  import Suche from './routes/Suche.svelte'
 
   theme.apply()
 
@@ -142,6 +150,26 @@
           <GeraetForm id={router.current.params.id} />
         {:else if router.current.name === 'einstellungen'}
           <Einstellungen />
+        {:else if router.current.name === 'kontakte'}
+          <Kontakte />
+        {:else if router.current.name === 'kontakt-neu'}
+          <KontaktForm />
+        {:else if router.current.name === 'kontakt-detail'}
+          <KontaktDetail id={router.current.params.id} />
+        {:else if router.current.name === 'kontakt-bearbeiten'}
+          <KontaktForm id={router.current.params.id} />
+        {:else if router.current.name === 'wissen'}
+          <Wissen />
+        {:else if router.current.name === 'wissen-neu'}
+          <WissenForm />
+        {:else if router.current.name === 'wissen-detail'}
+          <WissenDetail id={router.current.params.id} />
+        {:else if router.current.name === 'wissen-bearbeiten'}
+          <WissenForm id={router.current.params.id} />
+        {:else if router.current.name === 'notfall'}
+          <Notfall />
+        {:else if router.current.name === 'suche'}
+          <Suche />
         {:else if router.current.name === 'mehr'}
           <Mehr {user} />
         {:else}

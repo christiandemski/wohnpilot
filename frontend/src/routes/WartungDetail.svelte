@@ -6,6 +6,7 @@
   import { EXECUTIONS, RESPONSIBLE, intervalText, maintenanceChip, seasonText } from '../lib/house'
   import { roomName } from '../lib/meters'
   import type { DeviceSummary, MaintenanceDetail } from '../lib/types'
+  import ContactLine from '../components/ContactLine.svelte'
   import LoadState from '../components/LoadState.svelte'
   import PageHeader from '../components/PageHeader.svelte'
   import PhotoGallery from '../components/PhotoGallery.svelte'
@@ -146,6 +147,7 @@
     <div class="stack">
       <section class="card stack" aria-labelledby="aufgabe">
         <h2 id="aufgabe" class="section-title">Aufgabe</h2>
+        {#if typeof t.fields.kontakt === 'string'}<ContactLine id={t.fields.kontakt} />{/if}
         <dl class="fact-list">
           <div><dt>Intervall</dt><dd>{intervalText(t.fields.intervall_monate, t.fields.intervall_wochen) || '–'}</dd></div>
           {#if t.fields.saison}<div><dt>Saison</dt><dd>{seasonText(t.fields.saison)}</dd></div>{/if}

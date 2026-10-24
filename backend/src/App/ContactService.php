@@ -124,7 +124,7 @@ final class ContactService
                 $used[] = [
                     'type' => (string) $fm->get('typ', ''),
                     'id' => (string) $fm->get('id', ''),
-                    'title' => (string) ($fm->get('titel') ?? $fm->get('name') ?? $fm->get('bezeichnung') ?? $fm->get('anbieter') ?? $fm->get('id', '')),
+                    'title' => $fm->get('typ') === 'mietvertrag' ? 'Mietvertrag' : (string) ($fm->get('titel') ?? $fm->get('name') ?? $fm->get('bezeichnung') ?? $fm->get('anbieter') ?? $fm->get('id', '')),
                 ];
             }
         }

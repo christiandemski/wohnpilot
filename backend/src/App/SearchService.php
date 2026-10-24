@@ -88,10 +88,13 @@ final class SearchService
         return implode(' · ', $parts);
     }
 
-    /** Some words around the first hit in the text, else in the fields. */
+    /** Some words around the first hit in the text, else the start of the text, else the hit in the fields. */
     private static function snippet(string $text, string $fields, string $term): string
     {
         $plain = trim((string) preg_replace(['/!\[[^\]]*\]\([^)]*\)/u', '/\[([^\]]*)\]\([^)]*\)/u', '/[|#*_`>-]+/u', '/\s+/u'], ['', '$1', ' ', ' '], $text));
+        if ($plain !== '' && self::find(mb_str_split($plain), $term) === null) {
+            return mb_substr($plain, 0, 140) . (mb_strlen($plain) > 140 ? ' …' : '');
+        }
         foreach ([$plain, $fields] as $source) {
             $chars = mb_str_split($source);
             $at = self::find($chars, $term);
@@ -101,7 +104,7 @@ final class SearchService
                 return ($start > 0 ? '… ' : '') . trim($piece) . ($start + 140 < count($chars) ? ' …' : '');
             }
         }
-        return mb_substr($plain, 0, 140);
+        return mb_substr($plain, 0, 140) . (mb_strlen($plain) > 140 ? ' …' : '');
     }
 
     /** Position of $term in the characters, comparing normalized letter by letter (ß → ss is two). */

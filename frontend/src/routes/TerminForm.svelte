@@ -4,13 +4,14 @@
   import { router } from '../lib/router.svelte'
   import type { Appointment, DeviceSummary, MaintenanceDetail } from '../lib/types'
   import ConflictPanel from '../components/ConflictPanel.svelte'
+  import ContactPicker from '../components/ContactPicker.svelte'
   import PageHeader from '../components/PageHeader.svelte'
 
   /** New appointment (no id) or its data. */
   let { id = null }: { id?: string | null } = $props()
 
   const LABELS: Record<string, string> = { titel: 'Was', datum: 'Tag', uhrzeit: 'Uhrzeit', bis: 'Bis', ort: 'Wo', bezieht_sich_auf: 'Gerät' }
-  const blank = { titel: '', datum: '', uhrzeit: '', bis: '', ort: '', geraete: [] as string[] }
+  const blank = { kontakt: '', titel: '', datum: '', uhrzeit: '', bis: '', ort: '', geraete: [] as string[] }
   type Form = typeof blank
 
   let form = $state<Form>({ ...blank, geraete: [] })
@@ -25,7 +26,7 @@
       devices = (await api.get<{ devices: DeviceSummary[] }>('/devices')).devices
       if (id) {
         const a = await api.get<Appointment>(`/appointments/${encodeURIComponent(id)}`)
-        form = { titel: a.fields.titel, datum: a.fields.datum, uhrzeit: a.fields.uhrzeit ?? '', bis: a.fields.bis ?? '', ort: a.fields.ort ?? '', geraete: a.fields.bezieht_sich_auf ?? [] }
+        form = { kontakt: (typeof a.fields.kontakt === 'string' ? a.fields.kontakt : ''), titel: a.fields.titel, datum: a.fields.datum, uhrzeit: a.fields.uhrzeit ?? '', bis: a.fields.bis ?? '', ort: a.fields.ort ?? '', geraete: a.fields.bezieht_sich_auf ?? [] }
         edit.loaded(payload(form), a.etag)
       } else if (router.query.get('wartung')) {
         // From a task done by a service: its title and devices
@@ -49,6 +50,7 @@
       uhrzeit: textField(f.uhrzeit),
       bis: textField(f.bis),
       ort: textField(f.ort),
+      kontakt: f.kontakt || null,
       bezieht_sich_auf: f.geraete.length ? f.geraete : null,
     }
   }
@@ -123,6 +125,10 @@
         </div>
       </fieldset>
     {/if}
+
+    <div class="card fields">
+      <ContactPicker bind:value={form.kontakt} label="Wer kommt?" />
+    </div>
 
     {#if edit.error}<p class="save-error" role="alert">{edit.error.text}</p>{/if}
     <button type="submit" class="btn btn-primary btn-large" disabled={edit.saving}>

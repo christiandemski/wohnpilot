@@ -4,6 +4,7 @@
   import { Resource } from '../lib/resource.svelte'
   import { days, formatLongDay } from '../lib/format'
   import type { Appointment, DeviceSummary } from '../lib/types'
+  import ContactLine from '../components/ContactLine.svelte'
   import LoadState from '../components/LoadState.svelte'
   import PageHeader from '../components/PageHeader.svelte'
   import StatusChip from '../components/StatusChip.svelte'
@@ -40,6 +41,7 @@
   </header>
 
   <section class="card stack" aria-label="Angaben">
+    {#if typeof a.fields.kontakt === 'string'}<ContactLine id={a.fields.kontakt} />{/if}
     <dl class="fact-list">
       {#if a.fields.ort}<div><dt>Wo</dt><dd>{a.fields.ort}</dd></div>{/if}
       {#if a.fields.bezieht_sich_auf?.length}

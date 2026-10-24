@@ -185,7 +185,8 @@ final class ContractService
             ->string('paperless')
             ->number('versicherungssumme_eur')
             ->number('selbstbeteiligung_eur')
-            ->slugList('bezieht_sich_auf');
+            ->slugList('bezieht_sich_auf')
+            ->slug('kontakt');
 
         // One notice period; the form sends the other one as null to remove it.
         if ($check->value('kuendigungsfrist_wochen') !== null && $check->value('kuendigungsfrist_monate') !== null) {

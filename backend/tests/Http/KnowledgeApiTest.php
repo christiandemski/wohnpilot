@@ -40,8 +40,8 @@ final class KnowledgeApiTest extends ApiTestCase
         $landlord = self::decode($this->request('GET', '/api/contacts/vermieter'));
         self::assertSame('+491701234567', $landlord['mobile'], 'the plus stays');
         self::assertSame(
-            [['mangel', 'fenster-schlafzimmer'], ['mietvertrag', 'mietvertrag-efh-musterstrasse']],
-            array_map(static fn (array $u): array => [$u['type'], $u['id']], $landlord['usedIn']),
+            [['mangel', 'fenster-schlafzimmer', 'Fenster im Schlafzimmer zieht'], ['mietvertrag', 'mietvertrag-efh-musterstrasse', 'Mietvertrag']],
+            array_map(static fn (array $u): array => [$u['type'], $u['id'], $u['title']], $landlord['usedIn']),
         );
         self::assertSame([['vertrag', 'strom-stadtwerke', 'Stadtwerke']], array_map(static fn (array $u): array => array_values($u), self::decode($this->request('GET', '/api/contacts/stadtwerke-stoerung'))['usedIn']));
     }
@@ -58,8 +58,7 @@ final class KnowledgeApiTest extends ApiTestCase
         self::assertStringContainsString("NOTE:Wohnpilot · heizung\r\n", $text);
         $landlordCard = (string) $this->request('GET', '/api/contacts/vermieter/vcard')->getBody();
         self::assertStringNotContainsString('[Telefon]', $landlordCard, 'placeholders stay out');
-        self::assertStringContainsString("TEL;TYPE=CELL:+491701234567
-", $landlordCard);
+        self::assertStringContainsString("TEL;TYPE=CELL:+491701234567\r\n", $landlordCard);
     }
 
     public function testCreateContact(): void
@@ -72,6 +71,16 @@ final class KnowledgeApiTest extends ApiTestCase
 
         $landlord = self::decode($this->request('POST', '/api/contacts', ['name' => 'Hausmeister', 'rolle' => 'hausverwaltung', 'zuhause' => true]));
         self::assertSame('efh-musterstrasse', $landlord['object']);
+    }
+
+    public function testEntriesTakeAContact(): void
+    {
+        $defect = self::decode($this->request('GET', '/api/defects/wasserhahn-bad'));
+        $saved = self::decode($this->request('PUT', '/api/defects/wasserhahn-bad', ['etag' => $defect['etag'], 'changes' => ['kontakt' => 'heizungsbau-mueller'], 'original' => []]));
+        self::assertSame('heizungsbau-mueller', $saved['fields']['kontakt']);
+        self::assertContains('wasserhahn-bad', array_column(self::decode($this->request('GET', '/api/contacts/heizungsbau-mueller'))['usedIn'], 'id'));
+
+        self::assertSame(['kontakt' => 'id'], self::decode($this->request('POST', '/api/appointments', ['titel' => 'X', 'datum' => '2026-11-03', 'kontakt' => 'Kein Slug!']))['fields']);
     }
 
     public function testKnowledgeWithText(): void
@@ -125,6 +134,7 @@ final class KnowledgeApiTest extends ApiTestCase
         $search = fn (string $q, string $typ = ''): array => self::decode($this->request('GET', '/api/search?q=' . rawurlencode($q) . ($typ ? "&typ=$typ" : '')))['results'];
 
         self::assertSame('sicherungskasten', $search('Sicherungskasten')[0]['id'], 'title first');
+        self::assertStringStartsWith('Hinter dem Wasserzähler', $search('haupthahn')[0]['snippet'], 'only in the title: the start of the text');
         self::assertContains('fenster-schlafzimmer', array_column($search('fensterbauer'), 'id'), 'text in the history table');
         self::assertSame(['waschmaschine'], array_column($search('flusensieb'), 'id'));
         self::assertStringContainsString('Herd, eigener Kreis', implode(' / ', array_column($search('herd'), 'snippet')));

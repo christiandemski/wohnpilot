@@ -478,3 +478,69 @@ export interface Settings {
   paperlessUrl: string | null
   readingDay: number
 }
+
+export interface Contact {
+  id: string
+  path: string
+  etag: string
+  /** '' = belongs to the household, else to that home */
+  object: string
+  name: string
+  fields: {
+    name: string
+    firma?: string
+    rolle?: string
+    gewerk?: string
+    telefon?: string
+    mobil?: string
+    email?: string
+    adresse?: string
+    notfall?: string[]
+    [key: string]: unknown
+  }
+  phone: string | null
+  mobile: string | null
+  modifiedBy: string | null
+}
+
+export interface ContactDetail extends Contact {
+  usedIn: { type: string; id: string; title: string }[]
+  notes: string
+}
+
+export interface DocumentRef {
+  path: string
+  title: string
+  url: string
+}
+
+export interface KnowledgePage {
+  id: string
+  path: string
+  etag: string
+  title: string
+  category: string
+  fields: { titel: string; kategorie?: string; raum?: string; notfall?: string[]; szenario?: string; bezieht_sich_auf?: string[]; [key: string]: unknown }
+  modifiedBy: string | null
+}
+
+export interface KnowledgeDetail extends KnowledgePage {
+  text: string
+  photos: PhotoRef[]
+  documents: DocumentRef[]
+}
+
+export interface EmergencyScenario {
+  id: string
+  steps: { id: string; text: string } | null
+  places: { id: string; title: string; room: string; hint: string; photo: PhotoRef | null }[]
+  contacts: { id: string; name: string; role: string; phone: string | null; mobile: string | null }[]
+}
+
+export interface SearchResult {
+  type: string
+  id: string
+  title: string
+  snippet: string
+  score: number
+}

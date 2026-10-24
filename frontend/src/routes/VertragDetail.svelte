@@ -10,6 +10,7 @@
   import type { ContractDetail, MeterSummary } from '../lib/types'
   import FristLineal from '../components/FristLineal.svelte'
   import FristRing from '../components/FristRing.svelte'
+  import ContactLine from '../components/ContactLine.svelte'
   import LoadState from '../components/LoadState.svelte'
   import PageHeader from '../components/PageHeader.svelte'
   import StatusChip from '../components/StatusChip.svelte'
@@ -211,6 +212,7 @@
       <div class="column">
         <section class="card" aria-labelledby="daten">
           <h2 id="daten">Vertrag</h2>
+          {#if typeof f.kontakt === 'string'}<ContactLine id={f.kontakt} />{/if}
           <dl class="facts">
             <div><dt>Anbieter</dt><dd>{f.anbieter}</dd></div>
             {#if f.vertragsnummer}<div><dt>{c.insurance ? 'Versicherungsnummer' : 'Vertragsnummer'}</dt><dd class="num">{f.vertragsnummer}</dd></div>{/if}

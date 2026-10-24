@@ -6,6 +6,7 @@
   import { router } from '../lib/router.svelte'
   import type { DeviceSummary, MaintenanceDetail, ObjectData } from '../lib/types'
   import ConflictPanel from '../components/ConflictPanel.svelte'
+  import ContactPicker from '../components/ContactPicker.svelte'
   import PageHeader from '../components/PageHeader.svelte'
 
   /** New recurring task (no id) or its settings. */
@@ -25,6 +26,7 @@
   }
 
   const blank = {
+    kontakt: '',
     titel: '',
     intervall: '12' as string | number,
     einheit: 'monate',
@@ -60,6 +62,7 @@
         const t = await api.get<MaintenanceDetail>(`/maintenance/${encodeURIComponent(id)}`)
         const f = t.fields
         form = {
+          kontakt: (typeof f.kontakt === 'string' ? f.kontakt : ''),
           titel: f.titel,
           intervall: String(f.intervall_wochen ?? f.intervall_monate ?? ''),
           einheit: f.intervall_wochen ? 'wochen' : 'monate',
@@ -94,6 +97,7 @@
       saison: f.saisonal ? { von: Number(f.von), bis: Number(f.bis) } : null,
       ab: textField(f.ab),
       zustaendig: f.zustaendig,
+      kontakt: f.kontakt || null,
       // Yourself is the default and is not written.
       ausfuehrung: f.ausfuehrung === 'selbst' ? null : f.ausfuehrung,
       raum: f.raum || null,
@@ -237,6 +241,10 @@
         </div>
       </fieldset>
     {/if}
+
+    <div class="card fields">
+      <ContactPicker bind:value={form.kontakt} label="Wer erledigt es? (Dienstleister, Handwerker)" />
+    </div>
 
     {#if edit.error}<p class="save-error" role="alert">{edit.error.text}</p>{/if}
     <button type="submit" class="btn btn-primary btn-large" disabled={edit.saving}>

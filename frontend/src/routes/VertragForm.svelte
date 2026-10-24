@@ -8,6 +8,7 @@
   import type { ContractDetail, MeterSummary } from '../lib/types'
   import CategoryIcon from '../components/CategoryIcon.svelte'
   import ConflictPanel from '../components/ConflictPanel.svelte'
+  import ContactPicker from '../components/ContactPicker.svelte'
   import PageHeader from '../components/PageHeader.svelte'
 
   /** New contract (no id) or its master data. */
@@ -36,6 +37,7 @@
   }
 
   const blank = {
+    kontakt: '',
     kategorie: 'energie',
     sparte: '',
     anbieter: '',
@@ -73,6 +75,7 @@
         const f = c.fields
         const text = (v: unknown) => (v === undefined || v === null ? '' : String(v))
         form = {
+          kontakt: (typeof f.kontakt === 'string' ? f.kontakt : ''),
           kategorie: f.kategorie,
           sparte: text(f.sparte),
           anbieter: text(f.anbieter),
@@ -110,6 +113,7 @@
     const notice = numberField(f.frist)
     return {
       kategorie: f.kategorie,
+      kontakt: f.kontakt || null,
       sparte: textField(f.sparte),
       anbieter: textField(f.anbieter),
       bezeichnung: textField(f.bezeichnung),
@@ -309,6 +313,10 @@
         </div>
       </div>
     {/if}
+
+    <div class="card fields">
+      <ContactPicker bind:value={form.kontakt} label="Kontakt beim Anbieter (z. B. Störungsnummer)" />
+    </div>
 
     {#if edit.error}
       <p class="save-error" role="alert">{edit.error.text}</p>

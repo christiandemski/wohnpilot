@@ -7,6 +7,7 @@
   import { settings } from '../lib/settings.svelte'
   import { paperlessLink } from '../lib/house'
   import type { Lease } from '../lib/types'
+  import ContactLine from '../components/ContactLine.svelte'
   import LoadState from '../components/LoadState.svelte'
   import NextCard from '../components/NextCard.svelte'
   import PageHeader from '../components/PageHeader.svelte'
@@ -209,6 +210,7 @@
       <div class="column">
         <section class="card" aria-labelledby="daten">
           <h2 id="daten">Vertrag</h2>
+          {#if typeof f.kontakt === 'string'}<ContactLine id={f.kontakt} />{/if}
           <dl class="facts">
             <div><dt>Vermieter</dt><dd>{f.vermieter ?? '–'}</dd></div>
             <div><dt>Beginn</dt><dd class="num">{f.beginn ? formatDate(f.beginn) : '–'}</dd></div>

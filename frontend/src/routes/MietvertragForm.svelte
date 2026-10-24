@@ -6,6 +6,7 @@
   import { settings } from '../lib/settings.svelte'
   import type { Lease, ObjectData } from '../lib/types'
   import ConflictPanel from '../components/ConflictPanel.svelte'
+  import ContactPicker from '../components/ContactPicker.svelte'
   import PageHeader from '../components/PageHeader.svelte'
 
   /** Creates the lease of the active object, or edits it if there is one. */
@@ -21,6 +22,7 @@
   }
 
   const blank = {
+    kontakt: '',
     vermieter: '',
     beginn: '',
     mietart: 'standard',
@@ -49,6 +51,7 @@
         const f = lease.fields
         const text = (v: unknown) => (v === undefined || v === null ? '' : String(v))
         form = {
+          kontakt: (typeof f.kontakt === 'string' ? f.kontakt : ''),
           vermieter: text(f.vermieter),
           beginn: text(f.beginn),
           mietart: f.mietart ?? 'standard',
@@ -81,6 +84,7 @@
     )
     return {
       vermieter: textField(f.vermieter),
+      kontakt: f.kontakt || null,
       beginn: textField(f.beginn),
       mietart: f.mietart,
       kaltmiete_eur: numberField(f.kaltmiete),
@@ -195,6 +199,10 @@
         </div>
       </div>
     {/if}
+
+    <div class="card fields">
+      <ContactPicker bind:value={form.kontakt} label="Vermieter als Kontakt" />
+    </div>
 
     {#if edit.error}
       <p class="save-error" role="alert">{edit.error.text}</p>

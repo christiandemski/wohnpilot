@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Ellipsis, Gauge, House, LayoutGrid, Plus } from '@lucide/svelte'
+  import { Ellipsis, Gauge, House, LayoutGrid, Plus, Search } from '@lucide/svelte'
   import { router } from '../lib/router.svelte'
   import ErfassenSheet from './ErfassenSheet.svelte'
 
@@ -18,9 +18,9 @@
       icon: House,
       module: 'miete',
       // Everything about the house itself
-      prefixes: ['zuhause', 'mietvertrag', 'wartung', 'termine', 'termin', 'muell', 'maengel', 'mangel', 'geraete', 'geraet'],
+      prefixes: ['zuhause', 'mietvertrag', 'wartung', 'termine', 'termin', 'muell', 'maengel', 'mangel', 'geraete', 'geraet', 'wissen', 'notfall'],
     },
-    { href: '/mehr', label: 'Mehr', icon: Ellipsis, module: 'wissen', prefixes: ['mehr', 'vertraege', 'vertrag', 'fristen', 'frist', 'einstellungen'] },
+    { href: '/mehr', label: 'Mehr', icon: Ellipsis, module: 'wissen', prefixes: ['mehr', 'vertraege', 'vertrag', 'fristen', 'frist', 'einstellungen', 'kontakte', 'kontakt'] },
   ]
 
   /** Route names like "mangel-detail" belong to the target with prefix "mangel". */
@@ -50,6 +50,10 @@
 
 <nav class="sidenav" aria-label="Hauptnavigation">
   <a class="brand" href="/">Wohnpilot</a>
+  <a class="side-search" href="/suche">
+    <Search size={18} strokeWidth={1.75} aria-hidden="true" />
+    Suchen
+  </a>
   <ul>
     {#each items as item (item.href)}
       {@const Icon = item.icon}
@@ -172,6 +176,19 @@
       font-weight: 700;
       letter-spacing: -0.01em;
       text-decoration: none;
+    }
+
+    .side-search {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-height: var(--touch-min);
+      padding: 0 var(--space-3);
+      border-radius: var(--radius-full);
+      box-shadow: inset 0 0 0 1px var(--line-strong);
+      color: var(--ink-muted);
+      text-decoration: none;
+      font-size: 14px;
     }
 
     ul {

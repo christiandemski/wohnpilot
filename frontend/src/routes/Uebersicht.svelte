@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CalendarClock, CalendarDays, Gauge, House, KeyRound, Plus, Receipt, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
+  import { CalendarClock, CalendarDays, Gauge, House, KeyRound, Plus, Receipt, Search, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
   import { api, ApiError } from '../lib/api'
   import { Resource } from '../lib/resource.svelte'
   import { formatChipDay, formatDay, formatLongDay, formatNumber, formatPercent, greeting, monthName } from '../lib/format'
@@ -129,8 +129,13 @@
 </script>
 
 <header class="hello">
-  <span class="greet">{greeting(hour)}, {user.name}</span>
-  <h1>{formatLongDay(overview.data?.today ?? new Date().toISOString().slice(0, 10))}</h1>
+  <span class="hello-text">
+    <span class="greet">{greeting(hour)}, {user.name}</span>
+    <h1>{formatLongDay(overview.data?.today ?? new Date().toISOString().slice(0, 10))}</h1>
+  </span>
+  <a class="btn btn-icon search-button" href="/suche" aria-label="Suchen">
+    <Search size={20} strokeWidth={1.75} aria-hidden="true" />
+  </a>
 </header>
 
 <LoadState resource={overview} />
@@ -313,6 +318,18 @@
     flex-direction: column;
     gap: 2px;
     padding: 0 var(--space-1) var(--space-2);
+  }
+
+  .hello-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  @media (min-width: 900px) {
+    .search-button {
+      display: none;
+    }
   }
 
   .greet {

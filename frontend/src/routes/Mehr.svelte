@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Bell, BellOff, CalendarClock, CalendarPlus, ChevronRight, Copy, FileText, LogOut, RefreshCw, Settings2 } from '@lucide/svelte'
+  import { Bell, BellOff, CalendarClock, CalendarPlus, ChevronRight, Copy, FileText, LogOut, RefreshCw, Search, Settings2, UserRound } from '@lucide/svelte'
   import { api, ApiError, logout } from '../lib/api'
   import { theme, type ThemeChoice } from '../lib/theme.svelte'
   import type { User } from '../lib/types'
@@ -11,6 +11,8 @@
 
   const modules = [
     { href: '/vertraege', label: 'Verträge', meta: 'Strom, Internet, Versicherungen', icon: FileText, module: 'vertraege' },
+    { href: '/kontakte', label: 'Kontakte', meta: 'Vermieter, Handwerker, Störungsnummern', icon: UserRound, module: 'kontakte' },
+    { href: '/suche', label: 'Suchen', meta: 'In allen Einträgen', icon: Search, module: 'wissen' },
     { href: '/fristen', label: 'Fristen', meta: 'Einmalige Termine mit Stichtag', icon: CalendarClock, module: 'vertraege' },
     { href: '/einstellungen', label: 'Einstellungen', meta: 'Paperless und mehr für den ganzen Haushalt', icon: Settings2, module: 'wissen' },
   ]

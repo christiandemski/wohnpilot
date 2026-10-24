@@ -7,6 +7,7 @@
   import { DEFECT_STATUSES, RESPONSIBLE } from '../lib/house'
   import { roomName } from '../lib/meters'
   import type { DefectDetail, DefectStatus } from '../lib/types'
+  import ContactLine from '../components/ContactLine.svelte'
   import LoadState from '../components/LoadState.svelte'
   import PageHeader from '../components/PageHeader.svelte'
   import PhotoGallery from '../components/PhotoGallery.svelte'
@@ -150,6 +151,7 @@
 
     <section class="card stack" aria-labelledby="angaben">
       <h2 id="angaben" class="section-title">Angaben</h2>
+      {#if typeof d.fields.kontakt === 'string'}<ContactLine id={d.fields.kontakt} />{/if}
       <dl class="fact-list">
         <div><dt>Zuständig</dt><dd>{RESPONSIBLE[d.fields.zustaendig ?? 'vermieter'] ?? d.fields.zustaendig}</dd></div>
         {#if d.fields.raum}<div><dt>Raum</dt><dd>{roomName(d.fields.raum)}</dd></div>{/if}
