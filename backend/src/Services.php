@@ -25,6 +25,7 @@ use Wohnpilot\App\ObjectNotes;
 use Wohnpilot\App\PhotoService;
 use Wohnpilot\App\SearchService;
 use Wohnpilot\App\SettingsService;
+use Wohnpilot\App\ReportService;
 use Wohnpilot\App\UtilityService;
 use Wohnpilot\App\WasteService;
 use Wohnpilot\Auth\AccountStore;
@@ -203,6 +204,11 @@ class Services
     public function settings(): SettingsService
     {
         return $this->instances[__FUNCTION__] ??= new SettingsService($this->notes(), $this->household());
+    }
+
+    public function reports(): ReportService
+    {
+        return $this->instances[__FUNCTION__] ??= new ReportService($this->notes(), $this->household(), $this->meters(), $this->lease(), $this->utilities(), $this->defects(), $this->clock());
     }
 
     public function entries(): EntryService

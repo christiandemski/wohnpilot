@@ -205,6 +205,15 @@ final class Api
                 201,
             ));
 
+            // The year in review and the § 35a list
+            $api->get('/reports', fn (Request $r, Response $response) => self::json($response, ['years' => $services->reports()->years()]));
+            $api->get('/reports/{year:[0-9]{4}}', fn (Request $r, Response $response, array $args) => self::json($response, $services->reports()->year((int) $args['year'])));
+            $api->get('/reports/{year:[0-9]{4}}/steuer.csv', function (Request $r, Response $response, array $args) use ($services): Response {
+                [$csv, $name] = $services->reports()->taxCsv((int) $args['year']);
+                $response->getBody()->write($csv);
+                return $response->withHeader('Content-Type', 'text/csv; charset=utf-8')->withHeader('Content-Disposition', 'attachment; filename="' . $name . '"');
+            });
+
             // Utility statements (landlord, metering service)
             $api->get('/utilities', fn (Request $r, Response $response) => self::json($response, ['statements' => $services->utilities()->list()]));
             $api->post('/utilities', fn (Request $request, Response $response) => self::json($response, $services->utilities()->create(self::body($request), self::user($request)), 201));
