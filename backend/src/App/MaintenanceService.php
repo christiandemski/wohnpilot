@@ -8,6 +8,7 @@ use Wohnpilot\Domain\MaintenanceSuggestions;
 use Wohnpilot\Domain\MaintenanceTask;
 use Wohnpilot\Note\HistoryTable;
 use Wohnpilot\Note\NoteDocument;
+use Wohnpilot\Storage\AttachmentStore;
 use Wohnpilot\Storage\StoredNote;
 
 /**
@@ -21,6 +22,7 @@ final class MaintenanceService
         private readonly ObjectNotes $objects,
         private readonly HouseholdService $household,
         private readonly Clock $clock,
+        private readonly ?AttachmentStore $files = null,
     ) {
     }
 
@@ -139,6 +141,28 @@ final class MaintenanceService
             return $note;
         });
         return $this->detail($id);
+    }
+
+    /**
+     * Deletes the task, if nobody changed it since $etag, and its own photos
+     * (anhaenge/wartung/<id>/). A task taken from a suggestion is offered
+     * again afterwards.
+     */
+    public function delete(string $id, string $etag): void
+    {
+        $stored = $this->find($id);
+        $own = array_filter(
+            array_column(PhotoService::of($stored), 'path'),
+            static fn (string $path): bool => str_starts_with($path, AttachmentStore::FOLDER . "/wartung/$id/"),
+        );
+        $this->notes->delete($stored->path, $etag);
+        foreach ($own as $path) {
+            try {
+                $this->files?->deleteFile($path);
+            } catch (\Throwable) {
+                // A photo left behind does no harm; the note is gone
+            }
+        }
     }
 
     private function find(string $id): StoredNote

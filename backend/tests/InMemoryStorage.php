@@ -50,4 +50,12 @@ final class InMemoryStorage implements StorageAdapter
         $this->notes[$path] = $content;
         return $this->get($path);
     }
+
+    public function delete(string $path, ?string $etag = null): void
+    {
+        if (!isset($this->notes[$path])) {
+            throw NotFoundException::forPath($path);
+        }
+        unset($this->notes[$path]);
+    }
 }

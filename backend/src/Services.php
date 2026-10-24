@@ -164,7 +164,7 @@ class Services
 
     public function maintenance(): MaintenanceService
     {
-        return $this->instances[__FUNCTION__] ??= new MaintenanceService($this->notes(), $this->objectNotes(), $this->household(), $this->clock());
+        return $this->instances[__FUNCTION__] ??= new MaintenanceService($this->notes(), $this->objectNotes(), $this->household(), $this->clock(), $this->files());
     }
 
     public function appointments(): AppointmentService

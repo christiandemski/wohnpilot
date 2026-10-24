@@ -101,6 +101,12 @@ final class NoteIndex
         ]);
     }
 
+    /** Forgets a deleted note. */
+    public function remove(string $path): void
+    {
+        $this->db->prepare('DELETE FROM notes WHERE path = :path')->execute(['path' => $path]);
+    }
+
     public function get(string $path): ?StoredNote
     {
         $statement = $this->db->prepare('SELECT * FROM notes WHERE path = ?');

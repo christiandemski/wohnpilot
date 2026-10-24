@@ -82,6 +82,26 @@ final class FilesystemAdapter implements StorageAdapter, AttachmentStore
         return $this->get($path);
     }
 
+    public function delete(string $path, ?string $etag = null): void
+    {
+        $file = $this->file($path);
+        $handle = @fopen($file, 'r');
+        if ($handle === false) {
+            throw NotFoundException::forPath($path);
+        }
+        try {
+            flock($handle, LOCK_EX);
+            $current = stream_get_contents($handle);
+            if ($etag !== null && self::etag($current) !== $etag) {
+                throw new ConflictException(new StoredNote($path, $current, self::etag($current), filemtime($file)));
+            }
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
+        }
+        unlink($file);
+    }
+
     public function putFile(string $path, string $bytes): void
     {
         AttachmentPath::assertWritable($path);

@@ -316,6 +316,10 @@ final class Api
                 [$changes, $original, $etag] = self::merge($request);
                 return self::json($response, $services->maintenance()->update($args['id'], $changes, $original, $etag, self::user($request)));
             });
+            $api->delete('/maintenance/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                $services->maintenance()->delete($args['id'], (string) ($request->getQueryParams()['etag'] ?? ''));
+                return self::json($response, ['deleted' => true]);
+            });
             $api->post('/maintenance/{id}/done', fn (Request $request, Response $response, array $args) => self::json($response, $services->maintenance()->done($args['id'], self::body($request), self::user($request))));
             $api->delete('/maintenance/{id}/done/{date}', fn (Request $request, Response $response, array $args) => self::json($response, $services->maintenance()->undo($args['id'], $args['date'], self::user($request))));
 

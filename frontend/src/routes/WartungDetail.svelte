@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { CalendarPlus, Check, Pencil, Radio } from '@lucide/svelte'
+  import { CalendarPlus, Check, Pencil, Radio, Trash2 } from '@lucide/svelte'
   import { outbox } from '../lib/outbox.svelte'
   import { api, ApiError } from '../lib/api'
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { formatDate } from '../lib/format'
   import { EXECUTIONS, RESPONSIBLE, intervalText, maintenanceChip, seasonText } from '../lib/house'
   import { roomName } from '../lib/meters'
+  import { router } from '../lib/router.svelte'
   import type { DeviceSummary, MaintenanceDetail } from '../lib/types'
   import ContactLine from '../components/ContactLine.svelte'
   import LoadState from '../components/LoadState.svelte'
@@ -25,6 +26,30 @@
   let error = $state('')
   /** Date of a done row made here, which can be taken back */
   let justDone = $state<string | null>(null)
+
+  /** Deleting asks once more; it fails if the task changed elsewhere meanwhile */
+  let confirmDelete = $state(false)
+  let deleteError = $state('')
+  async function remove() {
+    if (!task.data) return
+    busy = true
+    deleteError = ''
+    try {
+      await api.delete(`${path}?etag=${encodeURIComponent(task.data.etag)}`)
+      router.go('/wartung', true)
+    } catch (e) {
+      deleteError =
+        e instanceof ApiError && e.status === 409
+          ? 'Die Aufgabe wurde inzwischen geändert. Schau sie dir noch einmal an, dann kannst du sie löschen.'
+          : e instanceof ApiError
+            ? e.text
+            : 'Das hat nicht geklappt.'
+      confirmDelete = false
+      if (e instanceof ApiError && e.status === 409) await task.reload()
+    } finally {
+      busy = false
+    }
+  }
 
   async function act(run: () => Promise<MaintenanceDetail>) {
     busy = true
@@ -168,6 +193,24 @@
         </dl>
         {#if t.notes}<p class="notes-text">{t.notes}</p>{/if}
         {#if t.modifiedBy}<p class="text-muted text-small">Zuletzt geändert von {t.modifiedBy}</p>{/if}
+        <div class="delete">
+          {#if confirmDelete}
+            <p class="text-small" role="alert">„{t.title}“ mit Verlauf und Fotos löschen? In Nextcloud landet die Notiz im Papierkorb.</p>
+            <div class="delete-actions">
+              <button type="button" class="btn btn-secondary on-surface danger" disabled={busy} onclick={remove}>
+                <Trash2 size={16} strokeWidth={1.75} aria-hidden="true" />
+                Endgültig löschen
+              </button>
+              <button type="button" class="btn btn-secondary on-surface" disabled={busy} onclick={() => (confirmDelete = false)}>Abbrechen</button>
+            </div>
+          {:else}
+            <button type="button" class="btn btn-secondary on-surface" onclick={() => (confirmDelete = true)}>
+              <Trash2 size={16} strokeWidth={1.75} aria-hidden="true" />
+              Aufgabe löschen
+            </button>
+          {/if}
+          {#if deleteError}<p class="save-error" role="alert">{deleteError}</p>{/if}
+        </div>
       </section>
 
       <section class="card stack" aria-labelledby="fotos">
@@ -179,6 +222,25 @@
 {/if}
 
 <style>
+  .delete {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--line);
+  }
+
+  .delete-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .danger {
+    color: var(--due);
+  }
+
   .info {
     display: flex;
     align-items: flex-start;
