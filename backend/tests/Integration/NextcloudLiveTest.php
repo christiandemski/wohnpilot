@@ -167,6 +167,12 @@ final class NextcloudLiveTest extends TestCase
             $files->putFile($path, $bytes . 'x');
             self::assertSame($bytes . 'x', $files->getFile($path), 'replaced');
 
+            // A downloaded waste calendar, as WasteService::upload stores it
+            $ics = (string) file_get_contents(dirname(__DIR__, 3) . '/fixtures/abfuhrkalender.ics');
+            $files->putFile("anhaenge/$folder/abfuhrkalender.ics", $ics);
+            self::assertSame($ics, $files->getFile("anhaenge/$folder/abfuhrkalender.ics"), 'calendar file unchanged');
+            $files->deleteFile("anhaenge/$folder/abfuhrkalender.ics");
+
             $files->deleteFile($path);
             $files->deleteFile($path);
             $this->expectException(NotFoundException::class);
