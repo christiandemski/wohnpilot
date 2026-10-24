@@ -53,9 +53,9 @@ Ziel: Subdomain `wohnpilot.codekorb.de`, Ordner im Webspace `wohnpilot.codekorb.
       public/                   ← Document Root: index.php, .htaccess, gebaute App
 ```
 
-1. **Lokal bauen:** `cd frontend && npm run build` (legt die App nach `backend/public/`), dann `cd backend && composer install --no-dev --optimize-autoloader`.
-2. **Hochladen:** den *Inhalt* von `backend/` nach `wohnpilot.codekorb.de/httpdocs/` (ohne `var/`, ohne `.env` aus der Entwicklung). Der Ordner `var/` muss für PHP beschreibbar sein; er entsteht beim ersten Aufruf.
-3. **`.env`** nach `wohnpilot.codekorb.de/httpdocs/.env`, mit:
+1. **Paket bauen:** `php tools/build-deploy.php` baut das Frontend, stellt das Backend ohne Tests und Entwicklungspakete zusammen und legt `dist/wohnpilot-deploy-<datum>-<commit>.zip` an. Darin liegen auch `LIESMICH.txt` und `.env.server` (vorausgefüllt, ohne Passwort).
+2. **Hochladen:** den *Inhalt* des ZIP nach `wohnpilot.codekorb.de/httpdocs/`, mit den versteckten Dateien. `var/` muss für PHP beschreibbar sein.
+3. **`.env`:** `.env.server` in `.env` umbenennen und das Nextcloud-App-Passwort eintragen. Vorausgefüllt sind:
    - `APP_ENV=prod`, `APP_URL=https://wohnpilot.codekorb.de`, `DEV_LOGIN_USER` leer
    - Nextcloud-URL, -Benutzer und App-Passwort
    - `BEARID_PUBLIC_KEY_FILE=/var/www/vhosts/hosting226222.ae9bd.netcup.net/bearid-guard/public.key`
