@@ -19,6 +19,12 @@ function read(): ThemeChoice {
 class Theme {
   choice = $state<ThemeChoice>(read())
 
+  constructor() {
+    // Paper is light: print in the light theme, whatever the screen shows.
+    window.addEventListener('beforeprint', () => document.documentElement.setAttribute('data-theme', 'light'))
+    window.addEventListener('afterprint', () => this.apply())
+  }
+
   apply(): void {
     const root = document.documentElement
     if (this.choice === 'system') root.removeAttribute('data-theme')

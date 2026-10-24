@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BookOpen, CalendarDays, ChevronRight, House, KeyRound, Pencil, Siren, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
+  import { BookOpen, CalendarDays, ChevronRight, House, KeyRound, Pencil, QrCode, Siren, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
   import type { Component } from 'svelte'
   import { api } from '../lib/api'
   import { Resource } from '../lib/resource.svelte'
@@ -86,6 +86,7 @@
     { href: '/geraete', label: 'Geräte', icon: WashingMachine, module: 'geraete', meta: devicesMeta },
     { href: '/wissen', label: 'Wissen', icon: BookOpen, module: 'wissen', meta: () => 'Wo ist was, Kennwerte, Bedienung' },
     { href: '/notfall', label: 'Notfallblatt', icon: Siren, module: 'maengel', meta: () => 'Was tun bei Wasser, Strom, Gas, Heizung' },
+    { href: '/aufkleber', label: 'QR-Aufkleber', icon: QrCode, module: 'wissen', meta: () => 'Für Zähler, Geräte und Orte zum Ausdrucken' },
   ]
 </script>
 

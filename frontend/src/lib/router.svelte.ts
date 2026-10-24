@@ -57,6 +57,8 @@ const routes: [string, string][] = [
   ['wissen-bearbeiten', '/wissen/:id/bearbeiten'],
   ['notfall', '/notfall'],
   ['suche', '/suche'],
+  ['aufkleber', '/aufkleber'],
+  ['qr', '/q/:kind/:id'],
   ['mehr', '/mehr'],
 ]
 

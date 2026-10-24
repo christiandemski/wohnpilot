@@ -502,3 +502,24 @@ a.list-row,
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* Printing (emergency sheet, QR stickers): only the page itself, on light paper */
+
+@media print {
+  html,
+  body {
+    background: var(--surface);
+  }
+
+  .no-print,
+  .tabbar,
+  .sidenav {
+    display: none !important;
+  }
+}
+
+/* QR sticker sheets print edge to edge, label sheets have no margin of their own */
+@page stickers {
+  size: A4;
+  margin: 0;
+}

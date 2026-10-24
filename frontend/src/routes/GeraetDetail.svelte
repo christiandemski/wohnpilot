@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Pencil } from '@lucide/svelte'
+  import { Pencil, QrCode } from '@lucide/svelte'
   import { api } from '../lib/api'
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { euro } from '../lib/contracts'
@@ -101,7 +101,11 @@
         {#if paperless}<div><dt>Paperless</dt><dd class="num"><a href={paperless} target="_blank" rel="noopener">Dokument {f.paperless}</a></dd></div>{/if}
       </dl>
       {#if d.notes}<p class="notes-text">{d.notes}</p>{/if}
-      {#if d.modifiedBy}<p class="text-muted text-small">Zuletzt geändert von {d.modifiedBy}</p>{/if}
+      <a class="btn btn-secondary on-surface" href="/aufkleber?nur=g:{encodeURIComponent(d.id)}">
+            <QrCode size={16} strokeWidth={1.75} aria-hidden="true" />
+            QR-Aufkleber drucken
+          </a>
+          {#if d.modifiedBy}<p class="text-muted text-small">Zuletzt geändert von {d.modifiedBy}</p>{/if}
     </section>
   </div>
 {/if}

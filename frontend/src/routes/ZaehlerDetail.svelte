@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Gauge, Lightbulb, Pencil } from '@lucide/svelte'
+  import { Gauge, Lightbulb, Pencil, QrCode } from '@lucide/svelte'
   import { api } from '../lib/api'
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { formatDate, formatEuro, formatNumber, monthName, previousDay } from '../lib/format'
@@ -219,6 +219,10 @@
             <p class="muted small">Kommt ein Brief vom Versorger mit Stichtag, trag ihn hier ein. Dann erinnert dich Wohnpilot rechtzeitig.</p>
           {/if}
           {#if m.notes}<p class="notes">{m.notes}</p>{/if}
+          <a class="btn btn-secondary on-surface" href="/aufkleber?nur=z:{encodeURIComponent(m.id)}">
+            <QrCode size={16} strokeWidth={1.75} aria-hidden="true" />
+            QR-Aufkleber drucken
+          </a>
           {#if m.modifiedBy}<p class="muted small">Zuletzt geändert von {m.modifiedBy}</p>{/if}
         </section>
       </div>

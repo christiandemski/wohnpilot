@@ -11,7 +11,7 @@
   }: { back: string; close?: boolean; title?: string; action?: Snippet } = $props()
 </script>
 
-<header class="bar">
+<header class="bar no-print">
   <a class="btn btn-icon" href={back} aria-label={close ? 'Schließen' : 'Zurück'}>
     {#if close}
       <X size={20} strokeWidth={2} aria-hidden="true" />

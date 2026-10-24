@@ -3,6 +3,8 @@
   import { router } from './lib/router.svelte'
   import { theme } from './lib/theme.svelte'
   import { settings } from './lib/settings.svelte'
+  import { rememberReturn, takeReturn } from './lib/returnTo'
+  import { qrTarget } from './lib/stickers'
   import type { User } from './lib/types'
   import Navigation from './components/Navigation.svelte'
   import Login from './routes/Login.svelte'
@@ -45,6 +47,7 @@
   import WissenForm from './routes/WissenForm.svelte'
   import Notfall from './routes/Notfall.svelte'
   import Suche from './routes/Suche.svelte'
+  import Aufkleber from './routes/Aufkleber.svelte'
 
   theme.apply()
 
@@ -57,18 +60,29 @@
     .then((data) => {
       user = data.user
       void settings.load()
+      // Back from BearID or the redirect login, which always land on "/"
+      const back = router.path === '/' ? takeReturn() : null
+      if (back) router.go(back, true)
     })
-    .catch((e) => (authError = e instanceof ApiError ? e : new ApiError(0, 'internal')))
+    .catch((e) => {
+      authError = e instanceof ApiError ? e : new ApiError(0, 'internal')
+      rememberReturn(window.location.pathname + window.location.search)
+    })
     .finally(() => (checked = true))
 
   /** Full-screen flows without navigation */
   const focused = $derived(['ablesen', 'ablesen-einzeln'].includes(router.current.name))
+
+  /** A scanned QR sticker: on to where it leads, without the sticker address in the history. */
+  $effect(() => {
+    if (user && router.current.name === 'qr') router.go(qrTarget(router.current.params.kind, router.current.params.id), true)
+  })
 </script>
 
 {#if !checked}
   <p class="splash" aria-live="polite">Wohnpilot lädt …</p>
 {:else if user === null}
-  <Login error={authError} reason={router.query.get('login')} onSignedIn={(u) => { user = u; void settings.load(); router.go("/", true) }} />
+  <Login error={authError} reason={router.query.get('login')} onSignedIn={(u) => { user = u; void settings.load(); router.go(takeReturn() ?? "/", true) }} />
 {:else}
   <div class="layout" class:focused>
     {#if !focused}<Navigation />{/if}
@@ -170,6 +184,10 @@
           <Notfall />
         {:else if router.current.name === 'suche'}
           <Suche />
+        {:else if router.current.name === 'aufkleber'}
+          <Aufkleber />
+        {:else if router.current.name === 'qr'}
+          <p class="text-muted" aria-live="polite">Einen Moment …</p>
         {:else if router.current.name === 'mehr'}
           <Mehr {user} />
         {:else}
@@ -222,6 +240,17 @@
     .focused .content {
       max-width: 560px;
       margin: 0 auto;
+    }
+  }
+
+  @media print {
+    .layout {
+      display: block;
+    }
+
+    .content {
+      max-width: none;
+      padding: 0;
     }
   }
 </style>
