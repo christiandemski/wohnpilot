@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Wohnpilot;
 
 use RuntimeException;
+use Wohnpilot\App\AgendaService;
 use Wohnpilot\App\Clock;
+use Wohnpilot\App\ContractService;
+use Wohnpilot\App\DeadlineService;
 use Wohnpilot\App\HouseholdService;
+use Wohnpilot\App\LeaseService;
 use Wohnpilot\App\MeterService;
 use Wohnpilot\App\NoteRepository;
 use Wohnpilot\Auth\AccountStore;
@@ -66,6 +70,26 @@ class Services
     public function meters(): MeterService
     {
         return $this->instances[__FUNCTION__] ??= new MeterService($this->notes(), $this->household(), $this->clock());
+    }
+
+    public function contracts(): ContractService
+    {
+        return $this->instances[__FUNCTION__] ??= new ContractService($this->notes(), $this->clock());
+    }
+
+    public function lease(): LeaseService
+    {
+        return $this->instances[__FUNCTION__] ??= new LeaseService($this->notes(), $this->household(), $this->clock());
+    }
+
+    public function deadlines(): DeadlineService
+    {
+        return $this->instances[__FUNCTION__] ??= new DeadlineService($this->notes(), $this->household(), $this->meters(), $this->clock());
+    }
+
+    public function agenda(): AgendaService
+    {
+        return $this->instances[__FUNCTION__] ??= new AgendaService($this->contracts(), $this->lease(), $this->deadlines(), $this->clock());
     }
 
     public function session(): Session

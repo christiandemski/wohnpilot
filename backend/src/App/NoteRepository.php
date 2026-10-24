@@ -96,6 +96,36 @@ final class NoteRepository
         }
     }
 
+    /**
+     * Writes changed frontmatter fields with a three-way merge (see FieldMerge):
+     * starts from the version the client saw if it is still current, else from
+     * the newest one, and sets `geaendert_von`.
+     *
+     * @param array<string, mixed> $changes
+     * @param array<string, mixed> $original
+     * @param (callable(StoredNote): array)|null $describe adds the current data to a conflict answer
+     * @throws AppException conflict, with the conflicting fields
+     */
+    public function updateFields(StoredNote $stored, array $changes, array $original, string $etag, string $by, ?callable $describe = null): StoredNote
+    {
+        for ($attempt = 0; $attempt < self::MAX_RETRIES; $attempt++) {
+            $current = $attempt === 0 && $stored->etag === $etag ? $stored : $this->load($stored->path);
+            $note = NoteDocument::parse($current->content);
+            $conflicts = FieldMerge::apply($note->frontmatter(), $changes, $original);
+            if ($conflicts !== []) {
+                $details = ['fields' => $conflicts] + ($describe === null ? [] : ['current' => $describe($current)]);
+                throw new AppException('conflict', 409, 'Changed elsewhere', $details);
+            }
+            $note->frontmatter()->set('geaendert_von', $by);
+            try {
+                return $this->update($current->path, $note, $current->etag);
+            } catch (ConflictException) {
+                continue;
+            }
+        }
+        throw new AppException('conflict', 409, 'Changed elsewhere');
+    }
+
     /** Fresh version from storage, bypassing the cache. */
     public function load(string $path): StoredNote
     {

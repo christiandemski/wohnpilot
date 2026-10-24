@@ -124,23 +124,7 @@ final class HouseholdService
     {
         $changes = self::validateObject($changes, false);
         $stored = $this->notes->findById('objekt', $id) ?? throw AppException::notFound("Objekt $id");
-        $path = $stored->path;
-
-        for ($attempt = 0; $attempt < 3; $attempt++) {
-            $current = $attempt === 0 && $stored->etag === $etag ? $stored : $this->notes->load($path);
-            $note = NoteDocument::parse($current->content);
-            $conflicts = FieldMerge::apply($note->frontmatter(), $changes, $original);
-            if ($conflicts !== []) {
-                throw new AppException('conflict', 409, 'Changed elsewhere', ['fields' => $conflicts, 'current' => self::objectData($current)]);
-            }
-            $note->frontmatter()->set('geaendert_von', $user->id);
-            try {
-                return self::objectData($this->notes->update($path, $note, $current->etag));
-            } catch (ConflictException) {
-                continue;
-            }
-        }
-        throw new AppException('conflict', 409, 'Changed elsewhere');
+        return self::objectData($this->notes->updateFields($stored, $changes, $original, $etag, $user->id, self::objectData(...)));
     }
 
     private function setActiveObject(string $id, User $user): void

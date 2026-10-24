@@ -119,7 +119,10 @@ final class Api
         $app->group('/api', function (RouteCollectorProxy $api) use ($services): void {
             $api->get('/me', fn (Request $request, Response $response) => self::json($response, ['user' => self::user($request)->toArray()]));
 
-            $api->get('/overview', fn (Request $r, Response $response) => self::json($response, $services->meters()->overview()));
+            $api->get('/overview', function (Request $r, Response $response) use ($services): Response {
+                $overview = $services->meters()->overview();
+                return self::json($response, $overview + $services->agenda()->forOverview($overview['meters']));
+            });
             $api->get('/meters', fn (Request $r, Response $response) => self::json($response, ['meters' => $services->meters()->list()]));
             $api->post('/meters', fn (Request $request, Response $response) => self::json(
                 $response,
@@ -159,6 +162,59 @@ final class Api
                     self::user($request),
                 )]);
             });
+            $api->get('/contracts', fn (Request $r, Response $response) => self::json($response, ['contracts' => $services->contracts()->list()]));
+            $api->post('/contracts', fn (Request $request, Response $response) => self::json(
+                $response,
+                $services->contracts()->create(self::body($request), self::user($request)),
+                201,
+            ));
+            $api->get('/contracts/{id}', fn (Request $r, Response $response, array $args) => self::json($response, $services->contracts()->detail($args['id'])));
+            $api->put('/contracts/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                [$changes, $original, $etag] = self::merge($request);
+                return self::json($response, $services->contracts()->update($args['id'], $changes, $original, $etag, self::user($request)));
+            });
+            $api->post('/contracts/{id}/prices', fn (Request $request, Response $response, array $args) => self::json(
+                $response,
+                $services->contracts()->addPrice($args['id'], self::body($request), self::user($request)),
+                201,
+            ));
+
+            $api->get('/lease', fn (Request $r, Response $response) => self::json($response, ['lease' => $services->lease()->get()]));
+            $api->post('/lease', fn (Request $request, Response $response) => self::json(
+                $response,
+                ['lease' => $services->lease()->create(self::body($request), self::user($request))],
+                201,
+            ));
+            $api->put('/lease', function (Request $request, Response $response) use ($services): Response {
+                [$changes, $original, $etag] = self::merge($request);
+                return self::json($response, ['lease' => $services->lease()->update($changes, $original, $etag, self::user($request))]);
+            });
+            $api->post('/lease/rent', fn (Request $request, Response $response) => self::json(
+                $response,
+                ['lease' => $services->lease()->addRentChange(self::body($request), self::user($request))],
+                201,
+            ));
+            $api->put('/lease/rent/{validFrom}/agreed', function (Request $request, Response $response, array $args) use ($services): Response {
+                $date = self::body($request)['datum'] ?? null;
+                return self::json($response, ['lease' => $services->lease()->agree($args['validFrom'], is_string($date) ? $date : null, self::user($request))]);
+            });
+
+            $api->get('/deadlines', fn (Request $r, Response $response) => self::json($response, $services->deadlines()->list()));
+            $api->post('/deadlines', fn (Request $request, Response $response) => self::json(
+                $response,
+                $services->deadlines()->create(self::body($request), self::user($request)),
+                201,
+            ));
+            $api->get('/deadlines/{id}', fn (Request $r, Response $response, array $args) => self::json($response, $services->deadlines()->detail($args['id'])));
+            $api->put('/deadlines/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                [$changes, $original, $etag] = self::merge($request);
+                return self::json($response, $services->deadlines()->update($args['id'], $changes, $original, $etag, self::user($request)));
+            });
+            $api->put('/deadlines/{id}/done', function (Request $request, Response $response, array $args) use ($services): Response {
+                $date = self::body($request)['datum'] ?? null;
+                return self::json($response, $services->deadlines()->setDone($args['id'], is_string($date) ? $date : null, self::user($request)));
+            });
+
             $api->post('/sync', function (Request $r, Response $response) use ($services): Response {
                 $services->notes()->refresh(true);
                 return $response->withStatus(204);
@@ -225,6 +281,13 @@ final class Api
     private static function user(Request $request): User
     {
         return $request->getAttribute('user');
+    }
+
+    /** @return array{array<string, mixed>, array<string, mixed>, string} changes, original, etag of a three-way merge */
+    private static function merge(Request $request): array
+    {
+        $body = self::body($request);
+        return [(array) ($body['changes'] ?? []), (array) ($body['original'] ?? []), (string) ($body['etag'] ?? '')];
     }
 
     private static function body(Request $request): array

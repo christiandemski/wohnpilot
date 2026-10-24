@@ -15,7 +15,6 @@ use Wohnpilot\Domain\Reading;
 use Wohnpilot\Domain\ReadingSchedule;
 use Wohnpilot\Domain\Urgency;
 use Wohnpilot\Note\NoteDocument;
-use Wohnpilot\Storage\ConflictException;
 use Wohnpilot\Storage\StoredNote;
 
 /**
@@ -50,18 +49,24 @@ final class MeterService
         $today = $this->clock->today();
 
         $stored = $this->notes->byType('zaehler', $object['id']);
-        $parsed = [];
-        foreach ($stored as $note) {
-            $meter = Meter::fromNote(NoteDocument::parse($note->content));
-            $parsed[$meter->id] = $meter;
-        }
-        $requests = $this->requests($object['id'], $parsed, $today);
+        $requests = $this->requests($object['id'], $this->metersById($object['id']), $today);
 
         $meters = array_map(
             fn (StoredNote $note): array => $this->summary($note, $readingDay, $today, $requests),
             $stored,
         );
         usort($meters, static fn (array $a, array $b): int => [$rooms[$a['room']] ?? PHP_INT_MAX, $a['id']] <=> [$rooms[$b['room']] ?? PHP_INT_MAX, $b['id']]);
+        return $meters;
+    }
+
+    /** @return array<string, Meter> meters of an object by id, e.g. to check deadlines that link them */
+    public function metersById(string $objectId): array
+    {
+        $meters = [];
+        foreach ($this->notes->byType('zaehler', $objectId) as $stored) {
+            $meter = Meter::fromNote(NoteDocument::parse($stored->content));
+            $meters[$meter->id] = $meter;
+        }
         return $meters;
     }
 
@@ -221,24 +226,8 @@ final class MeterService
     {
         $object = $this->household->activeObject();
         $changes = $this->validate($changes, false, $object['raeume'] ?? []);
-        $stored = $this->find($id);
-
-        for ($attempt = 0; $attempt < 3; $attempt++) {
-            $current = $attempt === 0 && $stored->etag === $etag ? $stored : $this->notes->load($stored->path);
-            $note = NoteDocument::parse($current->content);
-            $conflicts = FieldMerge::apply($note->frontmatter(), $changes, $original);
-            if ($conflicts !== []) {
-                throw new AppException('conflict', 409, 'Changed elsewhere', ['fields' => $conflicts]);
-            }
-            $note->frontmatter()->set('geaendert_von', $user->id);
-            try {
-                $this->notes->update($current->path, $note, $current->etag);
-                return $this->detail($id);
-            } catch (ConflictException) {
-                continue;
-            }
-        }
-        throw new AppException('conflict', 409, 'Changed elsewhere');
+        $this->notes->updateFields($this->find($id), $changes, $original, $etag, $user->id);
+        return $this->detail($id);
     }
 
     private function find(string $id): StoredNote
