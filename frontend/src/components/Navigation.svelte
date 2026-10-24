@@ -20,8 +20,9 @@
   {#each items.slice(0, 2) as item (item.href)}
     {@render tab(item)}
   {/each}
-  <a class="fab" href="/ablesen" aria-label="Zählerstände erfassen">
-    <Plus size={24} strokeWidth={2.25} aria-hidden="true" />
+  <a class="tab add" href="/ablesen">
+    <span class="fab"><Plus size={22} strokeWidth={2.25} aria-hidden="true" /></span>
+    <span class="label">Ablesen</span>
   </a>
   {#each items.slice(2) as item (item.href)}
     {@render tab(item)}
@@ -30,9 +31,9 @@
 
 {#snippet tab(item: (typeof items)[number])}
   {@const Icon = item.icon}
-  <a class="tab" class:active={isCurrent(item)} href={item.href} aria-label={item.label} aria-current={isCurrent(item) ? 'page' : undefined}>
-    <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
-    {#if isCurrent(item)}<span>{item.label}</span>{/if}
+  <a class="tab" class:active={isCurrent(item)} href={item.href} aria-current={isCurrent(item) ? 'page' : undefined}>
+    <span class="icon"><Icon size={20} strokeWidth={1.75} aria-hidden="true" /></span>
+    <span class="label">{item.label}</span>
   </a>
 {/snippet}
 
@@ -62,39 +63,54 @@
     position: fixed;
     left: var(--space-4);
     right: var(--space-4);
-    bottom: calc(var(--space-6) + env(safe-area-inset-bottom));
+    bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
     z-index: 10;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     height: var(--tabbar-height);
     max-width: 480px;
     margin: 0 auto;
-    padding: 0 10px;
+    padding: 0 var(--space-2);
     border-radius: var(--radius-full);
     background: color-mix(in srgb, var(--inverse) 94%, transparent);
     box-shadow: var(--shadow-tabbar);
   }
 
+  /* Icon over word, the whole column is the touch target (TabBar.md) */
   .tab {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: var(--touch-min);
+    height: 100%;
+    color: var(--on-inverse-muted);
+    text-decoration: none;
+  }
+
+  .icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    min-width: 48px;
-    height: 48px;
+    width: 48px;
+    height: 28px;
     border-radius: var(--radius-full);
-    color: var(--on-inverse-muted);
-    text-decoration: none;
-    font-size: 13px;
+  }
+
+  .label {
+    font-size: 11px;
+    line-height: 14px;
     font-weight: 600;
   }
 
-  /* Light pill in both themes (TabBar.md: surface or on-inverse as ground) */
   .tab.active {
-    padding: 0 14px;
-    background: var(--on-inverse);
-    color: var(--inverse);
+    color: var(--on-inverse);
+  }
+
+  .tab.active .icon {
+    background: color-mix(in srgb, var(--on-inverse) 16%, transparent);
   }
 
   .fab {
@@ -106,6 +122,11 @@
     border-radius: var(--radius-full);
     background: var(--accent);
     color: var(--on-accent);
+  }
+
+  .add {
+    gap: 0;
+    color: var(--on-inverse);
   }
 
   .sidenav {

@@ -74,8 +74,8 @@
   --touch-min: 44px;
   --button-height: 52px;
   --button-height-l: 56px;
-  --tabbar-height: 68px;
-  --fab: 52px;
+  --tabbar-height: 60px;
+  --fab: 36px;
   --font-ui: "Geist", system-ui, sans-serif;
   --font-num: "Geist Mono", ui-monospace, monospace;
 }

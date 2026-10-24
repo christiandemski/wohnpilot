@@ -84,7 +84,7 @@
     gap: var(--space-3);
     max-width: 560px;
     margin: 0 auto;
-    padding: var(--space-6) var(--space-4) calc(120px + env(safe-area-inset-bottom));
+    padding: var(--space-6) var(--space-4) calc(var(--tabbar-height) + var(--space-3) + var(--space-6) + env(safe-area-inset-bottom));
   }
 
   .focused .content {
