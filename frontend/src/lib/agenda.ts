@@ -1,5 +1,5 @@
 import { dueChip, months } from './contracts'
-import { formatDay } from './format'
+import { formatChipDay, formatDay } from './format'
 import type { ChipTone } from './meters'
 import type { AgendaGroup, AgendaItem, NextReading } from './types'
 
@@ -55,8 +55,51 @@ export function agendaText(item: AgendaItem, today: string): AgendaText {
         href: '/mietvertrag',
         chip,
       }
+    case 'wartung':
+      return {
+        title: name,
+        meta: item.from && today < item.from
+          ? `Möglich ab ${formatDay(item.from)}, bis ${formatDay(item.date)}`
+          : item.appointment
+            ? `Mit Termin · bis ${formatDay(item.date)}`
+            : item.responsible === 'vermieter'
+              ? `Macht der Vermieter · bis ${formatDay(item.date)}`
+              : item.lastDone
+                ? `Wartung · zuletzt ${formatDay(item.lastDone)}`
+                : 'Wartung · noch nie erledigt',
+        href: `/wartung/${encodeURIComponent(item.ref.id ?? '')}`,
+        chip: item.from && today < item.from ? { text: `ab ${formatDay(item.from)}`, tone: 'neutral' } : item.lastDone === null && item.daysUntil === 0 ? { text: 'Jetzt', tone: 'soon' } : chip,
+      }
+    case 'termin':
+      return {
+        title: name,
+        meta: [item.time ? `${item.time}${item.until ? `–${item.until}` : ''} Uhr` : 'Termin', item.place].filter(Boolean).join(' · '),
+        href: `/termine/${encodeURIComponent(item.ref.id ?? '')}`,
+        chip: { text: item.daysUntil === 0 ? 'Heute' : item.daysUntil === 1 ? 'Morgen' : formatChipDay(item.date), tone: item.daysUntil <= 1 ? 'soon' : 'neutral' },
+      }
+    case 'nachfassen':
+      return {
+        title: `Nachfassen: ${name}`,
+        meta: 'Mangel · Hat sich der Vermieter gerührt?',
+        href: `/maengel/${encodeURIComponent(item.ref.id ?? '')}`,
+        chip,
+      }
+    case 'garantie':
+      return {
+        title: `${item.which === 'garantie' ? 'Garantie' : 'Gewährleistung'} endet: ${name}`,
+        meta: `Am ${formatDay(item.date)} · Mängel jetzt noch melden`,
+        href: `/geraete/${encodeURIComponent(item.ref.id ?? '')}`,
+        chip,
+      }
+    case 'muell':
+      return {
+        title: name,
+        meta: item.fullService ? 'Abholung · Vollservice' : 'Am Vorabend rausstellen',
+        href: '/termine',
+        chip: { text: item.daysUntil === 0 ? 'Heute' : item.daysUntil === 1 ? 'Morgen' : formatChipDay(item.date), tone: !item.fullService && item.daysUntil <= 1 ? 'soon' : 'neutral' },
+      }
     case 'frist': {
-      const early = item.from !== undefined && today < item.from && (item.meterIds?.length ?? 0) > 0
+      const early = !!item.from && today < item.from && (item.meterIds?.length ?? 0) > 0
       return {
         title: name,
         meta: early ? `Ablesen ab ${formatDay(item.from!)}, bis ${formatDay(item.date)}` : `Bis ${formatDay(item.date)}`,
@@ -86,8 +129,11 @@ export function pickNext(agenda: AgendaItem[], reading: NextReading | null): { i
   const readingRank = reading === null ? Infinity : reading.kind === 'meldung' ? RANK[reading.status] : reading.status === 'open' ? 3 : 4
   let best: AgendaItem | null = null
   for (const item of agenda) {
-    // The voluntary hint and the requested reading are the reading card already.
-    if (item.kind === 'ablesung') continue
+    // The voluntary hint and the requested reading are the reading card already;
+    // a pickup is never "the next thing".
+    if (item.kind === 'ablesung' || item.kind === 'muell') continue
+    // The landlord's maintenance is for your information only.
+    if (item.kind === 'wartung' && item.responsible === 'vermieter') continue
     if (reading?.kind === 'meldung' && item.ref.type === 'frist' && item.ref.id === reading.deadlineId) continue
     if (best === null || RANK[item.status] < RANK[best.status] || (RANK[item.status] === RANK[best.status] && item.date < best.date)) best = item
   }

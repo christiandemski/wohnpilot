@@ -78,6 +78,50 @@ final class IcsFeedTest extends TestCase
         self::assertCount(4, array_keys($lines, 'BEGIN:VEVENT'), 'voluntary readings are no event');
     }
 
+    public function testAppointmentsHaveTimeAndPlace(): void
+    {
+        $lines = self::unfold(self::feed([
+            self::item(['kind' => 'termin', 'ref' => ['type' => 'termin', 'id' => 'schornsteinfeger-2026-11'], 'name' => 'Schornsteinfeger', 'date' => '2026-11-12', 'time' => '08:00', 'until' => '09:30', 'place' => 'Keller, Kamin']),
+            self::item(['kind' => 'termin', 'ref' => ['type' => 'termin', 'id' => 'handwerker'], 'name' => 'Handwerker', 'date' => '2026-11-13', 'time' => '14:00']),
+        ]));
+
+        self::assertContains('TZID:Europe/Berlin', $lines);
+        self::assertContains('DTSTART;TZID=Europe/Berlin:20261112T080000', $lines);
+        self::assertContains('DTEND;TZID=Europe/Berlin:20261112T093000', $lines);
+        self::assertContains('DTEND;TZID=Europe/Berlin:20261113T150000', $lines, 'one hour without an end');
+        self::assertContains('LOCATION:Keller\, Kamin', $lines);
+        self::assertContains('TRANSP:OPAQUE', $lines);
+        self::assertContains('TRIGGER:-PT12H', $lines);
+    }
+
+    public function testHouseEntries(): void
+    {
+        $ics = self::feed([
+            self::item(['kind' => 'wartung', 'ref' => ['type' => 'wartung', 'id' => 'heckenschnitt'], 'name' => 'Hecke zurückschneiden', 'date' => '2027-02-28', 'from' => '2026-10-01']),
+            self::item(['kind' => 'nachfassen', 'ref' => ['type' => 'mangel', 'id' => 'fenster'], 'name' => 'Fenster zieht', 'date' => '2026-11-02']),
+            self::item(['kind' => 'garantie', 'ref' => ['type' => 'geraet', 'id' => 'waschmaschine'], 'name' => 'Waschmaschine', 'date' => '2026-11-19', 'which' => 'gewaehrleistung']),
+        ]);
+        $lines = self::unfold($ics);
+
+        self::assertContains('SUMMARY:Wartung: Hecke zurückschneiden', $lines);
+        self::assertContains('DESCRIPTION:Möglich ab 01.10.2026\, erledigt bis heute.\n\nhttps://wohnpilot.example.org/wartung/heckenschnitt', $lines);
+        self::assertContains('SUMMARY:Nachfassen: Fenster zieht', $lines);
+        self::assertContains('SUMMARY:Gewährleistung endet: Waschmaschine', $lines);
+        self::assertContains('URL:https://wohnpilot.example.org/geraete/waschmaschine', $lines);
+    }
+
+    public function testBinsRemindOnlyIfYouPutThemOut(): void
+    {
+        $bin = static fn (bool $fullService): array => self::item(['kind' => 'muell', 'ref' => ['type' => 'muell', 'id' => 'gelb'], 'name' => 'Gelbe Tonne', 'date' => '2026-10-27', 'fullService' => $fullService]);
+
+        $full = self::unfold(self::feed([$bin(true)]));
+        self::assertContains('SUMMARY:Gelbe Tonne', $full);
+        self::assertNotContains('BEGIN:VALARM', $full);
+
+        $own = self::unfold(self::feed([$bin(false)]));
+        self::assertContains('TRIGGER:-PT6H', $own, '18:00 the evening before');
+    }
+
     public function testEscapesAndFoldsLongLines(): void
     {
         $ics = self::feed([self::item(['kind' => 'frist', 'ref' => ['type' => 'frist', 'id' => 'f'], 'name' => str_repeat('Mülltonne; Keller, Garten ', 6)])]);

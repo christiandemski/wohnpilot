@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Wohnpilot\App;
 
 use Wohnpilot\Domain\ContractTerm;
+use Wohnpilot\Domain\Day;
+use Wohnpilot\Domain\Device;
 use Wohnpilot\Domain\Deadline;
 use Wohnpilot\Domain\ReadingSchedule;
 use Wohnpilot\Domain\Urgency;
 
 /**
- * "Was steht an": every dated thing from contracts, lease, deadlines and
- * meters in one list, grouped by urgency, plus the key figures of the overview.
+ * "Was steht an": every dated thing from contracts, lease, deadlines,
+ * meters and the house (maintenance, appointments, defects to follow up,
+ * warranties ending, waste pickups) in one list, grouped by urgency, plus
+ * the key figures of the overview.
  * Items carry codes and names only; the frontend writes the sentences.
  */
 final class AgendaService
@@ -25,20 +29,28 @@ final class AgendaService
 
     private const WEEK_DAYS = 7;
     private const SOON_DAYS = 30;
+    /** Waste pickups in the overview: this week only. */
+    public const PICKUP_DAYS = 7;
 
     public function __construct(
         private readonly ContractService $contracts,
         private readonly LeaseService $lease,
         private readonly DeadlineService $deadlines,
         private readonly Clock $clock,
+        private readonly ?MaintenanceService $maintenance = null,
+        private readonly ?AppointmentService $appointments = null,
+        private readonly ?DefectService $defects = null,
+        private readonly ?DeviceService $devices = null,
+        private readonly ?WasteService $waste = null,
     ) {
     }
 
     /**
      * @param list<array<string, mixed>> $meters meter summaries of the overview (MeterService::list)
+     * @param int $pickupDays how far ahead waste pickups are listed (the calendar wants more)
      * @return array{agenda: list<array<string, mixed>>, figures: array<string, mixed>}
      */
-    public function forOverview(array $meters): array
+    public function forOverview(array $meters, int $pickupDays = self::PICKUP_DAYS): array
     {
         $today = $this->clock->today();
         $items = [];
@@ -95,6 +107,9 @@ final class AgendaService
             $items[] = ['ref' => ['type' => 'ablesung', 'id' => null], 'name' => null, 'category' => null, 'kind' => 'ablesung', 'date' => $first['dueDate'], 'daysUntil' => $first['daysUntil'], 'status' => ReadingSchedule::STATUS_OPEN, 'group' => self::GROUP_HINT, 'meterIds' => array_column($voluntary, 'id')];
         }
 
+        [$houseItems, $openDefects] = $this->house($today, $pickupDays);
+        array_push($items, ...$houseItems);
+
         usort($items, static fn (array $a, array $b): int => [$a['group'] === self::GROUP_HINT, $a['date'], $a['kind']] <=> [$b['group'] === self::GROUP_HINT, $b['date'], $b['kind']]);
 
         return [
@@ -104,8 +119,85 @@ final class AgendaService
                 'rentMonthly' => $rent === null ? null : round($rent, 2),
                 'fixedMonthly' => round($monthly + ($rent ?? 0.0), 2),
                 'nextNotice' => $nextNotice,
+                'openDefects' => $openDefects,
             ],
         ];
+    }
+
+    /**
+     * Maintenance (not the ones checked by radio), appointments from today,
+     * defects with a follow-up day, warranties ending within 30 days, and
+     * waste pickups of the next $pickupDays days.
+     *
+     * @return array{list<array<string, mixed>>, ?int} items and the number of open defects
+     */
+    private function house(string $today, int $pickupDays): array
+    {
+        $items = [];
+        foreach ($this->maintenance?->list() ?? [] as $task) {
+            $e = $task['evaluation'];
+            if ($e['automatic']) {
+                continue;
+            }
+            $items[] = ['ref' => ['type' => 'wartung', 'id' => $task['id']], 'name' => $task['title'], 'category' => null]
+                + self::dated('wartung', $e['dueDate'], $e['daysUntil'], $e['status'])
+                + ['from' => $e['from'], 'lastDone' => $e['lastDone'], 'appointment' => ($task['fields']['ausfuehrung'] ?? null) === 'termin', 'responsible' => $task['fields']['zustaendig'] ?? 'mieter'];
+        }
+
+        foreach ($this->appointments?->all() ?? [] as $appointment) {
+            if ($appointment['daysUntil'] < 0) {
+                continue;
+            }
+            $items[] = ['ref' => ['type' => 'termin', 'id' => $appointment['id']], 'name' => $appointment['title'], 'category' => null]
+                + self::dated('termin', $appointment['date'], $appointment['daysUntil'], Urgency::OK)
+                + ['time' => $appointment['time'], 'until' => $appointment['fields']['bis'] ?? null, 'place' => $appointment['fields']['ort'] ?? null];
+        }
+
+        $openDefects = null;
+        if ($this->defects !== null) {
+            $openDefects = 0;
+            foreach ($this->defects->list() as $defect) {
+                $e = $defect['evaluation'];
+                $openDefects += $e['open'] ? 1 : 0;
+                if ($e['followUp'] !== null) {
+                    $items[] = ['ref' => ['type' => 'mangel', 'id' => $defect['id']], 'name' => $defect['title'], 'category' => null]
+                        + self::dated('nachfassen', $e['followUp']['date'], $e['followUp']['daysUntil'], $e['followUp']['status'])
+                        + ['defectStatus' => $e['status']];
+                }
+            }
+        }
+
+        foreach ($this->devices?->list() ?? [] as $device) {
+            // The end that comes first, while it is still ahead and close
+            $ends = array_filter(
+                ['gewaehrleistung' => $device['evaluation']['liability'], 'garantie' => $device['evaluation']['warranty']],
+                static fn (?array $end): bool => $end !== null && $end['daysUntil'] >= 0 && $end['daysUntil'] <= Device::WARRANTY_LEAD_DAYS,
+            );
+            uasort($ends, static fn (array $a, array $b): int => $a['daysUntil'] <=> $b['daysUntil']);
+            if ($ends !== []) {
+                $which = array_key_first($ends);
+                $end = $ends[$which];
+                $items[] = ['ref' => ['type' => 'geraet', 'id' => $device['id']], 'name' => $device['name'], 'category' => null]
+                    + self::dated('garantie', $end['until'], $end['daysUntil'], $end['status'])
+                    + ['which' => $which];
+            }
+        }
+
+        if ($this->waste !== null) {
+            $waste = $this->waste->get();
+            $bins = array_column($waste['bins'], null, 'id');
+            foreach ($waste['pickups'] as $pickup) {
+                $days = Day::between($today, $pickup['date']);
+                if ($pickup['bin'] === null || $days < 0 || $days > $pickupDays) {
+                    continue;
+                }
+                $bin = $bins[$pickup['bin']] ?? ['name' => $pickup['summary'], 'farbe' => 'bin-rest'];
+                $items[] = ['ref' => ['type' => 'muell', 'id' => $pickup['bin']], 'name' => $bin['name'], 'category' => null]
+                    + self::dated('muell', $pickup['date'], $days, Urgency::OK)
+                    + ['color' => $bin['farbe'] ?? 'bin-rest', 'fullService' => $waste['fullService'], 'time' => $pickup['time']];
+            }
+        }
+        return [$items, $openDefects];
     }
 
     /** @return array{kind: string, date: string, daysUntil: int, status: string, group: string} */

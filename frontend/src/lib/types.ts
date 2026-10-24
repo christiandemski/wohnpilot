@@ -109,10 +109,10 @@ export type AgendaGroup = 'ueberfaellig' | 'woche' | 'bald' | 'spaeter' | 'hinwe
 
 /** One dated thing of "Was steht an" (AgendaService); kind decides which extra fields are set. */
 export interface AgendaItem {
-  ref: { type: 'vertrag' | 'mietvertrag' | 'frist' | 'ablesung'; id: string | null }
+  ref: { type: 'vertrag' | 'mietvertrag' | 'frist' | 'ablesung' | 'wartung' | 'termin' | 'mangel' | 'geraet' | 'muell'; id: string | null }
   name: string | null
   category: string | null
-  kind: 'kuendigung' | 'vertragsende' | 'sonderkuendigung' | 'zustimmung' | 'frist' | 'ablesung'
+  kind: 'kuendigung' | 'vertragsende' | 'sonderkuendigung' | 'zustimmung' | 'frist' | 'ablesung' | 'wartung' | 'termin' | 'nachfassen' | 'garantie' | 'muell'
   date: string
   daysUntil: number
   status: DueStatus | 'open'
@@ -125,8 +125,23 @@ export interface AgendaItem {
   validFrom?: string
   received?: string
   coldRent?: number | null
-  from?: string
+  from?: string | null
   meterIds?: string[]
+  /** wartung */
+  lastDone?: string | null
+  appointment?: boolean
+  responsible?: string
+  /** termin */
+  time?: string | null
+  until?: string | null
+  place?: string | null
+  /** nachfassen */
+  defectStatus?: string
+  /** garantie */
+  which?: 'garantie' | 'gewaehrleistung'
+  /** muell */
+  color?: string
+  fullService?: boolean
 }
 
 export interface Figures {
@@ -142,6 +157,8 @@ export interface Figures {
     status: DueStatus
     countdownFrom: string | null
   } | null
+  /** null while the house modules are not there */
+  openDefects: number | null
 }
 
 export type NextReading =

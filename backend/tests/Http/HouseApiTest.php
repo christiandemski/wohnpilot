@@ -91,6 +91,39 @@ final class HouseApiTest extends ApiTestCase
         self::assertSame(['ausfuehrung' => 'unknown'], self::decode($this->request('PUT', '/api/maintenance/rauchmelder', ['etag' => $saved['etag'], 'changes' => ['ausfuehrung' => 'magie'], 'original' => []]))['fields']);
     }
 
+    public function testOverviewListsTheHouseToo(): void
+    {
+        $agenda = self::decode($this->request('GET', '/api/overview'))['agenda'];
+        $house = array_values(array_filter($agenda, static fn (array $i): bool => in_array($i['kind'], ['wartung', 'termin', 'nachfassen', 'garantie', 'muell'], true)));
+
+        self::assertSame(
+            [
+                ['muell', 'gelb', '2026-10-27', 3, 'ok', 'woche'],
+                ['muell', 'bio', '2026-10-30', 6, 'ok', 'woche'],
+                ['wartung', 'heizungswartung', '2026-11-01', 8, 'soon', 'bald'],
+                ['nachfassen', 'fenster-schlafzimmer', '2026-11-02', 9, 'ok', 'bald'],
+                ['wartung', 'rauchmelder', '2026-11-08', 15, 'ok', 'bald'],
+                ['termin', 'schornsteinfeger-2026-11', '2026-11-12', 19, 'ok', 'bald'],
+                ['garantie', 'waschmaschine', '2026-11-19', 26, 'soon', 'bald'],
+                ['wartung', 'heckenschnitt', '2027-02-28', 127, 'ok', 'spaeter'],
+            ],
+            array_map(static fn (array $i): array => [$i['kind'], $i['ref']['id'], $i['date'], $i['daysUntil'], $i['status'], $i['group']], $house),
+        );
+        self::assertSame(['Gelbe Tonne', 'bin-gelb', true], [$house[0]['name'], $house[0]['color'], $house[0]['fullService']]);
+        self::assertSame(['08:00', '09:00'], [$house[5]['time'], $house[5]['until']]);
+        self::assertSame(['gewaehrleistung', 'bestaetigt'], [$house[6]['which'], $house[3]['defectStatus']]);
+        self::assertSame('2026-10-01', $house[7]['from']);
+    }
+
+    public function testRadioCheckedTasksStayOffTheOverview(): void
+    {
+        $task = self::decode($this->request('GET', '/api/maintenance/rauchmelder'));
+        $this->request('PUT', '/api/maintenance/rauchmelder', ['etag' => $task['etag'], 'changes' => ['ausfuehrung' => 'funk'], 'original' => []]);
+
+        $ids = array_column(array_column(self::decode($this->request('GET', '/api/overview'))['agenda'], 'ref'), 'id');
+        self::assertNotContains('rauchmelder', $ids);
+    }
+
     public function testAppointments(): void
     {
         $list = self::decode($this->request('GET', '/api/appointments'));
@@ -163,6 +196,14 @@ final class HouseApiTest extends ApiTestCase
         $this->calendarBody = null;
         $stale = self::decode($this->request('GET', '/api/waste?neu=1'));
         self::assertSame(['unreachable', '2026-10-27'], [$stale['error'], $stale['next']['gelb']]);
+
+        // Copy older than six hours: still no new try within half an hour of the failure
+        foreach (glob("$this->root/.cache/abfuhr-*.ics") as $copy) {
+            touch($copy, time() - 7 * 3600);
+        }
+        $this->calendarRequests = 0;
+        $quiet = self::decode($this->request('GET', '/api/waste'));
+        self::assertSame([0, 'unreachable'], [$this->calendarRequests, $quiet['error']]);
     }
 
     public function testWasteSettings(): void

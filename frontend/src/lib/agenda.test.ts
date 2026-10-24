@@ -72,6 +72,37 @@ describe('agendaText', () => {
   })
 })
 
+describe('house entries', () => {
+  it('words maintenance, appointments, follow-ups, warranties and bins', () => {
+    const house = (changes: Partial<AgendaItem>) => item({ category: null, renewsMonths: undefined, periodEnd: undefined, ...changes })
+    expect(agendaText(house({ ref: { type: 'wartung', id: 'heckenschnitt' }, name: 'Hecke', kind: 'wartung', date: '2027-02-28', daysUntil: 127, status: 'ok', from: '2026-11-01', lastDone: '2026-02-14' }), today)).toMatchObject({
+      meta: 'Möglich ab 01.11., bis 28.02.',
+      chip: { text: 'ab 01.11.', tone: 'neutral' },
+      href: '/wartung/heckenschnitt',
+    })
+    expect(agendaText(house({ ref: { type: 'termin', id: 's' }, name: 'Schornsteinfeger', kind: 'termin', date: '2026-10-25', daysUntil: 1, status: 'ok', time: '08:00', until: '09:00', place: 'Keller' }), today)).toMatchObject({
+      meta: '08:00–09:00 Uhr · Keller',
+      chip: { text: 'Morgen', tone: 'soon' },
+    })
+    expect(agendaText(house({ ref: { type: 'geraet', id: 'w' }, name: 'Waschmaschine', kind: 'garantie', which: 'gewaehrleistung', date: '2026-11-19', daysUntil: 26 }), today).title).toBe('Gewährleistung endet: Waschmaschine')
+    expect(agendaText(house({ ref: { type: 'muell', id: 'gelb' }, name: 'Gelbe Tonne', kind: 'muell', date: '2026-10-27', daysUntil: 3, status: 'ok', fullService: true }), today)).toMatchObject({
+      meta: 'Abholung · Vollservice',
+      chip: { text: 'Di 27.', tone: 'neutral' },
+    })
+  })
+
+  it('leaves maintenance of the landlord off the next card', () => {
+    const boiler = item({ ref: { type: 'wartung', id: 'heizungswartung' }, name: 'Gastherme', kind: 'wartung', date: '2026-11-01', daysUntil: 8, status: 'soon', responsible: 'vermieter' })
+    expect(pickNext([boiler, item({})], null)).toEqual({ item: item({}) })
+    expect(agendaText(boiler, today).meta).toBe('Macht der Vermieter · bis 01.11.')
+  })
+
+  it('never puts a pickup on the next card', () => {
+    const bin = item({ ref: { type: 'muell', id: 'gelb' }, kind: 'muell', date: '2026-10-25', daysUntil: 1, status: 'ok', group: 'woche' })
+    expect(pickNext([bin], null)).toBeNull()
+  })
+})
+
 describe('pickNext', () => {
   it('puts a close notice day before a calm request', () => {
     const agenda = [item({}), meldungItem, hint]

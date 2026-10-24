@@ -13,6 +13,7 @@ use Slim\Factory\AppFactory;
 use Slim\Routing\RouteCollectorProxy;
 use Throwable;
 use Wohnpilot\App\AppException;
+use Wohnpilot\App\WasteService;
 use Wohnpilot\App\User;
 use Wohnpilot\Auth\BearId;
 use Wohnpilot\Auth\Identity;
@@ -123,7 +124,7 @@ final class Api
                 throw AppException::notFound('Calendar');
             }
             $services->notes()->refresh();
-            $agenda = $services->agenda()->forOverview([])['agenda'];
+            $agenda = $services->agenda()->forOverview([], WasteService::DAYS_AHEAD)['agenda'];
             $response->getBody()->write($services->calendarFeed()->build($agenda, gmdate('Ymd\THis\Z')));
             return $response
                 ->withHeader('Content-Type', 'text/calendar; charset=utf-8')

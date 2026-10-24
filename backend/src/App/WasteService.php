@@ -22,6 +22,8 @@ final class WasteService
 {
     public const COLORS = ['bin-rest', 'bin-bio', 'bin-papier', 'bin-gelb', 'bin-glas'];
     public const MAX_AGE_SECONDS = 6 * 3600;
+    /** After a failed load, wait this long before the next try (the overview should not hang on it). */
+    public const RETRY_SECONDS = 30 * 60;
     /** How far ahead pickups are listed. */
     public const DAYS_AHEAD = 60;
     private const DEFAULT_BINS = [
@@ -115,6 +117,10 @@ final class WasteService
         if (!$refresh && $cachedAt !== null && $now - $cachedAt < self::MAX_AGE_SECONDS) {
             return [(string) file_get_contents($file), $cachedAt, null];
         }
+        $failed = $file . '.fehler';
+        if (!$refresh && is_file($failed) && $now - (int) filemtime($failed) < self::RETRY_SECONDS) {
+            return [$cachedAt === null ? null : (string) file_get_contents($file), $cachedAt, trim((string) file_get_contents($failed))];
+        }
         try {
             $ics = $this->fetcher->fetch($url);
             if (!is_dir($this->cacheDir)) {
@@ -122,8 +128,13 @@ final class WasteService
             }
             file_put_contents($file, $ics, LOCK_EX);
             touch($file, $now);
+            @unlink($failed);
             return [$ics, $now, null];
         } catch (RuntimeException $e) {
+            if (is_dir($this->cacheDir) || mkdir($this->cacheDir, 0775, true)) {
+                file_put_contents($failed, $e->getMessage());
+                touch($failed, $now);
+            }
             return [$cachedAt === null ? null : (string) file_get_contents($file), $cachedAt, $e->getMessage()];
         }
     }

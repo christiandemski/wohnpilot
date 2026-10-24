@@ -28,8 +28,12 @@ final class ContractsApiTest extends ApiTestCase
                 ['zustimmung', 'mietvertrag-efh-musterstrasse', '2026-12-31', 68, 'ok', 'spaeter'],
                 ['kuendigung', 'hausrat', '2027-08-31', 311, 'ok', 'spaeter'],
             ],
-            array_map(static fn (array $i): array => [$i['kind'], $i['ref']['id'], $i['date'], $i['daysUntil'], $i['status'], $i['group']], $data['agenda']),
+            array_values(array_map(
+                static fn (array $i): array => [$i['kind'], $i['ref']['id'], $i['date'], $i['daysUntil'], $i['status'], $i['group']],
+                array_filter($data['agenda'], static fn (array $i): bool => in_array($i['kind'], ['kuendigung', 'vertragsende', 'frist', 'sonderkuendigung', 'zustimmung'], true)),
+            )),
         );
+        $data['agenda'] = array_values(array_filter($data['agenda'], static fn (array $i): bool => in_array($i['kind'], ['kuendigung', 'vertragsende', 'frist', 'sonderkuendigung', 'zustimmung'], true)));
         self::assertSame('Stadtwerke', $data['agenda'][0]['name']);
         self::assertSame('2026-11-30', $data['agenda'][0]['periodEnd']);
         self::assertSame('2024-12-01', $data['agenda'][0]['countdownFrom']);
@@ -43,6 +47,7 @@ final class ContractsApiTest extends ApiTestCase
                 'rentMonthly' => 1730.0,
                 'fixedMonthly' => 1868.02,
                 'nextNotice' => ['id' => 'strom-stadtwerke', 'name' => 'Stadtwerke', 'category' => 'energie', 'date' => '2026-11-02', 'daysUntil' => 9, 'status' => 'soon', 'countdownFrom' => '2024-12-01'],
+                'openDefects' => 1,
             ],
             $data['figures'],
         );

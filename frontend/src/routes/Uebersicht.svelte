@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { CalendarClock, Gauge, House, KeyRound, Plus, Receipt } from '@lucide/svelte'
-  import { api } from '../lib/api'
+  import { CalendarClock, CalendarDays, Gauge, House, KeyRound, Plus, Receipt, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
+  import { api, ApiError } from '../lib/api'
   import { Resource } from '../lib/resource.svelte'
   import { formatChipDay, formatDay, formatLongDay, formatNumber, formatPercent, greeting, monthName } from '../lib/format'
   import { mediumName, meterChip, requestChip, roomName } from '../lib/meters'
@@ -15,6 +15,7 @@
   import MediumIcon from '../components/MediumIcon.svelte'
   import NextCard from '../components/NextCard.svelte'
   import StatusChip from '../components/StatusChip.svelte'
+  import Tonne from '../components/Tonne.svelte'
 
   let { user }: { user: User } = $props()
 
@@ -66,8 +67,44 @@
   /** A contract, lease or deadline on the "Als Nächstes" card. */
   function itemCard(data: Overview, item: AgendaItem) {
     const text = agendaText(item, data.today)
-    return { title: text.title, meta: text.meta, chip: text.chip, action: { href: text.href, text: item.kind === 'frist' ? 'Frist ansehen' : item.kind === 'zustimmung' ? 'Mietvertrag ansehen' : 'Vertrag ansehen' } }
+    const label: Record<string, string> = {
+      frist: 'Frist ansehen',
+      zustimmung: 'Mietvertrag ansehen',
+      wartung: 'Aufgabe ansehen',
+      termin: 'Termin ansehen',
+      nachfassen: 'Mangel ansehen',
+      garantie: 'Gerät ansehen',
+    }
+    return { title: text.title, meta: text.meta, chip: text.chip, action: { href: text.href, text: label[item.kind] ?? 'Vertrag ansehen' } }
   }
+
+  // Ticking off maintenance right in "Was steht an"
+  let busyTask = $state<string | null>(null)
+  let doneTask = $state<{ id: string; title: string } | null>(null)
+  let taskError = $state('')
+
+  async function tick(item: AgendaItem, undo = false) {
+    const id = item.ref.id ?? ''
+    busyTask = id
+    taskError = ''
+    try {
+      if (undo) {
+        await api.delete(`/maintenance/${encodeURIComponent(id)}/done/${overview.data?.today}`)
+        doneTask = null
+      } else {
+        await api.post(`/maintenance/${encodeURIComponent(id)}/done`, {})
+        doneTask = { id, title: item.name ?? '' }
+      }
+      await overview.reload()
+    } catch (e) {
+      taskError = e instanceof ApiError ? e.text : 'Das hat nicht geklappt.'
+    } finally {
+      busyTask = null
+    }
+  }
+
+  /** The circle only where it can be done now (not before a season starts). */
+  const tickable = (item: AgendaItem, today: string) => item.kind === 'wartung' && !(item.from && today < item.from) && item.daysUntil <= 30
 
   /** Later deadlines are many and calm: the first few, the rest on request. */
   const LATER_SHOWN = 3
@@ -164,19 +201,45 @@
         </Kennzahlkachel>
       {/if}
 
+      {#if data.figures.openDefects !== null && data.figures.openDefects !== undefined}
+        <Kennzahlkachel href="/maengel" label="Offene Mängel" value={formatNumber(data.figures.openDefects)} module="maengel">
+          {#snippet icon()}<TriangleAlert size={18} strokeWidth={1.75} aria-hidden="true" />{/snippet}
+        </Kennzahlkachel>
+      {/if}
+
       {#if groups.length > 0}
         <section class="card list wide agenda" aria-labelledby="agenda-title">
           <div class="list-head">
             <h2 id="agenda-title">Was steht an</h2>
             <a href="/fristen">Fristen</a>
           </div>
+          {#if doneTask || taskError}
+            <p class="tick-status" role="status">
+              {#if doneTask}
+                „{doneTask.title}“ ist erledigt.
+                <button type="button" class="btn btn-secondary on-surface" disabled={busyTask !== null} onclick={() => tick({ ref: { type: 'wartung', id: doneTask!.id } } as AgendaItem, true)}>Rückgängig</button>
+              {/if}
+              {#if taskError}<span class="save-error">{taskError}</span>{/if}
+            </p>
+          {/if}
           {#each groups as { group, items } (group)}
             {@const shown = group === 'spaeter' && !showAllLater ? items.slice(0, LATER_SHOWN) : items}
             <h3 class="group {group}">{GROUP_TITLES[group]}</h3>
             {#each shown as item (item.kind + item.ref.id + item.date)}
               {@const text = agendaText(item, data.today)}
+              <div class="row-wrap">
               <a class="row" href={text.href}>
-                {#if item.kind === 'zustimmung'}
+                {#if item.kind === 'muell'}
+                  <span class="bin-tile"><Tonne color={item.color ?? 'bin-rest'} /></span>
+                {:else if item.kind === 'wartung'}
+                  <IconTile module="wartung"><Wrench size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
+                {:else if item.kind === 'termin'}
+                  <IconTile module="termine"><CalendarDays size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
+                {:else if item.kind === 'nachfassen'}
+                  <IconTile module="maengel"><TriangleAlert size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
+                {:else if item.kind === 'garantie'}
+                  <IconTile module="geraete"><WashingMachine size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
+                {:else if item.kind === 'zustimmung'}
                   <IconTile module="miete"><KeyRound size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
                 {:else if item.kind === 'ablesung' || (item.kind === 'frist' && item.meterIds?.length)}
                   <IconTile><Gauge size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
@@ -191,6 +254,10 @@
                 </span>
                 <StatusChip tone={text.chip.tone}>{text.chip.text}</StatusChip>
               </a>
+              {#if tickable(item, data.today)}
+                <button type="button" class="done-circle" aria-label="„{item.name}“ als erledigt abhaken" disabled={busyTask !== null} onclick={() => tick(item)}></button>
+              {/if}
+              </div>
             {/each}
             {#if shown.length < items.length}
               <button type="button" class="more" onclick={() => (showAllLater = true)}>
@@ -347,6 +414,37 @@
     font-size: 13px;
     line-height: 18px;
     color: var(--ink-muted);
+  }
+
+  .row-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .row-wrap .row {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tick-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding-bottom: var(--space-2);
+    font-size: 14px;
+  }
+
+  .bin-tile {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--bin-tint);
   }
 
   .group {

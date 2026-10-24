@@ -174,7 +174,17 @@ class Services
 
     public function agenda(): AgendaService
     {
-        return $this->instances[__FUNCTION__] ??= new AgendaService($this->contracts(), $this->lease(), $this->deadlines(), $this->clock());
+        return $this->instances[__FUNCTION__] ??= new AgendaService(
+            $this->contracts(),
+            $this->lease(),
+            $this->deadlines(),
+            $this->clock(),
+            $this->maintenance(),
+            $this->appointments(),
+            $this->defects(),
+            $this->devices(),
+            $this->waste(),
+        );
     }
 
     public function session(): Session
