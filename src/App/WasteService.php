@@ -10,13 +10,16 @@ use Wohnpilot\Calendar\IcsReader;
 use Wohnpilot\Domain\Day;
 use Wohnpilot\Domain\WasteSchedule;
 use Wohnpilot\Note\NoteDocument;
+use Wohnpilot\Storage\AttachmentStore;
 use Wohnpilot\Storage\StoredNote;
 
 /**
  * Waste collection of the active home (`typ: muell`, `termine/muell.md`).
- * The note holds the address of the municipal calendar and the bins; the
- * calendar itself is a cache file (var/cache), loaded again after six hours.
- * If loading fails, the last copy is used and the error is shown.
+ * The note holds the address of the municipal calendar (`kalender_url`) or,
+ * if the municipality only offers a download, the uploaded file next to the
+ * attachments (`kalender_datei`), and the bins. The calendar itself is a
+ * cache file (var/cache), loaded again after six hours. If loading fails,
+ * the last copy is used and the error is shown.
  */
 final class WasteService
 {
@@ -26,6 +29,8 @@ final class WasteService
     public const RETRY_SECONDS = 30 * 60;
     /** How far ahead pickups are listed. */
     public const DAYS_AHEAD = 60;
+    /** How far ahead the end of the calendar is looked for (a downloaded file usually covers one year). */
+    private const END_LOOKAHEAD_DAYS = 400;
     private const DEFAULT_BINS = [
         ['id' => 'rest', 'name' => 'Restmüll', 'farbe' => 'bin-rest', 'stichwort' => 'Rest'],
         ['id' => 'bio', 'name' => 'Bio', 'farbe' => 'bin-bio', 'stichwort' => 'Bio'],
@@ -41,6 +46,7 @@ final class WasteService
         private readonly string $cacheDir,
         private readonly Clock $clock,
         private readonly ?\Closure $now = null,
+        private readonly ?AttachmentStore $files = null,
     ) {
     }
 
@@ -55,10 +61,16 @@ final class WasteService
         $fm = $stored === null ? [] : NoteDocument::parse($stored->content)->frontmatter()->all();
         $bins = is_array($fm['tonnen'] ?? null) ? array_values(array_filter($fm['tonnen'], 'is_array')) : [];
         $url = is_string($fm['kalender_url'] ?? null) ? $fm['kalender_url'] : null;
+        $file = is_string($fm['kalender_datei'] ?? null) ? $fm['kalender_datei'] : null;
         $today = $this->clock->today();
 
-        [$ics, $fetchedAt, $error] = $url === null ? [null, null, null] : $this->calendar($url, $refresh);
+        [$ics, $fetchedAt, $error] = match (true) {
+            $url !== null => $this->calendar("url:$url", fn (): string => $this->fetcher->fetch($url), $refresh),
+            $file !== null && $this->files !== null => $this->calendar("datei:$file", fn (): string => $this->readFile($file), $refresh),
+            default => [null, null, null],
+        };
         $pickups = $ics === null ? [] : WasteSchedule::pickups($bins, IcsReader::occurrences($ics, $today, Day::addDays($today, self::DAYS_AHEAD)));
+        $all = $ics === null ? [] : IcsReader::occurrences($ics, $today, Day::addDays($today, self::END_LOOKAHEAD_DAYS));
 
         return [
             'configured' => $stored !== null,
@@ -66,6 +78,9 @@ final class WasteService
             'etag' => $stored?->etag,
             'fullService' => ($fm['vollservice'] ?? false) === true,
             'url' => $url,
+            'file' => $url === null ? $file : null,
+            // Last pickup in the calendar: a downloaded file needs a new one before then
+            'calendarEnds' => $all === [] ? null : $all[array_key_last($all)]['date'],
             'bins' => $bins === [] && $stored === null ? self::DEFAULT_BINS : $bins,
             'pickups' => $pickups,
             'next' => WasteSchedule::nextPerBin($pickups, $today),
@@ -79,13 +94,21 @@ final class WasteService
      *
      * @param array<string, mixed> $input kalender_url, vollservice, tonnen
      */
-    public function save(array $input, User $user): array
+    public function save(array $input, User $user, bool $raw = false): array
     {
-        $check = (new Input($input, false))->url('kalender_url')->bool('vollservice');
-        if (array_key_exists('tonnen', $input)) {
-            $check->set('tonnen', self::bins($input['tonnen'], $check));
+        if ($raw) {
+            $fields = $input;
+        } else {
+            $check = (new Input($input, false))->url('kalender_url')->bool('vollservice');
+            if (array_key_exists('tonnen', $input)) {
+                $check->set('tonnen', self::bins($input['tonnen'], $check));
+            }
+            $fields = $check->fields();
+            // An address replaces an uploaded file
+            if (is_string($fields['kalender_url'] ?? null)) {
+                $fields['kalender_datei'] = null;
+            }
         }
-        $fields = $check->fields();
 
         $stored = $this->find();
         if ($stored === null) {
@@ -103,15 +126,54 @@ final class WasteService
         return $this->get(true);
     }
 
+    /**
+     * Takes a downloaded calendar file (ICS) instead of an address: stored in
+     * the Nextcloud at anhaenge/muell/<objekt>/abfuhrkalender.ics, replacing
+     * an older one. The address, if there was one, is removed.
+     */
+    public function upload(string $ics, User $user): array
+    {
+        $files = $this->files ?? throw new AppException('no_files', 409, 'No attachment storage');
+        if (strlen($ics) > CalendarFetcher::MAX_BYTES) {
+            throw AppException::validation(['kalender' => 'too_large']);
+        }
+        if (!str_contains($ics, 'BEGIN:VCALENDAR')) {
+            throw AppException::validation(['kalender' => 'not_a_calendar']);
+        }
+        $path = AttachmentStore::FOLDER . '/muell/' . $this->objects->activeObjectId() . '/abfuhrkalender.ics';
+        $files->putFile($path, $ics);
+        // The new file counts from now on, not the copy of the old one
+        @unlink($this->cacheFile("datei:$path"));
+        $this->save(['kalender_url' => null, 'kalender_datei' => $path], $user, raw: true);
+        return $this->get();
+    }
+
+    private function readFile(string $path): string
+    {
+        try {
+            return $this->files->getFile($path);
+        } catch (\Throwable) {
+            throw new RuntimeException('file_missing');
+        }
+    }
+
     private function find(): ?StoredNote
     {
         return $this->objects->all('muell')[0] ?? null;
     }
 
-    /** @return array{?string, ?int, ?string} calendar text, when it was loaded, why loading failed */
-    private function calendar(string $url, bool $refresh): array
+    private function cacheFile(string $source): string
     {
-        $file = $this->cacheDir . '/abfuhr-' . sha1($url) . '.ics';
+        return $this->cacheDir . '/abfuhr-' . sha1($source) . '.ics';
+    }
+
+    /**
+     * @param \Closure(): string $load throws RuntimeException with a short reason
+     * @return array{?string, ?int, ?string} calendar text, when it was loaded, why loading failed
+     */
+    private function calendar(string $source, \Closure $load, bool $refresh): array
+    {
+        $file = $this->cacheFile($source);
         $cachedAt = is_file($file) ? (int) filemtime($file) : null;
         $now = $this->now === null ? time() : ($this->now)();
         if (!$refresh && $cachedAt !== null && $now - $cachedAt < self::MAX_AGE_SECONDS) {
@@ -122,7 +184,7 @@ final class WasteService
             return [$cachedAt === null ? null : (string) file_get_contents($file), $cachedAt, trim((string) file_get_contents($failed))];
         }
         try {
-            $ics = $this->fetcher->fetch($url);
+            $ics = $load();
             if (!is_dir($this->cacheDir)) {
                 mkdir($this->cacheDir, 0775, true);
             }

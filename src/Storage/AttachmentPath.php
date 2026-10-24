@@ -18,7 +18,7 @@ final class AttachmentPath
             }
         }
         if (self::type($path) === null) {
-            throw new InvalidArgumentException("Not an image or PDF: $path");
+            throw new InvalidArgumentException("Not an image, PDF or calendar: $path");
         }
     }
 
@@ -26,7 +26,7 @@ final class AttachmentPath
     public static function assertWritable(string $path): void
     {
         self::assertReadable($path);
-        if (!preg_match('#^' . AttachmentStore::FOLDER . '(/[a-z0-9][a-z0-9_-]*)+\.(jpg|jpeg|png|webp|pdf)$#', $path)) {
+        if (!preg_match('#^' . AttachmentStore::FOLDER . '(/[a-z0-9][a-z0-9_-]*)+\.(jpg|jpeg|png|webp|pdf|ics)$#', $path)) {
             throw new InvalidArgumentException("Wohnpilot writes below anhaenge/ only: $path");
         }
     }

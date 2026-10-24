@@ -13,7 +13,7 @@ namespace Wohnpilot\Storage;
 interface AttachmentStore
 {
     public const FOLDER = 'anhaenge';
-    public const TYPES = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp', 'gif' => 'image/gif', 'pdf' => 'application/pdf'];
+    public const TYPES = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp', 'gif' => 'image/gif', 'pdf' => 'application/pdf', 'ics' => 'text/calendar'];
 
     /** Creates folders as needed and replaces a file of the same path. */
     public function putFile(string $path, string $bytes): void;
