@@ -1160,6 +1160,7 @@ class ComposerStaticInit46f8d95941feb8dbc73c995178fc46ab
         'Wohnpilot\\App\\DefectService' => __DIR__ . '/../..' . '/src/App/DefectService.php',
         'Wohnpilot\\App\\DeviceService' => __DIR__ . '/../..' . '/src/App/DeviceService.php',
         'Wohnpilot\\App\\DocumentService' => __DIR__ . '/../..' . '/src/App/DocumentService.php',
+        'Wohnpilot\\App\\EntryService' => __DIR__ . '/../..' . '/src/App/EntryService.php',
         'Wohnpilot\\App\\FieldMerge' => __DIR__ . '/../..' . '/src/App/FieldMerge.php',
         'Wohnpilot\\App\\HouseholdService' => __DIR__ . '/../..' . '/src/App/HouseholdService.php',
         'Wohnpilot\\App\\Input' => __DIR__ . '/../..' . '/src/App/Input.php',

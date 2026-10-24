@@ -955,6 +955,7 @@ return array(
     'Wohnpilot\\App\\DefectService' => $baseDir . '/src/App/DefectService.php',
     'Wohnpilot\\App\\DeviceService' => $baseDir . '/src/App/DeviceService.php',
     'Wohnpilot\\App\\DocumentService' => $baseDir . '/src/App/DocumentService.php',
+    'Wohnpilot\\App\\EntryService' => $baseDir . '/src/App/EntryService.php',
     'Wohnpilot\\App\\FieldMerge' => $baseDir . '/src/App/FieldMerge.php',
     'Wohnpilot\\App\\HouseholdService' => $baseDir . '/src/App/HouseholdService.php',
     'Wohnpilot\\App\\Input' => $baseDir . '/src/App/Input.php',
