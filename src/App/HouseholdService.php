@@ -128,12 +128,13 @@ final class HouseholdService
     }
 
     /**
-     * Creates an object and makes it the active one. Creates the household on
-     * first use with the current user as administrator.
+     * Creates an object and makes it the active one (unless it is a home you
+     * move into later). Creates the household on first use with the current
+     * user as administrator.
      *
      * @param array<string, mixed> $input art, bezeichnung, adresse, einzug, wohnflaeche_m2, raeume
      */
-    public function createObject(array $input, User $user): array
+    public function createObject(array $input, User $user, bool $activate = true): array
     {
         $fields = self::validateObject($input, true);
         $id = Slug::unique(
@@ -143,7 +144,9 @@ final class HouseholdService
 
         $note = NoteDocument::create(['typ' => 'objekt', 'id' => $id] + $fields + ['erstellt_von' => $user->id]);
         $stored = $this->notes->create("objekte/$id/_objekt.md", $note);
-        $this->setActiveObject($id, $user);
+        if ($activate || $this->household() === null) {
+            $this->setActiveObject($id, $user);
+        }
 
         return self::objectData($stored);
     }
@@ -159,6 +162,12 @@ final class HouseholdService
         $changes = self::validateObject($changes, false);
         $stored = $this->notes->findById('objekt', $id) ?? throw AppException::notFound("Objekt $id");
         return self::objectData($this->notes->updateFields($stored, $changes, $original, $etag, $user->id, self::objectData(...)));
+    }
+
+    /** The home you live in now; the others are planned or former ones. */
+    public function makeActive(string $id, User $user): void
+    {
+        $this->setActiveObject($id, $user);
     }
 
     private function setActiveObject(string $id, User $user): void
@@ -213,12 +222,14 @@ final class HouseholdService
                 $fields[$key] = $value === '' ? null : $value;
             }
         }
-        if (array_key_exists('einzug', $input)) {
-            $value = (string) $input['einzug'];
-            if ($value !== '' && !Day::isValid($value)) {
-                $errors['einzug'] = 'date';
+        foreach (['einzug', 'auszug'] as $key) {
+            if (array_key_exists($key, $input)) {
+                $value = (string) $input[$key];
+                if ($value !== '' && !Day::isValid($value)) {
+                    $errors[$key] = 'date';
+                }
+                $fields[$key] = $value === '' ? null : $value;
             }
-            $fields['einzug'] = $value === '' ? null : $value;
         }
         if (array_key_exists('wohnflaeche_m2', $input)) {
             $value = $input['wohnflaeche_m2'];

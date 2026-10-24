@@ -231,6 +231,17 @@ final class Api
             $api->put('/people/{id}', fn (Request $request, Response $response, array $args) => self::json($response, ['people' => $services->people()->update($args['id'], self::body($request), self::user($request))]));
             $api->delete('/people/{id}', fn (Request $request, Response $response, array $args) => self::json($response, ['people' => $services->people()->remove($args['id'], self::user($request))]));
 
+            // Moving: out of the current home, into a new one, the switch; checklists to tick off
+            $api->get('/move', fn (Request $r, Response $response) => self::json($response, $services->moves()->status()));
+            $api->post('/move/out', fn (Request $request, Response $response) => self::json($response, $services->moves()->moveOut(self::body($request), self::user($request))));
+            $api->post('/move/in', fn (Request $request, Response $response) => self::json($response, $services->moves()->moveIn(self::body($request), self::user($request)), 201));
+            $api->post('/move/switch', fn (Request $request, Response $response) => self::json($response, $services->moves()->switchTo((string) (self::body($request)['objekt'] ?? ''), self::user($request))));
+            $api->get('/checklists/{id}', fn (Request $r, Response $response, array $args) => self::json($response, $services->moves()->checklist($args['id'])));
+            $api->put('/checklists/{id}/items/{index:[0-9]+}', function (Request $request, Response $response, array $args) use ($services): Response {
+                $body = self::body($request);
+                return self::json($response, $services->moves()->tick($args['id'], (int) $args['index'], (string) ($body['text'] ?? ''), (bool) ($body['done'] ?? false), self::user($request)));
+            });
+
             $api->get('/objects/active', fn (Request $r, Response $response) => self::json($response, ['object' => $services->household()->activeObject()]));
             $api->post('/objects', fn (Request $request, Response $response) => self::json(
                 $response,
