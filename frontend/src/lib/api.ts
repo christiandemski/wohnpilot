@@ -35,6 +35,9 @@ const MESSAGES: Record<string, string> = {
   storage_unavailable: 'Die Nextcloud ist gerade nicht erreichbar. Deine Eingabe ist noch nicht gespeichert.',
   no_object: 'Leg zuerst dein Zuhause an.',
   offline: 'Du bist offline. Deine Eingabe ist noch nicht gespeichert.',
+  invalid_login: 'E-Mail oder Passwort stimmt nicht.',
+  rate_limited: 'Zu viele Fehlversuche. Warte bitte 15 Minuten oder melde dich mit BearID an.',
+  not_released: 'Wohnpilot ist für dein BearID-Konto nicht freigegeben. Der Admin kann es unter „Benutzer“ freigeben.',
 }
 
 const FIELD_PROBLEMS: Record<string, string> = {
@@ -79,11 +82,13 @@ export const api = {
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
 }
 
-export function login(): void {
+/** Only with APP_ENV=dev: sign in as DEV_LOGIN_USER. */
+export function devLogin(): void {
   window.location.href = '/api/auth/login'
 }
 
+/** Logs out here and, if signed in there, at BearID too (its cookie would sign you in again). */
 export async function logout(): Promise<void> {
-  await api.post('/auth/logout')
-  window.location.href = '/'
+  const result = await api.post<{ redirect: string | null }>('/auth/logout')
+  window.location.href = result?.redirect ?? '/'
 }

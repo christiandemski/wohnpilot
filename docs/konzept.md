@@ -260,7 +260,7 @@ Die gestrichelte Linie zu Paperless steht nur für Verweise per Dokument-ID; Woh
 
 - **Frontend:** PWA mit Vite und Svelte oder Vue, Service Worker für Offline-Warteschlange und Push, IndexedDB als lokaler Puffer. Eine Codebasis für Handy, Desktop und Kiosk.
 - **Backend:** Passend zum Netcup Webhosting PHP (z. B. Slim oder schlankes Laravel) mit SQLite als Cache und Index; Cronjob für Erinnerungen. Speicherung über austauschbare Adapter (Nextcloud Notes, SQLite, MySQL/MariaDB) hinter einer gemeinsamen Schnittstelle; Nextcloud-spezifisches wie ETag-Prüfung steckt nur im Nextcloud-Adapter. Läuft alternativ auf dem Server neben Nextcloud.
-- **Login:** BearID per OIDC, Session-Cookie fürs Frontend; die Benutzerkennung landet in `erstellt_von`.
+- **Login:** BearID über das gemeinsame Cookie `bearid` (signiertes JWT für alle Subdomains von codekorb.de, geprüft wie im `bearid-guard`), dazu ein eigener Login mit E-Mail und Passwort als Notzugang („Weg B“ aus der BearID-Anleitung). Danach Session-Cookie fürs Frontend; die Personen-ID landet in `erstellt_von`.
 - **Nextcloud-Zugriff:** Notes API für Lesen und Schreiben von Notizen, WebDAV für Anhänge und Ordner. Ein eigenes App-Passwort, nur für Wohnpilot, jederzeit in Nextcloud widerrufbar.
 - **Konfliktschutz:** Vor jedem Schreiben ETag prüfen; bei Konflikt Zusammenführen anbieten statt überschreiben.
 - **Cache:** Das Backend indiziert alle Notizen in SQLite (Frontmatter und Tabellen), Auswertungen laufen auf dem Index. Abgleich per Änderungszeitpunkt, Nextcloud bleibt die Quelle der Wahrheit.
@@ -306,13 +306,14 @@ Stufe 1 liefert mit Zählern und Übersicht schon im ersten Monat Alltagsnutzen;
 - **Plausibilität:** „Ungewöhnlich hoch“ ab dem Doppelten des Erwarteten (Durchschnitt pro Tag × Tage seit der letzten Ablesung).
 - **Fälligkeit:** Ablesetag aus `_haushalt.md` (`einstellungen.ablesetag`), Intervall je Zähler; eine Ablesung bis 5 Tage vor dem Termin zählt für diesen Termin.
 - **Zahlenformat:** Tausendertrenner ist das schmale geschützte Leerzeichen (U+202F), Dezimalzeichen das Komma. In den Notizen stehen Zahlen mit Punkt (`23702.0`); von Hand geschriebene Werte wie `23 702,0` oder `23.702,0` werden ebenfalls gelesen.
-- **Erster Zugang:** Solange es noch keinen Haushalt gibt, dürfen nur die BearID-Benutzer aus `WOHNPILOT_USERS` ihn anlegen; danach entscheidet die Personenliste in `_haushalt.md`.
+- **Erster Zugang:** Solange es noch keinen Haushalt gibt, dürfen nur Benutzernamen oder E-Mail-Adressen aus `WOHNPILOT_USERS` ihn anlegen; danach entscheidet die Personenliste in `_haushalt.md`.
+- **Anmeldung:** Wer bei BearID angemeldet ist und Wohnpilot freigegeben hat (oder Admin ist), ist ohne Klick drin; die Person wird über `bearid` (BearID-ID) oder `email` in `_haushalt.md` gefunden. Abmelden in Wohnpilot meldet auch bei BearID ab, sonst wäre man über das Cookie sofort wieder angemeldet. Der Notzugang mit E-Mail und Passwort nutzt eigene Konten in `var/accounts.sqlite` (kein Cache, gehört ins Backup), angelegt mit `php bin/account.php`; Passwörter nur als Hash, Bremse nach 5 Fehlversuchen pro E-Mail bzw. 20 pro IP in 15 Minuten. „Passwort vergessen“ per Mail gibt es noch nicht.
 
 ## Offene Fragen
 
 - [x] Name: Wohnpilot
 - [x] Backend: PHP 8.3+ mit Slim 4 auf dem Netcup Webhosting, SQLite als Index-Cache (entschieden 24.10.2026)
-- [ ] Welche Technik nutzt BearID bisher? Umgesetzt ist eine austauschbare Login-Schnittstelle mit OIDC (Discovery, Authorization Code mit PKCE) als erster Variante; noch gegen BearID zu prüfen, sobald Client-ID und -Secret da sind
+- [x] BearID: kein OIDC, sondern Single Sign-on über das Cookie `bearid` mit Ed25519-signiertem JWT; Wohnpilot läuft dafür auf `wohnpilot.codekorb.de` mit Kürzel `wohnpilot` (geklärt 24.10.2026)
 - [ ] Welche Heizform(en) und Zähler gibt es im Haus genau? (wird im Einrichtungsassistenten abgefragt)
 - [ ] Welche Pflichten regelt dein Mietvertrag für Garten, Winterdienst und Kleinreparaturen?
 - [x] Frontend: Svelte 5 mit Vite (entschieden 24.10.2026)

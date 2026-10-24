@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Wohnpilot;
 
-use GuzzleHttp\Client;
 use RuntimeException;
 use Wohnpilot\App\Clock;
 use Wohnpilot\App\HouseholdService;
 use Wohnpilot\App\MeterService;
 use Wohnpilot\App\NoteRepository;
+use Wohnpilot\Auth\AccountStore;
+use Wohnpilot\Auth\BearId;
 use Wohnpilot\Auth\DevLogin;
 use Wohnpilot\Auth\LoginProvider;
 use Wohnpilot\Auth\NativeSession;
-use Wohnpilot\Auth\OidcLogin;
 use Wohnpilot\Auth\Session;
 use Wohnpilot\Index\NoteIndex;
 use Wohnpilot\Storage\FilesystemAdapter;
@@ -73,19 +73,40 @@ class Services
         return $this->instances[__FUNCTION__] ??= new NativeSession(str_starts_with($this->appUrl(), 'https://'));
     }
 
-    public function login(): LoginProvider
+    /**
+     * Sign-in by redirect (GET /api/auth/login → callback). Today only the dev
+     * login with APP_ENV=dev; the BearID guard will plug in here later.
+     */
+    public function redirectLogin(): ?LoginProvider
     {
-        $callback = $this->appUrl() . '/api/auth/callback';
         if ($this->config->isDev() && $this->config->get('DEV_LOGIN_USER') !== '') {
-            return $this->instances[__FUNCTION__] ??= new DevLogin($this->config->get('DEV_LOGIN_USER'), $callback);
+            return $this->instances[__FUNCTION__] ??= new DevLogin($this->config->get('DEV_LOGIN_USER'), $this->appUrl() . '/api/auth/callback');
         }
-        return $this->instances[__FUNCTION__] ??= new OidcLogin(
-            new Client(['timeout' => 10, 'connect_timeout' => 5]),
-            $this->config->require('BEARID_ISSUER'),
-            $this->config->require('BEARID_CLIENT_ID'),
-            $this->config->require('BEARID_CLIENT_SECRET'),
-            $callback,
-        );
+        return null;
+    }
+
+    /**
+     * BearID sign-in, if BEARID_ISSUER and BEARID_PUBLIC_KEY_FILE
+     * (bearid-guard/public.key on the webspace) are set.
+     */
+    public function bearId(): ?BearId
+    {
+        if (array_key_exists(__FUNCTION__, $this->instances)) {
+            return $this->instances[__FUNCTION__];
+        }
+        $issuer = $this->config->get('BEARID_ISSUER');
+        $keyFile = $this->config->get('BEARID_PUBLIC_KEY_FILE');
+        $key = $issuer !== '' && $keyFile !== '' && is_readable($this->path($keyFile)) ? trim((string) file_get_contents($this->path($keyFile))) : '';
+        if ($issuer !== '' && $keyFile !== '' && $key === '') {
+            error_log("Wohnpilot: BearID public key not readable at $keyFile");
+        }
+        return $this->instances[__FUNCTION__] = $key === '' ? null : new BearId($issuer, $key, $this->config->get('BEARID_APP', 'wohnpilot'));
+    }
+
+    /** E-mail and password accounts (not a cache: belongs in the backup). */
+    public function accounts(): AccountStore
+    {
+        return $this->instances[__FUNCTION__] ??= AccountStore::open($this->path($this->config->get('ACCOUNTS_FILE', 'var/accounts.sqlite')));
     }
 
     public function appUrl(): string

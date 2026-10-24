@@ -27,24 +27,32 @@ final class HouseholdService
     }
 
     /**
-     * Maps a BearID identity to a person of the household. A person matches
-     * by `bearid` (the OIDC subject) or by id = username. Before a household
-     * exists, only usernames from WOHNPILOT_USERS get in.
+     * Maps a signed-in identity to a person of the household. A person
+     * matches by `bearid` (BearID user id), by `email`, or by id = username
+     * (e-mail accounts, dev login). Before a household exists, only
+     * usernames or e-mail addresses listed in WOHNPILOT_USERS get in.
      */
     public function userFor(Identity $identity): ?User
     {
+        $username = Slug::from($identity->username);
+        $email = mb_strtolower(trim($identity->email));
         $household = $this->household();
         if ($household === null) {
-            $username = Slug::from($identity->username);
-            return in_array($username, $this->bootstrapUsers, true) && $username !== ''
-                ? new User($username, $identity->name ?: $identity->username, $identity->subject)
-                : null;
+            $allowed = ($username !== '' && in_array($username, $this->bootstrapUsers, true))
+                || ($email !== '' && in_array($email, array_map('mb_strtolower', $this->bootstrapUsers), true));
+            if (!$allowed) {
+                return null;
+            }
+            $id = $username ?: Slug::from($identity->name) ?: Slug::from((string) strstr($email, '@', true)) ?: 'person';
+            return new User($id, $identity->name ?: ucfirst($id), $identity->subject, $email);
         }
+        $bearId = str_starts_with($identity->subject, 'bearid:') ? substr($identity->subject, 7) : null;
         foreach ($household['personen'] as $person) {
-            $matches = (($person['bearid'] ?? null) === $identity->subject)
-                || (($person['id'] ?? null) === Slug::from($identity->username));
+            $matches = ($bearId !== null && (string) ($person['bearid'] ?? '') === $bearId)
+                || ($email !== '' && mb_strtolower((string) ($person['email'] ?? '')) === $email)
+                || ($username !== '' && ($person['id'] ?? null) === $username);
             if ($matches) {
-                return new User((string) $person['id'], (string) ($person['name'] ?? $person['id']), $identity->subject);
+                return new User((string) $person['id'], (string) ($person['name'] ?? $person['id']), $identity->subject, $email);
             }
         }
         return null;
@@ -144,7 +152,7 @@ final class HouseholdService
                     'typ' => 'haushalt',
                     'id' => 'haushalt',
                     'name' => 'Unser Zuhause',
-                    'personen' => [['id' => $user->id, 'name' => $user->name, 'rolle' => 'verwalter', 'bearid' => $user->subject]],
+                    'personen' => [self::person($user)],
                     'aktives_objekt' => $id,
                     'speicher' => 'nextcloud',
                     'einstellungen' => ['ablesetag' => self::DEFAULT_READING_DAY],
@@ -212,6 +220,19 @@ final class HouseholdService
             throw AppException::validation($errors);
         }
         return $creating ? array_filter($fields, static fn ($v) => $v !== null && $v !== []) : $fields;
+    }
+
+    /** The first person of a new household, with what lets them sign in again. */
+    private static function person(User $user): array
+    {
+        $person = ['id' => $user->id, 'name' => $user->name, 'rolle' => 'verwalter'];
+        if ($user->email !== '') {
+            $person['email'] = $user->email;
+        }
+        if (str_starts_with($user->subject, 'bearid:')) {
+            $person['bearid'] = substr($user->subject, 7);
+        }
+        return $person;
     }
 
     private static function objectData(StoredNote $stored): array

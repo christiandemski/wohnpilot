@@ -10,7 +10,9 @@ use Psr\Http\Message\ResponseInterface;
 use Slim\App;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use Wohnpilot\App\Clock;
+use Wohnpilot\Auth\AccountStore;
 use Wohnpilot\Auth\ArraySession;
+use Wohnpilot\Auth\BearId;
 use Wohnpilot\Auth\Identity;
 use Wohnpilot\Auth\Session;
 use Wohnpilot\Config;
@@ -37,7 +39,64 @@ final class ApiTest extends TestCase
             copy(Fixtures::root() . "/$path", "$this->root/$path");
         }
         $this->session = new ArraySession();
+        $this->bearIdPair = sodium_crypto_sign_keypair();
         $this->app = $this->buildApp();
+    }
+
+    public function testBearIdCookieSignsInWithoutAClick(): void
+    {
+        $this->addEmailToHousehold();
+
+        $response = $this->request('GET', '/api/me', cookies: $this->bearIdCookie());
+
+        self::assertSame(['user' => ['id' => 'christian', 'name' => 'Christian']], self::decode($response));
+        self::assertSame('bearid:42', $this->session->get('identity')['subject']);
+        self::assertSame(1, $this->session->regenerated);
+    }
+
+    public function testBearIdAccountWithoutReleaseIsTurnedAway(): void
+    {
+        $this->addEmailToHousehold();
+
+        $response = $this->request('GET', '/api/me', cookies: $this->bearIdCookie(['apps' => ['garage']]));
+
+        self::assertSame(403, $response->getStatusCode());
+        self::assertSame('not_released', self::decode($response)['error']);
+    }
+
+    public function testBearIdPersonMustBelongToTheHousehold(): void
+    {
+        $response = $this->request('GET', '/api/me', cookies: $this->bearIdCookie(['email' => 'fremd@example.org']));
+
+        self::assertSame(403, $response->getStatusCode());
+        self::assertNull($this->session->get('identity'));
+    }
+
+    public function testBearIdButtonGoesToBearIdAndBackOnce(): void
+    {
+        $this->addEmailToHousehold();
+
+        $first = $this->request('GET', '/api/auth/bearid');
+        self::assertSame('https://id.codekorb.de/login?return=' . rawurlencode('http://localhost:8080/api/auth/bearid?zurueck=1'), $first->getHeaderLine('Location'));
+
+        $noCookie = $this->request('GET', '/api/auth/bearid?zurueck=1');
+        self::assertSame('/?login=fehlgeschlagen', $noCookie->getHeaderLine('Location'));
+
+        $withCookie = $this->request('GET', '/api/auth/bearid?zurueck=1', cookies: $this->bearIdCookie());
+        self::assertSame('/', $withCookie->getHeaderLine('Location'));
+        self::assertSame('bearid:42', $this->session->get('identity')['subject']);
+    }
+
+    public function testLogoutAlsoLeavesBearId(): void
+    {
+        $this->signIn();
+
+        $withCookie = self::decode($this->request('POST', '/api/auth/logout', cookies: $this->bearIdCookie()));
+        $without = self::decode($this->request('POST', '/api/auth/logout'));
+
+        self::assertSame('https://id.codekorb.de/logout?return=' . rawurlencode('http://localhost:8080/'), $withCookie['redirect']);
+        self::assertNull($without['redirect']);
+        self::assertNull($this->session->get('identity'));
     }
 
     protected function tearDown(): void
@@ -69,6 +128,57 @@ final class ApiTest extends TestCase
         self::assertSame('/', $callback->getHeaderLine('Location'));
         self::assertSame(1, $this->session->regenerated);
         self::assertSame(['user' => ['id' => 'christian', 'name' => 'Christian']], self::decode($this->request('GET', '/api/me')));
+    }
+
+    public function testPasswordLogin(): void
+    {
+        $response = $this->request('POST', '/api/auth/password', ['email' => 'Christian@example.org', 'password' => 'richtig-langes-passwort']);
+
+        self::assertSame(200, $response->getStatusCode(), (string) $response->getBody());
+        self::assertSame(['user' => ['id' => 'christian', 'name' => 'Christian']], self::decode($response));
+        self::assertSame(1, $this->session->regenerated);
+        self::assertSame(200, $this->request('GET', '/api/overview')->getStatusCode());
+    }
+
+    public function testWrongPasswordIsRejectedWithoutSession(): void
+    {
+        $response = $this->request('POST', '/api/auth/password', ['email' => 'christian@example.org', 'password' => 'falsch']);
+
+        self::assertSame(401, $response->getStatusCode());
+        self::assertSame('invalid_login', self::decode($response)['error']);
+        self::assertNull($this->session->get('identity'));
+    }
+
+    public function testTooManyAttemptsAreSlowedDown(): void
+    {
+        for ($i = 0; $i < AccountStore::MAX_FAILURES_PER_EMAIL; $i++) {
+            $this->request('POST', '/api/auth/password', ['email' => 'christian@example.org', 'password' => 'falsch']);
+        }
+
+        $response = $this->request('POST', '/api/auth/password', ['email' => 'christian@example.org', 'password' => 'richtig-langes-passwort']);
+
+        self::assertSame(429, $response->getStatusCode());
+        self::assertSame('rate_limited', self::decode($response)['error']);
+    }
+
+    public function testAccountWithoutHouseholdMembershipGetsNoSession(): void
+    {
+        $response = $this->request('POST', '/api/auth/password', ['email' => 'fremd@example.org', 'password' => 'richtig-langes-passwort']);
+
+        self::assertSame(403, $response->getStatusCode());
+        self::assertNull($this->session->get('identity'));
+    }
+
+    public function testPasswordLoginNeedsTheHeader(): void
+    {
+        $response = $this->request('POST', '/api/auth/password', ['email' => 'christian@example.org', 'password' => 'richtig-langes-passwort'], header: false);
+
+        self::assertSame(403, $response->getStatusCode());
+    }
+
+    public function testLoginMethods(): void
+    {
+        self::assertSame(['bearid' => true, 'password' => true, 'redirect' => 'dev'], self::decode($this->request('GET', '/api/auth/methods')));
     }
 
     public function testForgedCallbackIsRejected(): void
@@ -231,7 +341,7 @@ final class ApiTest extends TestCase
         );
         $household = file_get_contents("$this->root/_haushalt.md");
         self::assertStringContainsString("aktives_objekt: wohnung-hauptstrasse\n", $household);
-        self::assertStringContainsString("personen: [{ id: christian, name: Christian, rolle: verwalter, bearid: 'dev:christian' }]\n", $household);
+        self::assertStringContainsString("personen: [{ id: christian, name: Christian, rolle: verwalter }]\n", $household);
     }
 
     public function testFirstSetupOnlyForBootstrapUsers(): void
@@ -246,6 +356,22 @@ final class ApiTest extends TestCase
     }
 
     private ?string $today = '2026-10-24';
+    private string $bearIdPair;
+
+    private function bearIdCookie(array $claims = []): array
+    {
+        $claims += ['iss' => 'https://id.codekorb.de', 'sub' => '42', 'name' => 'Christian', 'email' => 'christian@example.org', 'admin' => false, 'apps' => ['wohnpilot'], 'exp' => time() + 3600];
+        return ['bearid' => \Wohnpilot\Tests\Auth\BearIdTest::token(sodium_crypto_sign_secretkey($this->bearIdPair), $claims)];
+    }
+
+    private function addEmailToHousehold(): void
+    {
+        $file = "$this->root/_haushalt.md";
+        file_put_contents($file, str_replace("    rolle: verwalter
+", "    rolle: verwalter
+    email: christian@example.org
+", file_get_contents($file)));
+    }
 
     private function clock(string $today): void
     {
@@ -259,13 +385,30 @@ final class ApiTest extends TestCase
         $root = $this->root;
         $session = $this->session;
         $today = $this->today;
-        $services = new class ($config, $root, $session, $today) extends Services {
+        $bearIdKey = base64_encode(sodium_crypto_sign_publickey($this->bearIdPair));
+        $services = new class ($config, $root, $session, $today, $bearIdKey) extends Services {
             private ?NoteIndex $testIndex = null;
             private ?StorageAdapter $testStorage = null;
+            private ?AccountStore $testAccounts = null;
 
-            public function __construct(Config $config, private readonly string $root, private readonly ArraySession $testSession, private readonly string $today)
+            public function accounts(): AccountStore
+            {
+                if ($this->testAccounts === null) {
+                    $this->testAccounts = new AccountStore(new PDO('sqlite::memory:'));
+                    $this->testAccounts->set('christian@example.org', 'christian', 'richtig-langes-passwort', 'Christian');
+                    $this->testAccounts->set('fremd@example.org', 'fremd', 'richtig-langes-passwort');
+                }
+                return $this->testAccounts;
+            }
+
+            public function __construct(Config $config, private readonly string $root, private readonly ArraySession $testSession, private readonly string $today, private readonly string $bearIdKey)
             {
                 parent::__construct($config, sys_get_temp_dir());
+            }
+
+            public function bearId(): BearId
+            {
+                return new BearId('https://id.codekorb.de', $this->bearIdKey, 'wohnpilot');
             }
 
             public function storage(): StorageAdapter
@@ -296,11 +439,11 @@ final class ApiTest extends TestCase
         $this->session->set('identity', (new Identity("dev:$username", $username, ucfirst($username)))->toArray());
     }
 
-    private function request(string $method, string $uri, ?array $body = null, bool $header = true): ResponseInterface
+    private function request(string $method, string $uri, ?array $body = null, bool $header = true, array $cookies = []): ResponseInterface
     {
         $request = (new ServerRequestFactory())->createServerRequest($method, $uri);
         parse_str((string) parse_url($uri, PHP_URL_QUERY), $query);
-        $request = $request->withQueryParams($query);
+        $request = $request->withQueryParams($query)->withCookieParams($cookies);
         if ($header) {
             $request = $request->withHeader('X-Requested-With', 'wohnpilot');
         }

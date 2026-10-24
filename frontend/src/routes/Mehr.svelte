@@ -55,7 +55,7 @@
 
 <section class="card" aria-labelledby="konto">
   <h2 id="konto">Konto</h2>
-  <p>Angemeldet als <strong>{user.name}</strong> über BearID.</p>
+  <p>Angemeldet als <strong>{user.name}</strong>.</p>
   <button type="button" class="btn btn-secondary on-surface" onclick={logout}>
     <LogOut size={18} strokeWidth={1.75} aria-hidden="true" />
     Abmelden

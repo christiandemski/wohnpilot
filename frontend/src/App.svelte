@@ -34,7 +34,7 @@
 {#if !checked}
   <p class="splash" aria-live="polite">Wohnpilot lädt …</p>
 {:else if user === null}
-  <Login error={authError} failed={router.query.get('login') === 'fehlgeschlagen'} />
+  <Login error={authError} reason={router.query.get('login')} onSignedIn={(u) => { user = u; router.go('/', true) }} />
 {:else}
   <div class="layout" class:focused>
     {#if !focused}<Navigation />{/if}

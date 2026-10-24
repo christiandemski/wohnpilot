@@ -11,6 +11,7 @@ final readonly class User
         public string $id,
         public string $name,
         public string $subject,
+        public string $email = '',
     ) {
     }
 

@@ -12,3 +12,6 @@ backend/var/
 backend/public/*
 !backend/public/index.php
 !backend/public/.htaccess
+
+# BearID sources the user shared for reference (separate project)
+Data/
