@@ -13,6 +13,8 @@
   import Rollenzaehler from '../components/Rollenzaehler.svelte'
   import ZaehlerFoto from '../components/ZaehlerFoto.svelte'
   import { stopOcr } from '../lib/ocr'
+  import { outbox } from '../lib/outbox.svelte'
+  import { isPlaceholder } from '../lib/knowledge'
   import { onDestroy } from 'svelte'
 
   /**
@@ -34,7 +36,7 @@
   let saving = $state(false)
   let error = $state<ApiError | null>(null)
   let photo = $state<Blob | null>(null)
-  let done = $state<{ meter: MeterSummary; value: number; skipped: boolean }[]>([])
+  let done = $state<{ meter: MeterSummary; value: number; skipped: boolean; queued?: boolean }[]>([])
 
   const list = $derived(meters.data ?? [])
   const meter = $derived(list[index] as MeterSummary | undefined)
@@ -92,18 +94,13 @@
     saving = true
     error = null
     try {
+      // Without network in the basement it waits on the phone, photo included
       const path = `/meters/${encodeURIComponent(meter.id)}/readings`
-      if (photo) {
-        const form = new FormData()
-        form.set('date', date)
-        form.set('value', String(value))
-        form.set('occasion', occasion)
-        form.set('foto', photo, 'zaehler.jpg')
-        await api.upload<MeterDetail>(path, form)
-      } else {
-        await api.post<MeterDetail>(path, { date, value, occasion })
-      }
-      done = [...done, { meter, value, skipped: false }]
+      const sent = await outbox.send<MeterDetail>(
+        `${meterTitle(meter)}: ${formatNumber(value, meter.decimals)} ${meter.unit}`,
+        [photo ? { method: 'POST', path, form: { date, value: String(value), occasion, foto: photo } } : { method: 'POST', path, json: { date, value, occasion } }],
+      )
+      done = [...done, { meter, value, skipped: false, queued: sent.queued }]
       index++
     } catch (e) {
       error = e instanceof ApiError ? e : new ApiError(0, 'internal')
@@ -149,6 +146,9 @@
     <section class="card finished" aria-labelledby="finished-title">
       <CircleCheck size={40} strokeWidth={1.75} aria-hidden="true" class="ok-icon" />
       <h1 id="finished-title">{done.some((d) => !d.skipped) ? 'Alles erfasst' : 'Nichts erfasst'}</h1>
+      {#if done.some((d) => d.queued)}
+        <p class="muted small">Ohne Netz gespeichert: Die Stände liegen auf dem Handy und gehen von selbst raus, sobald du wieder Netz hast.</p>
+      {/if}
       <ul>
         {#each done as entry (entry.meter.id)}
           <li>
@@ -156,7 +156,7 @@
             {#if entry.skipped}
               <span class="muted">übersprungen</span>
             {:else}
-              <span class="num">{formatNumber(entry.value, entry.meter.decimals)} {entry.meter.unit}</span>
+              <span><span class="num">{formatNumber(entry.value, entry.meter.decimals)} {entry.meter.unit}</span>{#if entry.queued}<span class="muted"> · wartet</span>{/if}</span>
             {/if}
           </li>
         {/each}
@@ -169,7 +169,7 @@
       <div>
         <h1>{meterTitle(meter)}</h1>
         <p class="meta">
-          {roomName(meter.room)}{#if meter.number}{' · '}<span class="num">{groupMeterNumber(meter.number)}</span>{/if}
+          {roomName(meter.room)}{#if meter.number && !isPlaceholder(meter.number)}{' · '}<span class="num">{groupMeterNumber(meter.number)}</span>{/if}
         </p>
       </div>
     </div>

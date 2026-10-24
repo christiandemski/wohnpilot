@@ -75,11 +75,24 @@ export default defineConfig({
         shortcuts: [{ name: 'Zählerstände ablesen', short_name: 'Ablesen', url: '/ablesen', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] }],
       },
       workbox: {
-        // Only the app shell is cached. API answers are never cached (offline queue comes in stage 4).
+        // The app shell is precached. API answers are cached as they come in, for reading
+        // offline (network first, the cache after 5 s); logging out deletes them (lib/api.ts).
         globPatterns: ['**/*.{js,css,html,woff2,png,svg,ico}'],
         // OCR is large and only needed when photographing a meter: cached on first use instead
         globIgnores: ['ocr/**'],
-        runtimeCaching: [{ urlPattern: /\/ocr\//, handler: 'CacheFirst', options: { cacheName: 'wohnpilot-ocr' } }],
+        runtimeCaching: [
+          { urlPattern: /\/ocr\//, handler: 'CacheFirst', options: { cacheName: 'wohnpilot-ocr' } },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/auth/'),
+            method: 'GET',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'wohnpilot-api',
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+        ],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         cleanupOutdatedCaches: true,

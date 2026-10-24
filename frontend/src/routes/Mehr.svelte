@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Bell, BellOff, CalendarClock, CalendarPlus, ChevronRight, Copy, FileText, LogOut, RefreshCw, Search, Settings2, UserRound } from '@lucide/svelte'
   import { api, ApiError, logout } from '../lib/api'
+  import { outbox } from '../lib/outbox.svelte'
   import { theme, type ThemeChoice } from '../lib/theme.svelte'
   import type { User } from '../lib/types'
   import { Resource } from '../lib/resource.svelte'
@@ -106,6 +107,17 @@
 
   let syncState = $state<'idle' | 'running' | 'done' | 'failed'>('idle')
   let syncError = $state('')
+
+  /** Logging out clears what waits on this device; say so first. */
+  let confirmLogout = $state(false)
+  async function signOut() {
+    if (outbox.jobs.length > 0 && !confirmLogout) {
+      confirmLogout = true
+      return
+    }
+    await outbox.clear()
+    await logout()
+  }
 
   async function sync() {
     syncState = 'running'
@@ -240,9 +252,14 @@
 <section class="card" aria-labelledby="konto">
   <h2 id="konto">Konto</h2>
   <p>Angemeldet als <strong>{user.name}</strong>.</p>
-  <button type="button" class="btn btn-secondary on-surface" onclick={logout}>
+  {#if confirmLogout}
+    <p class="save-error" role="alert">
+      {outbox.jobs.length === 1 ? 'Ein Eintrag ist' : `${outbox.jobs.length} Einträge sind`} noch nicht gesendet und {outbox.jobs.length === 1 ? 'geht' : 'gehen'} beim Abmelden verloren.
+    </p>
+  {/if}
+  <button type="button" class="btn btn-secondary on-surface" onclick={signOut}>
     <LogOut size={18} strokeWidth={1.75} aria-hidden="true" />
-    Abmelden
+    {confirmLogout ? 'Trotzdem abmelden' : 'Abmelden'}
   </button>
 </section>
 

@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { Camera, X } from '@lucide/svelte'
   import { api, ApiError } from '../lib/api'
+  import { outbox } from '../lib/outbox.svelte'
+  import { shrink } from '../lib/photos'
   import { EditForm, numberField, numberText, textField } from '../lib/form.svelte'
   import { RESPONSIBLE } from '../lib/house'
   import { roomName } from '../lib/meters'
@@ -10,7 +13,7 @@
   import ContactPicker from '../components/ContactPicker.svelte'
   import PageHeader from '../components/PageHeader.svelte'
 
-  /** Report a defect (no id; photos come on the next page) or change its data. */
+  /** Report a defect (no id; one photo right away, more on the next page) or change its data. */
   let { id = null }: { id?: string | null } = $props()
 
   const LABELS: Record<string, string> = { titel: 'Was', raum: 'Raum', zustaendig: 'Zuständig', kleinreparatur: 'Kleinreparatur', kosten_eur: 'Kosten', nachfassen: 'Nachfassen' }
@@ -23,6 +26,28 @@
   let loading = $state(true)
   let loadError = $state<ApiError | null>(null)
   const edit = new EditForm()
+
+  /** A photo for the report, kept as Blob so it can wait offline with it */
+  let photo = $state<Blob | null>(null)
+  let preview = $state<string | null>(null)
+  let photoInput: HTMLInputElement | undefined = $state()
+  $effect(() => {
+    const url = photo ? URL.createObjectURL(photo) : null
+    preview = url
+    return () => {
+      if (url) URL.revokeObjectURL(url)
+    }
+  })
+  async function choosePhoto(event: Event) {
+    const file = (event.currentTarget as HTMLInputElement).files?.[0]
+    ;(event.currentTarget as HTMLInputElement).value = ''
+    if (!file) return
+    try {
+      photo = await shrink(file)
+    } catch {
+      photo = file
+    }
+  }
 
   async function load() {
     loading = true
@@ -71,8 +96,12 @@
         if (Object.keys(changes).length > 0) await api.put(`/defects/${encodeURIComponent(id)}`, { etag: edit.etag, changes, original })
         router.go(`/maengel/${encodeURIComponent(id)}`, true)
       } else {
-        const created = await api.post<DefectDetail>('/defects', { ...payload(form), entdeckt: form.entdeckt, notiz: form.notiz.trim() })
-        router.go(`/maengel/${encodeURIComponent(created.id)}`, true)
+        // With the photo as second step: offline both wait together, the photo goes to the new defect's id
+        const sent = await outbox.send<DefectDetail | { photos: unknown }>(`Mangel: ${form.titel.trim()}`, [
+          { method: 'POST', path: '/defects', json: { ...payload(form), entdeckt: form.entdeckt, notiz: form.notiz.trim() } },
+          ...(photo ? [{ method: 'POST' as const, path: '/photos/mangel/{id}', form: { foto: photo, alt: form.titel.trim() } }] : []),
+        ])
+        router.go(sent.queued ? '/maengel' : `/maengel/${encodeURIComponent(sent.createdId ?? '')}`, true)
       }
     }, base)
   }
@@ -123,6 +152,23 @@
           <label for="notiz">Beschreibung <span class="optional">(optional)</span></label>
           <input id="notiz" class="input" bind:value={form.notiz} placeholder="z. B. Zugluft am Rahmen unten links" />
         </div>
+        <div class="field">
+          <span class="label">Foto <span class="optional">(optional)</span></span>
+          <input bind:this={photoInput} class="visually-hidden" type="file" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true" onchange={choosePhoto} />
+          {#if photo && preview}
+            <div class="photo-row">
+              <img src={preview} alt="Foto vom Mangel" class="photo-thumb" />
+              <button type="button" class="btn btn-icon" aria-label="Foto entfernen" onclick={() => (photo = null)}>
+                <X size={18} strokeWidth={1.75} aria-hidden="true" />
+              </button>
+            </div>
+          {:else}
+            <button type="button" class="btn btn-secondary on-surface photo-take" onclick={() => photoInput?.click()}>
+              <Camera size={18} strokeWidth={1.75} aria-hidden="true" />
+              Foto aufnehmen
+            </button>
+          {/if}
+        </div>
       {/if}
     </div>
 
@@ -158,6 +204,25 @@
     <button type="submit" class="btn btn-primary btn-large" disabled={edit.saving}>
       {edit.saving ? 'Speichert …' : id ? 'Änderungen speichern' : 'Mangel melden'}
     </button>
-    {#if !id}<p class="text-muted text-small">Fotos fügst du auf der nächsten Seite hinzu.</p>{/if}
+    {#if !id}<p class="text-muted text-small">Weitere Fotos fügst du auf der nächsten Seite hinzu. Ohne Netz wartet die Meldung samt Foto auf dem Handy.</p>{/if}
   </form>
 {/if}
+
+<style>
+  .photo-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .photo-thumb {
+    width: 96px;
+    height: 96px;
+    border-radius: var(--radius-xs);
+    object-fit: cover;
+  }
+
+  .photo-take {
+    align-self: flex-start;
+  }
+</style>

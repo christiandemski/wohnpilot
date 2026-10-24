@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Plus, Wrench } from '@lucide/svelte'
+  import { Check, Plus, Wrench } from '@lucide/svelte'
+  import { outbox } from '../lib/outbox.svelte'
   import { api, ApiError } from '../lib/api'
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { RESPONSIBLE, intervalText, maintenanceChip, maintenanceMeta, seasonText, suggestionReason } from '../lib/house'
@@ -33,14 +34,15 @@
 
   const done = (task: MaintenanceSummary) =>
     act(task.id, async () => {
-      await api.post(`/maintenance/${encodeURIComponent(task.id)}/done`, {})
+      await outbox.send(`Erledigt: ${task.title}`, [{ method: 'POST', path: `/maintenance/${encodeURIComponent(task.id)}/done`, json: {} }])
       last = task
       await tasks.reload()
     })
 
   const undo = (task: MaintenanceSummary) =>
     act(task.id, async () => {
-      await api.delete(`/maintenance/${encodeURIComponent(task.id)}/done/${today}`)
+      const path = `/maintenance/${encodeURIComponent(task.id)}/done`
+      await outbox.undo({ method: 'POST', path }, `Nicht erledigt: ${task.title}`, { method: 'DELETE', path: `${path}/${today}` })
       last = null
       await tasks.reload()
     })
@@ -99,7 +101,11 @@
               <StatusChip tone={chip.tone}>{chip.text}</StatusChip>
             </a>
             {#if !task.evaluation.automatic}
-              <button type="button" class="done-circle" aria-label="„{task.title}“ als erledigt abhaken" disabled={busy !== null} onclick={() => done(task)}></button>
+              {#if outbox.waiting('POST', `/maintenance/${encodeURIComponent(task.id)}/done`)}
+                <button type="button" class="done-circle waiting" aria-label="„{task.title}“ ist abgehakt und wartet auf Netz. Rückgängig machen" disabled={busy !== null} onclick={() => undo(task)}><Check size={20} strokeWidth={2.25} aria-hidden="true" /></button>
+              {:else}
+                <button type="button" class="done-circle" aria-label="„{task.title}“ als erledigt abhaken" disabled={busy !== null} onclick={() => done(task)}></button>
+              {/if}
             {/if}
           </li>
         {/each}

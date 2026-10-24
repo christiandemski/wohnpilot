@@ -64,13 +64,14 @@ const FIELD_PROBLEMS: Record<string, string> = {
   not_an_image: 'Das ist kein Foto (JPEG, PNG oder WebP).',
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+export async function request<T>(method: string, path: string, body?: unknown, headers: Record<string, string> = {}): Promise<T> {
   let response: Response
   try {
     response = await fetch('/api' + path, {
       method,
       credentials: 'same-origin',
       headers: {
+        ...headers,
         Accept: 'application/json',
         ...(method === 'GET' ? {} : { 'X-Requested-With': 'wohnpilot' }),
         // Forms with files set their own multipart Content-Type.
@@ -98,6 +99,9 @@ export const api = {
   upload: <T>(path: string, form: FormData) => request<T>('POST', path, form),
 }
 
+/** Service worker cache of API answers for reading offline (vite.config.ts) */
+export const API_CACHE = 'wohnpilot-api'
+
 /** Only with APP_ENV=dev: sign in as DEV_LOGIN_USER. */
 export function devLogin(): void {
   window.location.href = '/api/auth/login'
@@ -106,5 +110,11 @@ export function devLogin(): void {
 /** Logs out here and, if signed in there, at BearID too (its cookie would sign you in again). */
 export async function logout(): Promise<void> {
   const result = await api.post<{ redirect: string | null }>('/auth/logout')
+  // What the service worker kept for reading offline belongs to this person
+  try {
+    await caches.delete(API_CACHE)
+  } catch {
+    // no Cache API (old browser, private mode): nothing kept
+  }
   window.location.href = result?.redirect ?? '/'
 }

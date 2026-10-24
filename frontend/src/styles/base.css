@@ -382,6 +382,15 @@ a.list-row,
   border-color: var(--accent);
 }
 
+/* Ticked without network: done here, not yet sent */
+.done-circle.waiting {
+  display: inline-grid;
+  place-items: center;
+  border-style: dashed;
+  border-color: var(--soon);
+  color: var(--soon-text);
+}
+
 .fact-list {
   display: flex;
   flex-direction: column;

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { CalendarPlus, Check, Pencil, Radio } from '@lucide/svelte'
+  import { outbox } from '../lib/outbox.svelte'
   import { api, ApiError } from '../lib/api'
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { formatDate } from '../lib/format'
@@ -39,17 +40,17 @@
 
   const done = () =>
     act(async () => {
-      const result = await api.post<MaintenanceDetail>(`${path}/done`, { notiz: note.trim() })
+      const sent = await outbox.send<MaintenanceDetail>(`Erledigt: ${task.data?.title ?? id}`, [{ method: 'POST', path: `${path}/done`, json: { notiz: note.trim() } }])
       justDone = today
       note = ''
-      return result
+      return sent.queued ? task.data! : sent.answer
     })
 
   const undo = () =>
     act(async () => {
-      const result = await api.delete<MaintenanceDetail>(`${path}/done/${justDone}`)
+      const sent = await outbox.undo({ method: 'POST', path: `${path}/done` }, `Nicht erledigt: ${task.data?.title ?? id}`, { method: 'DELETE', path: `${path}/done/${justDone}` })
       justDone = null
-      return result
+      return sent.queued || sent.answer === undefined ? await api.get<MaintenanceDetail>(path).catch(() => task.data!) : (sent.answer as MaintenanceDetail)
     })
 
   const dateText = (date: string) => (/^\d{4}-\d{2}-\d{2}$/.test(date) ? formatDate(date) : date)

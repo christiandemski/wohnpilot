@@ -5,8 +5,10 @@
   import { settings } from './lib/settings.svelte'
   import { rememberReturn, takeReturn } from './lib/returnTo'
   import { qrTarget } from './lib/stickers'
+  import { outbox } from './lib/outbox.svelte'
   import type { User } from './lib/types'
   import Navigation from './components/Navigation.svelte'
+  import OutboxBanner from './components/OutboxBanner.svelte'
   import Login from './routes/Login.svelte'
   import Uebersicht from './routes/Uebersicht.svelte'
   import AbleseRunde from './routes/AbleseRunde.svelte'
@@ -60,6 +62,7 @@
     .then((data) => {
       user = data.user
       void settings.load()
+      void outbox.start()
       // Back from BearID or the redirect login, which always land on "/"
       const back = router.path === '/' ? takeReturn() : null
       if (back) router.go(back, true)
@@ -82,11 +85,12 @@
 {#if !checked}
   <p class="splash" aria-live="polite">Wohnpilot lädt …</p>
 {:else if user === null}
-  <Login error={authError} reason={router.query.get('login')} onSignedIn={(u) => { user = u; void settings.load(); router.go(takeReturn() ?? "/", true) }} />
+  <Login error={authError} reason={router.query.get('login')} onSignedIn={(u) => { user = u; void settings.load(); void outbox.start(); router.go(takeReturn() ?? "/", true) }} />
 {:else}
   <div class="layout" class:focused>
     {#if !focused}<Navigation />{/if}
     <main class="content">
+      <OutboxBanner />
       {#key router.path}
         {#if router.current.name === 'uebersicht'}
           <Uebersicht {user} />

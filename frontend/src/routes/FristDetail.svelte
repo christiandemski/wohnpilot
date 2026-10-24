@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Check, Gauge, Pencil } from '@lucide/svelte'
+  import { outbox } from '../lib/outbox.svelte'
   import { api, ApiError } from '../lib/api'
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { days, formatDate } from '../lib/format'
@@ -24,7 +25,12 @@
     busy = true
     error = null
     try {
-      deadline.data = await api.put<Deadline>(`${path}/done`, { datum: date })
+      const title = deadline.data?.title ?? id
+      const sent =
+        date === null
+          ? await outbox.undo({ method: 'PUT', path: `${path}/done` }, `Wieder offen: ${title}`, { method: 'PUT', path: `${path}/done`, json: { datum: null } })
+          : await outbox.send<Deadline>(`Erledigt: ${title}`, [{ method: 'PUT', path: `${path}/done`, json: { datum: date } }])
+      if (!sent.queued && sent.answer) deadline.data = sent.answer as Deadline
     } catch (e) {
       error = e instanceof ApiError ? e : new ApiError(0, 'internal')
     } finally {
@@ -110,6 +116,9 @@
             Heute erledigt
           </button>
         </div>
+      {/if}
+      {#if outbox.waiting('PUT', `${path}/done`)}
+        <p class="text-muted text-small" role="status">Als erledigt vorgemerkt. Wird gesendet, sobald du Netz hast.</p>
       {/if}
       {#if error}<p class="save-error" role="alert">{error.text}</p>{/if}
       {#if d.notes}<p class="notes">{d.notes}</p>{/if}

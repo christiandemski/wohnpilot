@@ -1,5 +1,6 @@
 <script lang="ts">
   import { CalendarClock, Check, ChevronRight, Plus } from '@lucide/svelte'
+  import { outbox } from '../lib/outbox.svelte'
   import { api, ApiError } from '../lib/api'
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { formatDate, formatDay } from '../lib/format'
@@ -23,7 +24,9 @@
     busy = deadline.id
     error = null
     try {
-      await api.put(`/deadlines/${encodeURIComponent(deadline.id)}/done`, { datum: date })
+      const path = `/deadlines/${encodeURIComponent(deadline.id)}/done`
+      if (date === null) await outbox.undo({ method: 'PUT', path }, `Wieder offen: ${deadline.title}`, { method: 'PUT', path, json: { datum: null } })
+      else await outbox.send(`Erledigt: ${deadline.title}`, [{ method: 'PUT', path, json: { datum: date } }])
       last = date === null ? null : deadline
       await deadlines.reload()
     } catch (e) {
@@ -88,13 +91,19 @@
               </span>
               <StatusChip tone={chip.tone}>{chip.text}</StatusChip>
             </a>
-            <button
-              type="button"
-              class="done-circle"
-              aria-label="„{d.title}“ als erledigt abhaken"
-              disabled={busy !== null}
-              onclick={() => setDone(d, today)}
-            ></button>
+            {#if outbox.waiting('PUT', `/deadlines/${encodeURIComponent(d.id)}/done`)}
+              <button type="button" class="done-circle waiting" aria-label="„{d.title}“ ist abgehakt und wartet auf Netz. Rückgängig machen" disabled={busy !== null} onclick={() => setDone(d, null)}>
+                <Check size={20} strokeWidth={2.25} aria-hidden="true" />
+              </button>
+            {:else}
+              <button
+                type="button"
+                class="done-circle"
+                aria-label="„{d.title}“ als erledigt abhaken"
+                disabled={busy !== null}
+                onclick={() => setDone(d, today)}
+              ></button>
+            {/if}
           </li>
         {/each}
       </ul>

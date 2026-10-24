@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { CalendarClock, CalendarDays, Gauge, House, KeyRound, Plus, Receipt, Search, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
+  import { CalendarClock, CalendarDays, Check, Gauge, House, KeyRound, Plus, Receipt, Search, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
+  import { outbox } from '../lib/outbox.svelte'
   import { api, ApiError } from '../lib/api'
   import { Resource } from '../lib/resource.svelte'
   import { formatChipDay, formatDay, formatLongDay, formatNumber, formatPercent, greeting, monthName } from '../lib/format'
@@ -88,11 +89,12 @@
     busyTask = id
     taskError = ''
     try {
+      const path = `/maintenance/${encodeURIComponent(id)}/done`
       if (undo) {
-        await api.delete(`/maintenance/${encodeURIComponent(id)}/done/${overview.data?.today}`)
+        await outbox.undo({ method: 'POST', path }, `Nicht erledigt: ${doneTask?.title ?? id}`, { method: 'DELETE', path: `${path}/${overview.data?.today}` })
         doneTask = null
       } else {
-        await api.post(`/maintenance/${encodeURIComponent(id)}/done`, {})
+        await outbox.send(`Erledigt: ${item.name ?? id}`, [{ method: 'POST', path, json: {} }])
         doneTask = { id, title: item.name ?? '' }
       }
       await overview.reload()
@@ -260,7 +262,11 @@
                 <StatusChip tone={text.chip.tone}>{text.chip.text}</StatusChip>
               </a>
               {#if tickable(item, data.today)}
-                <button type="button" class="done-circle" aria-label="„{item.name}“ als erledigt abhaken" disabled={busyTask !== null} onclick={() => tick(item)}></button>
+                {#if outbox.waiting('POST', `/maintenance/${encodeURIComponent(item.ref.id ?? '')}/done`)}
+                  <button type="button" class="done-circle waiting" aria-label="„{item.name}“ ist abgehakt und wartet auf Netz. Rückgängig machen" disabled={busyTask !== null} onclick={() => tick(item, true)}><Check size={20} strokeWidth={2.25} aria-hidden="true" /></button>
+                {:else}
+                  <button type="button" class="done-circle" aria-label="„{item.name}“ als erledigt abhaken" disabled={busyTask !== null} onclick={() => tick(item)}></button>
+                {/if}
               {/if}
               </div>
             {/each}
