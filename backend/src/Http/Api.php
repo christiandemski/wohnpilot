@@ -131,6 +131,54 @@ final class Api
                 ->withHeader('Content-Disposition', 'inline; filename="wohnpilot.ics"');
         });
 
+        // Kiosk tablet: paired once with a code, then known by its own cookie.
+        $app->post('/api/kiosk/pair', function (Request $request, Response $response) use ($services): Response {
+            $body = self::body($request);
+            try {
+                $paired = $services->kioskDevices()->pair((string) ($body['code'] ?? ''), (string) ($body['name'] ?? ''), (string) ($request->getServerParams()['REMOTE_ADDR'] ?? 'unknown'));
+            } catch (LoginFailed) {
+                throw new AppException('rate_limited', 429, 'Too many wrong codes');
+            }
+            if ($paired === null) {
+                throw AppException::validation(['code' => 'invalid_code']);
+            }
+            return self::kioskCookie(self::json($response, ['paired' => true, 'id' => $paired['id']], 201), $services, $paired['token']);
+        });
+
+        $app->group('/api/kiosk', function (RouteCollectorProxy $kiosk) use ($services): void {
+            $kiosk->get('/board', function (Request $request, Response $response) use ($services): Response {
+                $answer = self::json($response, $services->kiosk()->board() + ['user' => self::user($request)->toArray()]);
+                // Kept fresh while the tablet is in use, so it never runs out
+                $token = (string) ($request->getCookieParams()[self::KIOSK_COOKIE] ?? '');
+                return $token === '' ? $answer : self::kioskCookie($answer, $services, $token);
+            });
+            $kiosk->post('/maintenance/{id}/done', fn (Request $request, Response $response, array $args) => self::json($response, $services->maintenance()->done($args['id'], [], self::user($request))));
+            $kiosk->delete('/maintenance/{id}/done/{date}', fn (Request $request, Response $response, array $args) => self::json($response, $services->maintenance()->undo($args['id'], $args['date'], self::user($request))));
+            // The tablet forgets itself
+            $kiosk->post('/unpair', function (Request $request, Response $response) use ($services): Response {
+                $device = $request->getAttribute('kiosk');
+                if (is_array($device)) {
+                    $services->kioskDevices()->revoke($device['person'], $device['id']);
+                }
+                return $response->withHeader('Set-Cookie', self::KIOSK_COOKIE . '=; Path=/api/kiosk; Max-Age=0; HttpOnly; SameSite=Strict')->withStatus(204);
+            });
+        })->add(function (Request $request, Handler $handler) use ($services): Response {
+            // The device cookie, or a signed-in session (to look at the board on the computer)
+            $user = null;
+            $device = $services->kioskDevices()->deviceFor((string) ($request->getCookieParams()[self::KIOSK_COOKIE] ?? ''));
+            $services->notes()->refresh();
+            if ($device !== null) {
+                $user = $services->household()->memberById($device['person'], 'kiosk:' . $device['id']);
+            } else {
+                $identity = $services->session()->get('identity');
+                $user = is_array($identity) ? $services->household()->userFor(Identity::fromArray($identity)) : null;
+            }
+            if ($user === null) {
+                throw new AppException('unauthorized', 401, 'Not paired');
+            }
+            return $handler->handle($request->withAttribute('user', $user)->withAttribute('kiosk', $device));
+        });
+
         $app->group('/api', function (RouteCollectorProxy $api) use ($services): void {
             $api->get('/me', fn (Request $request, Response $response) => self::json($response, ['user' => self::user($request)->toArray()]));
 
@@ -204,6 +252,16 @@ final class Api
                 $services->contracts()->addPrice($args['id'], self::body($request), self::user($request)),
                 201,
             ));
+
+            // Pairing kiosk tablets and the list of them
+            $api->post('/kiosk/pairing', fn (Request $request, Response $response) => self::json($response, $services->kioskDevices()->createCode(self::user($request)->id), 201));
+            $api->get('/kiosk/devices', fn (Request $request, Response $response) => self::json($response, ['devices' => $services->kioskDevices()->list(self::user($request)->id)]));
+            $api->delete('/kiosk/devices/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                if (!$services->kioskDevices()->revoke(self::user($request)->id, $args['id'])) {
+                    throw AppException::notFound('Gerät');
+                }
+                return self::json($response, ['devices' => $services->kioskDevices()->list(self::user($request)->id)]);
+            });
 
             // The year in review and the § 35a list
             $api->get('/reports', fn (Request $r, Response $response) => self::json($response, ['years' => $services->reports()->years()]));
@@ -524,6 +582,16 @@ final class Api
         });
 
         return $app;
+    }
+
+    private const KIOSK_COOKIE = 'wohnpilot_kiosk';
+    /** A year; renewed on every board load */
+    private const KIOSK_COOKIE_SECONDS = 31_536_000;
+
+    private static function kioskCookie(Response $response, Services $services, string $token): Response
+    {
+        $secure = str_starts_with($services->appUrl(), 'https://') ? '; Secure' : '';
+        return $response->withHeader('Set-Cookie', self::KIOSK_COOKIE . "=$token; Path=/api/kiosk; Max-Age=" . self::KIOSK_COOKIE_SECONDS . "; HttpOnly; SameSite=Strict$secure");
     }
 
     private static function startSession(Services $services, Identity $identity): void

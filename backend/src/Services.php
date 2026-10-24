@@ -25,9 +25,11 @@ use Wohnpilot\App\ObjectNotes;
 use Wohnpilot\App\PhotoService;
 use Wohnpilot\App\SearchService;
 use Wohnpilot\App\SettingsService;
+use Wohnpilot\App\KioskService;
 use Wohnpilot\App\ReportService;
 use Wohnpilot\App\UtilityService;
 use Wohnpilot\App\WasteService;
+use Wohnpilot\Auth\KioskDevices;
 use Wohnpilot\Auth\AccountStore;
 use Wohnpilot\Auth\BearId;
 use Wohnpilot\Auth\DevLogin;
@@ -279,6 +281,16 @@ class Services
     }
 
     /** Personal settings like the calendar link (not a cache: belongs in the backup). */
+    public function kioskDevices(): KioskDevices
+    {
+        return $this->instances[__FUNCTION__] ??= KioskDevices::open($this->path($this->config->get('SETTINGS_FILE', 'var/settings.sqlite')));
+    }
+
+    public function kiosk(): KioskService
+    {
+        return $this->instances[__FUNCTION__] ??= new KioskService($this->meters(), $this->agenda(), $this->waste(), $this->household(), $this->clock());
+    }
+
     public function calendarLinks(): CalendarLinks
     {
         return $this->instances[__FUNCTION__] ??= CalendarLinks::open($this->path($this->config->get('SETTINGS_FILE', 'var/settings.sqlite')));

@@ -52,6 +52,7 @@
   import Aufkleber from './routes/Aufkleber.svelte'
   import Eingang from './routes/Eingang.svelte'
   import Jahresbericht from './routes/Jahresbericht.svelte'
+  import Kiosk from './routes/Kiosk.svelte'
   import Nebenkosten from './routes/Nebenkosten.svelte'
   import NebenkostenDetail from './routes/NebenkostenDetail.svelte'
   import NebenkostenForm from './routes/NebenkostenForm.svelte'
@@ -72,8 +73,17 @@
       const back = router.path === '/' ? takeReturn() : null
       if (back) router.go(back, true)
     })
-    .catch((e) => {
+    .catch(async (e) => {
       authError = e instanceof ApiError ? e : new ApiError(0, 'internal')
+      if (router.current.name === 'kiosk') return
+      // A paired tablet started from its home screen ("/"): straight to the board
+      if (authError.status === 401 && router.path === '/') {
+        const paired = await api.get('/kiosk/board').then(() => true, () => false)
+        if (paired) {
+          router.go('/kiosk', true)
+          return
+        }
+      }
       rememberReturn(window.location.pathname + window.location.search)
     })
     .finally(() => (checked = true))
@@ -87,7 +97,9 @@
   })
 </script>
 
-{#if !checked}
+{#if router.current.name === 'kiosk'}
+  <Kiosk />
+{:else if !checked}
   <p class="splash" aria-live="polite">Wohnpilot lädt …</p>
 {:else if user === null}
   <Login error={authError} reason={router.query.get('login')} onSignedIn={(u) => { user = u; void settings.load(); void outbox.start(); router.go(takeReturn() ?? "/", true) }} />

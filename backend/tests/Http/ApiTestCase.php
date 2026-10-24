@@ -132,6 +132,13 @@ abstract class ApiTestCase extends TestCase
                 return $this->testPush;
             }
 
+            protected ?\Wohnpilot\Auth\KioskDevices $testKioskDevices = null;
+
+            public function kioskDevices(): \Wohnpilot\Auth\KioskDevices
+            {
+                return $this->testKioskDevices ??= new \Wohnpilot\Auth\KioskDevices(new PDO('sqlite::memory:'));
+            }
+
             public function calendarLinks(): CalendarLinks
             {
                 return $this->testCalendarLinks ??= new CalendarLinks(new PDO('sqlite::memory:'));

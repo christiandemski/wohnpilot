@@ -60,6 +60,17 @@ final class HouseholdService
         return null;
     }
 
+    /** A person of the household by id (for a kiosk device acting for them), or null if they left */
+    public function memberById(string $id, string $subject): ?User
+    {
+        foreach ($this->household()['personen'] ?? [] as $person) {
+            if (($person['id'] ?? null) === $id) {
+                return new User($id, (string) ($person['name'] ?? $id), $subject, (string) ($person['email'] ?? ''));
+            }
+        }
+        return null;
+    }
+
     /** @return array<string, mixed>|null the household frontmatter, null before setup */
     public function household(): ?array
     {

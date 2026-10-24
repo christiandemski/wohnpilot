@@ -72,6 +72,43 @@
   let calendarError = $state('')
   let copied = $state(false)
 
+  // Kiosk tablets: a short-lived code to pair one, and the paired ones
+  const kioskDevices = new Resource(async () => (await api.get<{ devices: { id: string; name: string; createdAt: number; lastSeen: number }[] }>('/kiosk/devices')).devices)
+  let kioskCode = $state<{ code: string; expiresAt: number } | null>(null)
+  let kioskError = $state('')
+  let clock = $state(Date.now())
+  $effect(() => {
+    if (!kioskCode) return
+    const timer = setInterval(() => {
+      clock = Date.now()
+      // A paired tablet shows up here; the code is used up then
+      void kioskDevices.reload()
+    }, 5000)
+    return () => clearInterval(timer)
+  })
+  const kioskMinutes = $derived(kioskCode ? Math.max(0, Math.ceil((kioskCode.expiresAt * 1000 - clock) / 60000)) : 0)
+
+  async function newKioskCode() {
+    kioskError = ''
+    try {
+      kioskCode = await api.post<{ code: string; expiresAt: number }>('/kiosk/pairing')
+      clock = Date.now()
+    } catch (e) {
+      kioskError = e instanceof ApiError ? e.text : 'Das hat nicht geklappt.'
+    }
+  }
+
+  async function removeKiosk(id: string) {
+    kioskError = ''
+    try {
+      kioskDevices.data = (await api.delete<{ devices: { id: string; name: string; createdAt: number; lastSeen: number }[] }>(`/kiosk/devices/${encodeURIComponent(id)}`)).devices
+    } catch (e) {
+      kioskError = e instanceof ApiError ? e.text : 'Das hat nicht geklappt.'
+    }
+  }
+
+  const seen = (seconds: number) => formatDate(new Date(seconds * 1000).toISOString().slice(0, 10))
+
   async function calendarAction(run: () => Promise<void>) {
     calendarBusy = true
     calendarError = ''
@@ -253,6 +290,31 @@
   </p>
 </section>
 
+<section class="card kiosk" aria-labelledby="kiosk">
+  <h2 id="kiosk">Kiosk-Tablet</h2>
+  <p class="muted">Ein Tablet an der Wand zeigt Abfuhr, was ansteht und den Verbrauch, und du hakst dort Wartung ab. Es bleibt gekoppelt, bis du es hier entfernst.</p>
+  {#if kioskCode && kioskMinutes > 0}
+    <div class="kiosk-code">
+      <span class="num code">{kioskCode.code.slice(0, 3)} {kioskCode.code.slice(3)}</span>
+      <span class="muted small">Öffne auf dem Tablet <strong>{location.host}/kiosk</strong> und gib den Code ein. Gilt noch {kioskMinutes} {kioskMinutes === 1 ? 'Minute' : 'Minuten'}, einmal.</span>
+    </div>
+  {:else}
+    <button type="button" class="btn btn-secondary on-surface" onclick={newKioskCode}>Tablet koppeln</button>
+  {/if}
+  {#if kioskDevices.data && kioskDevices.data.length > 0}
+    <ul class="kiosk-list">
+      {#each kioskDevices.data as d (d.id)}
+        <li>
+          <span><strong>{d.name}</strong><br /><span class="muted small">gekoppelt {seen(d.createdAt)}, zuletzt aktiv {seen(d.lastSeen)}</span></span>
+          <button type="button" class="btn btn-secondary on-surface" onclick={() => removeKiosk(d.id)}>Entfernen</button>
+        </li>
+      {/each}
+    </ul>
+  {/if}
+  <a href="/kiosk" class="small">Kiosk-Ansicht hier ansehen</a>
+  {#if kioskError}<p class="save-error" role="alert">{kioskError}</p>{/if}
+</section>
+
 <section class="card" aria-labelledby="konto">
   <h2 id="konto">Konto</h2>
   <p>Angemeldet als <strong>{user.name}</strong>.</p>
@@ -268,6 +330,44 @@
 </section>
 
 <style>
+  .kiosk {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .kiosk-code {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--paper);
+  }
+
+  .code {
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .kiosk-list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .kiosk-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+    border-top: 1px solid var(--line);
+  }
+
   .head {
     padding: 0 var(--space-1) var(--space-2);
   }

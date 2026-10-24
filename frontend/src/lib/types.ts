@@ -644,3 +644,13 @@ export interface UtilityDetail extends UtilitySummary {
   prepaymentAdopted: boolean | null
   notes: string
 }
+
+/** The kiosk board (KioskService) */
+export interface KioskBoard {
+  today: string
+  household: string | null
+  user: { id: string; name: string }
+  items: AgendaItem[]
+  waste: { configured: boolean; fullService: boolean; pickups: { date: string; daysUntil: number; name: string; color: string }[] }
+  meters: { id: string; medium: string; name: string | null; unit: string; decimals: number; currentMonth: MonthValue; latest: Reading | null }[]
+}
