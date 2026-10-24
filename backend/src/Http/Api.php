@@ -116,6 +116,19 @@ final class Api
             });
         });
 
+        // Calendar apps cannot sign in: the secret link is the key (CalendarLinks).
+        $app->get('/api/calendar/{token:[A-Za-z0-9_-]+}.ics', function (Request $r, Response $response, array $args) use ($services): Response {
+            if ($services->calendarLinks()->personFor($args['token']) === null) {
+                throw AppException::notFound('Calendar');
+            }
+            $services->notes()->refresh();
+            $agenda = $services->agenda()->forOverview([])['agenda'];
+            $response->getBody()->write($services->calendarFeed()->build($agenda, gmdate('Ymd\THis\Z')));
+            return $response
+                ->withHeader('Content-Type', 'text/calendar; charset=utf-8')
+                ->withHeader('Content-Disposition', 'inline; filename="wohnpilot.ics"');
+        });
+
         $app->group('/api', function (RouteCollectorProxy $api) use ($services): void {
             $api->get('/me', fn (Request $request, Response $response) => self::json($response, ['user' => self::user($request)->toArray()]));
 
@@ -213,6 +226,20 @@ final class Api
             $api->put('/deadlines/{id}/done', function (Request $request, Response $response, array $args) use ($services): Response {
                 $date = self::body($request)['datum'] ?? null;
                 return self::json($response, $services->deadlines()->setDone($args['id'], is_string($date) ? $date : null, self::user($request)));
+            });
+
+            // The person's own calendar link: status, a new one (the old one stops), or none.
+            $api->get('/calendar', function (Request $request, Response $response) use ($services): Response {
+                $created = $services->calendarLinks()->createdAt(self::user($request)->id);
+                return self::json($response, ['active' => $created !== null, 'createdAt' => $created === null ? null : gmdate('c', $created)]);
+            });
+            $api->post('/calendar', function (Request $request, Response $response) use ($services): Response {
+                $token = $services->calendarLinks()->create(self::user($request)->id);
+                return self::json($response, ['active' => true, 'createdAt' => gmdate('c'), 'url' => $services->appUrl() . "/api/calendar/$token.ics"], 201);
+            });
+            $api->delete('/calendar', function (Request $request, Response $response) use ($services): Response {
+                $services->calendarLinks()->revoke(self::user($request)->id);
+                return $response->withStatus(204);
             });
 
             $api->post('/sync', function (Request $r, Response $response) use ($services): Response {

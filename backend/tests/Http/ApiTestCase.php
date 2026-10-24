@@ -11,6 +11,7 @@ use Slim\App;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use Wohnpilot\App\Clock;
 use Wohnpilot\Auth\AccountStore;
+use Wohnpilot\Calendar\CalendarLinks;
 use Wohnpilot\Auth\ArraySession;
 use Wohnpilot\Auth\BearId;
 use Wohnpilot\Auth\Identity;
@@ -80,6 +81,12 @@ abstract class ApiTestCase extends TestCase
             protected ?NoteIndex $testIndex = null;
             protected ?StorageAdapter $testStorage = null;
             protected ?AccountStore $testAccounts = null;
+            protected ?CalendarLinks $testCalendarLinks = null;
+
+            public function calendarLinks(): CalendarLinks
+            {
+                return $this->testCalendarLinks ??= new CalendarLinks(new PDO('sqlite::memory:'));
+            }
 
             public function accounts(): AccountStore
             {

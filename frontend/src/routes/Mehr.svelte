@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { CalendarClock, ChevronRight, FileText, KeyRound, LogOut, RefreshCw } from '@lucide/svelte'
+  import { CalendarClock, CalendarPlus, ChevronRight, Copy, FileText, KeyRound, LogOut, RefreshCw } from '@lucide/svelte'
   import { api, ApiError, logout } from '../lib/api'
   import { theme, type ThemeChoice } from '../lib/theme.svelte'
   import type { User } from '../lib/types'
+  import { Resource } from '../lib/resource.svelte'
+  import { formatDate } from '../lib/format'
   import IconTile from '../components/IconTile.svelte'
   import Segmentschalter from '../components/Segmentschalter.svelte'
 
@@ -16,6 +18,49 @@
 
   let choice = $state<string>(theme.choice)
   $effect(() => theme.set(choice as ThemeChoice))
+
+  // Calendar subscription: the link is shown once, right after it is made.
+  const calendar = new Resource(() => api.get<{ active: boolean; createdAt: string | null }>('/calendar'))
+  let calendarUrl = $state('')
+  let calendarBusy = $state(false)
+  let calendarError = $state('')
+  let copied = $state(false)
+
+  async function calendarAction(run: () => Promise<void>) {
+    calendarBusy = true
+    calendarError = ''
+    try {
+      await run()
+    } catch (e) {
+      calendarError = e instanceof ApiError ? e.text : ''
+    } finally {
+      calendarBusy = false
+    }
+  }
+
+  const createLink = () =>
+    calendarAction(async () => {
+      const result = await api.post<{ active: boolean; createdAt: string; url: string }>('/calendar')
+      calendarUrl = result.url
+      copied = false
+      calendar.data = { active: true, createdAt: result.createdAt }
+    })
+
+  const removeLink = () =>
+    calendarAction(async () => {
+      await api.delete('/calendar')
+      calendarUrl = ''
+      calendar.data = { active: false, createdAt: null }
+    })
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(calendarUrl)
+      copied = true
+    } catch {
+      copied = false
+    }
+  }
 
   let syncState = $state<'idle' | 'running' | 'done' | 'failed'>('idle')
   let syncError = $state('')
@@ -51,6 +96,42 @@
     {/each}
   </ul>
 </nav>
+
+<section class="card" aria-labelledby="kalender">
+  <h2 id="kalender">Kalender</h2>
+  <p class="muted">Kündigungstage und Fristen als Abo in deinem Kalender, mit Erinnerung eine Woche und einen Tag vorher.</p>
+  {#if calendarUrl}
+    <div class="field link-field">
+      <label for="kalender-link">Dein Kalender-Link</label>
+      <input id="kalender-link" class="input num" readonly value={calendarUrl} onfocus={(e) => e.currentTarget.select()} />
+      <span class="hint">Nur jetzt sichtbar. Wer den Link hat, sieht deine Fristen – teil ihn nicht.</span>
+    </div>
+    <div class="actions">
+      <a class="btn btn-primary" href={calendarUrl.replace(/^https?:/, 'webcal:')}>
+        <CalendarPlus size={18} strokeWidth={1.75} aria-hidden="true" />
+        Im Kalender abonnieren
+      </a>
+      <button type="button" class="btn btn-secondary on-surface" onclick={copyLink}>
+        <Copy size={18} strokeWidth={1.75} aria-hidden="true" />
+        {copied ? 'Kopiert' : 'Link kopieren'}
+      </button>
+    </div>
+    <p class="muted small">iPhone: Einstellungen › Kalender › Accounts › Kalenderabo hinzufügen. Google Kalender: Weitere Kalender › Per URL.</p>
+  {:else if calendar.data?.active}
+    <p>Dein Kalender-Link ist aktiv{calendar.data.createdAt ? ` seit ${formatDate(calendar.data.createdAt.slice(0, 10))}` : ''}.</p>
+    <div class="actions">
+      <button type="button" class="btn btn-secondary on-surface" disabled={calendarBusy} onclick={createLink}>Neuen Link erzeugen</button>
+      <button type="button" class="btn btn-secondary on-surface" disabled={calendarBusy} onclick={removeLink}>Link löschen</button>
+    </div>
+    <p class="muted small">Ein neuer Link ersetzt den alten; dein Kalender braucht dann das neue Abo.</p>
+  {:else if calendar.data}
+    <button type="button" class="btn btn-secondary on-surface" disabled={calendarBusy} onclick={createLink}>
+      <CalendarPlus size={18} strokeWidth={1.75} aria-hidden="true" />
+      Kalender-Link erstellen
+    </button>
+  {/if}
+  {#if calendarError}<p class="save-error" role="alert">{calendarError}</p>{/if}
+</section>
 
 <section class="card" aria-labelledby="darstellung">
   <h2 id="darstellung">Darstellung</h2>
@@ -159,6 +240,16 @@
   .row :global(.chevron) {
     flex-shrink: 0;
     color: var(--ink-muted);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .link-field {
+    align-self: stretch;
   }
 
   .muted {

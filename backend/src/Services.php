@@ -14,6 +14,8 @@ use Wohnpilot\App\LeaseService;
 use Wohnpilot\App\MeterService;
 use Wohnpilot\App\NoteRepository;
 use Wohnpilot\Auth\AccountStore;
+use Wohnpilot\Calendar\CalendarLinks;
+use Wohnpilot\Calendar\IcsFeed;
 use Wohnpilot\Auth\BearId;
 use Wohnpilot\Auth\DevLogin;
 use Wohnpilot\Auth\LoginProvider;
@@ -131,6 +133,17 @@ class Services
     public function accounts(): AccountStore
     {
         return $this->instances[__FUNCTION__] ??= AccountStore::open($this->path($this->config->get('ACCOUNTS_FILE', 'var/accounts.sqlite')));
+    }
+
+    /** Personal settings like the calendar link (not a cache: belongs in the backup). */
+    public function calendarLinks(): CalendarLinks
+    {
+        return $this->instances[__FUNCTION__] ??= CalendarLinks::open($this->path($this->config->get('SETTINGS_FILE', 'var/settings.sqlite')));
+    }
+
+    public function calendarFeed(): IcsFeed
+    {
+        return $this->instances[__FUNCTION__] ??= new IcsFeed($this->appUrl());
     }
 
     public function appUrl(): string
