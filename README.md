@@ -55,6 +55,20 @@ Ziel: Subdomain `wohnpilot.codekorb.de`, Ordner im Webspace `wohnpilot.codekorb.
       public/                   ← Document Root: index.php, .htaccess, gebaute App
 ```
 
+### Bereitstellung über Git (Plesk)
+
+Bei jedem Push auf `main` testet und baut eine GitHub Action (`.github/workflows/deploy.yml`) den Inhalt von `httpdocs` und legt ihn in den Branch **`deploy`**: `public/` mit gebauter App, `src/`, `bin/`, `vendor/` ohne Entwicklungspakete, `composer.*`, `var/.htaccess`. Schlagen Tests fehl, bleibt `deploy` unverändert.
+
+In Plesk (Git bei `wohnpilot.codekorb.de`):
+
+- Repository `https://github.com/christiandemski/wohnpilot.git`, **Branch `deploy`**
+- **Serverpfad `/wohnpilot.codekorb.de/httpdocs`** – niemals `httpdocs/public`, sonst liegen die Dateien im Web
+- Bereitstellung automatisch; Document Root bleibt `httpdocs/public`
+
+`.env` und die Daten in `var/` liegen nur auf dem Server und sind nicht im Branch; ein Pull lässt sie stehen. `main` selbst ist nicht lauffähig (ohne `vendor/` und ohne gebaute App) und gehört nie auf den Server.
+
+### Bereitstellung per Upload-Paket
+
 1. **Paket bauen:** `php tools/build-deploy.php` baut das Frontend, stellt das Backend ohne Tests und Entwicklungspakete zusammen und legt `dist/wohnpilot-deploy-<datum>-<commit>.zip` an. Darin liegen auch `LIESMICH.txt` und `.env.server` (vorausgefüllt, ohne Passwort).
 2. **Hochladen:** den *Inhalt* des ZIP nach `wohnpilot.codekorb.de/httpdocs/`, mit den versteckten Dateien. `var/` muss für PHP beschreibbar sein.
 3. **`.env`:** `.env.server` in `.env` umbenennen und das Nextcloud-App-Passwort eintragen. Vorausgefüllt sind:
