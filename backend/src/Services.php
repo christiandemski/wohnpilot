@@ -13,6 +13,7 @@ use Wohnpilot\App\HouseholdService;
 use Wohnpilot\App\LeaseService;
 use Wohnpilot\App\MeterService;
 use Wohnpilot\App\NoteRepository;
+use Wohnpilot\App\PhotoService;
 use Wohnpilot\Auth\AccountStore;
 use Wohnpilot\Auth\BearId;
 use Wohnpilot\Auth\DevLogin;
@@ -26,7 +27,9 @@ use Wohnpilot\Push\MorningPush;
 use Wohnpilot\Push\PushSender;
 use Wohnpilot\Push\PushSubscriptions;
 use Wohnpilot\Push\WebPushSender;
+use Wohnpilot\Storage\AttachmentStore;
 use Wohnpilot\Storage\FilesystemAdapter;
+use Wohnpilot\Storage\NextcloudFiles;
 use Wohnpilot\Storage\NextcloudNotesAdapter;
 use Wohnpilot\Storage\StorageAdapter;
 
@@ -51,6 +54,27 @@ class Services
             'filesystem' => new FilesystemAdapter($this->path($this->config->get('FILESYSTEM_ROOT', 'var/notes'))),
             default => throw new RuntimeException('STORAGE must be nextcloud or filesystem'),
         };
+    }
+
+    /** Photos: the local folder itself, or WebDAV next to the notes in Nextcloud. */
+    public function files(): AttachmentStore
+    {
+        if (isset($this->instances[__FUNCTION__])) {
+            return $this->instances[__FUNCTION__];
+        }
+        $storage = $this->storage();
+        return $this->instances[__FUNCTION__] = $storage instanceof AttachmentStore ? $storage : NextcloudFiles::connect(
+            $this->config->require('NEXTCLOUD_URL'),
+            $this->config->require('NEXTCLOUD_USER'),
+            $this->config->require('NEXTCLOUD_APP_PASSWORD'),
+            $storage,
+            $this->config->get('NEXTCLOUD_FOLDER', 'Wohnpilot'),
+        );
+    }
+
+    public function photos(): PhotoService
+    {
+        return $this->instances[__FUNCTION__] ??= new PhotoService($this->notes(), $this->files(), $this->clock());
     }
 
     public function index(): NoteIndex

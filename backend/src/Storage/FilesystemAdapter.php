@@ -8,10 +8,10 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
 /**
- * Notes as files in a local folder. Used for local development and tests;
- * the ETag is a hash of the content.
+ * Notes and their attachments as files in a local folder. Used for local
+ * development and tests; the ETag is a hash of the content.
  */
-final class FilesystemAdapter implements StorageAdapter
+final class FilesystemAdapter implements StorageAdapter, AttachmentStore
 {
     public function __construct(private readonly string $root)
     {
@@ -80,6 +80,35 @@ final class FilesystemAdapter implements StorageAdapter
             fclose($handle);
         }
         return $this->get($path);
+    }
+
+    public function putFile(string $path, string $bytes): void
+    {
+        AttachmentPath::assertWritable($path);
+        $file = $this->root . '/' . $path;
+        if (!is_dir(dirname($file)) && !mkdir(dirname($file), 0775, true) && !is_dir(dirname($file))) {
+            throw new StorageException("Cannot create folder for $path");
+        }
+        $this->write($file, $bytes);
+    }
+
+    public function getFile(string $path): string
+    {
+        AttachmentPath::assertReadable($path);
+        $file = $this->root . '/' . $path;
+        if (!is_file($file)) {
+            throw NotFoundException::forPath($path);
+        }
+        return (string) file_get_contents($file);
+    }
+
+    public function deleteFile(string $path): void
+    {
+        AttachmentPath::assertWritable($path);
+        $file = $this->root . '/' . $path;
+        if (is_file($file)) {
+            unlink($file);
+        }
     }
 
     private function file(string $path): string

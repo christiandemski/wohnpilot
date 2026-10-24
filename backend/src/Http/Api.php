@@ -6,6 +6,7 @@ namespace Wohnpilot\Http;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\UploadedFileInterface;
 use Psr\Http\Server\RequestHandlerInterface as Handler;
 use Slim\App;
 use Slim\Factory\AppFactory;
@@ -277,6 +278,30 @@ final class Api
                 return self::json($response, ['result' => $outcome]);
             });
 
+            // Photos of defects, devices and maintenance tasks
+            $api->post('/photos/{type}/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                $file = $request->getUploadedFiles()['foto'] ?? null;
+                if (!$file instanceof UploadedFileInterface || $file->getError() !== UPLOAD_ERR_OK) {
+                    $tooLarge = $file instanceof UploadedFileInterface && in_array($file->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true);
+                    throw AppException::validation(['foto' => $tooLarge ? 'too_large' : 'required']);
+                }
+                $alt = (string) (((array) $request->getParsedBody())['alt'] ?? '');
+                $photos = $services->photos()->add($args['type'], $args['id'], (string) $file->getStream(), $alt, self::user($request));
+                return self::json($response, ['photos' => $photos], 201);
+            });
+            $api->delete('/photos/{type}/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                $path = (string) ($request->getQueryParams()['path'] ?? '');
+                return self::json($response, ['photos' => $services->photos()->remove($args['type'], $args['id'], $path, self::user($request))]);
+            });
+            $api->get('/files/{path:.+}', function (Request $request, Response $response, array $args) use ($services): Response {
+                [$bytes, $type] = $services->photos()->file(rawurldecode($args['path']));
+                $response->getBody()->write($bytes);
+                return $response
+                    ->withHeader('Content-Type', $type)
+                    ->withHeader('Cache-Control', 'private, max-age=86400')
+                    ->withHeader('X-Content-Type-Options', 'nosniff');
+            });
+
             $api->post('/sync', function (Request $r, Response $response) use ($services): Response {
                 $services->notes()->refresh(true);
                 return $response->withStatus(204);
@@ -311,7 +336,9 @@ final class Api
             if ($writes && $request->getHeaderLine('X-Requested-With') !== 'wohnpilot') {
                 throw new AppException('forbidden', 403, 'Missing X-Requested-With header');
             }
-            return $handler->handle($request)->withHeader('Cache-Control', 'no-store');
+            $response = $handler->handle($request);
+            // API answers are never cached, unless a route says otherwise (photos).
+            return $response->hasHeader('Cache-Control') ? $response : $response->withHeader('Cache-Control', 'no-store');
         });
 
         $errors = $app->addErrorMiddleware($services->config->isDev(), true, true);

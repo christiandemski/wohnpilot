@@ -13,6 +13,8 @@ use Wohnpilot\Domain\Lease;
 use Wohnpilot\Note\HistoryTable;
 use Wohnpilot\Note\NoteDocument;
 use Wohnpilot\Storage\ConflictException;
+use Wohnpilot\Storage\NextcloudFiles;
+use Wohnpilot\Storage\NotFoundException;
 use Wohnpilot\Storage\NextcloudNotesAdapter;
 
 /**
@@ -125,6 +127,31 @@ final class NextcloudLiveTest extends TestCase
         $read = $this->adapter->get($leasePath)->content;
         self::assertSame($note->toString(), $read);
         self::assertSame([], Lease::fromNote(NoteDocument::parse($read))->consentDeadlines('2026-10-24'), 'agreed: no open consent deadline');
+    }
+
+    public function testPhotosGoNextToTheNotesViaWebDav(): void
+    {
+        $files = NextcloudFiles::connect($_ENV['NEXTCLOUD_URL'], $_ENV['NEXTCLOUD_USER'], $_ENV['NEXTCLOUD_APP_PASSWORD'], $this->adapter, $_ENV['NEXTCLOUD_FOLDER'] ?? 'Wohnpilot');
+        $folder = 'live-test-' . bin2hex(random_bytes(3));
+        $path = "anhaenge/$folder/foto.jpg";
+        $bytes = "\xFF\xD8\xFF\xE0" . random_bytes(2048);
+
+        try {
+            $files->putFile($path, $bytes);
+            self::assertSame($bytes, $files->getFile($path), 'same bytes back');
+            $files->putFile($path, $bytes . 'x');
+            self::assertSame($bytes . 'x', $files->getFile($path), 'replaced');
+
+            $files->deleteFile($path);
+            $files->deleteFile($path);
+            $this->expectException(NotFoundException::class);
+            $files->getFile($path);
+        } finally {
+            // Remove the empty test folder again (not part of AttachmentStore).
+            $settings = $this->adapter->settings();
+            $dav = new \GuzzleHttp\Client(['base_uri' => rtrim($_ENV['NEXTCLOUD_URL'], '/') . NextcloudFiles::DAV_PATH, 'auth' => [$_ENV['NEXTCLOUD_USER'], $_ENV['NEXTCLOUD_APP_PASSWORD']], 'http_errors' => false]);
+            $dav->request('DELETE', implode('/', array_map('rawurlencode', [$settings['notesPath'], $_ENV['NEXTCLOUD_FOLDER'] ?? 'Wohnpilot', 'anhaenge', $folder])));
+        }
     }
 
     private function track(string $path): string

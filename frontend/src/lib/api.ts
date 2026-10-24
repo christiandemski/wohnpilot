@@ -56,6 +56,8 @@ const FIELD_PROBLEMS: Record<string, string> = {
   id: 'Ungültige Auswahl.',
   one_of: 'Bitte nur Wochen oder Monate.',
   after_date: 'Muss vor dem Stichtag liegen.',
+  too_large: 'Das Foto ist zu groß.',
+  not_an_image: 'Das ist kein Foto (JPEG, PNG oder WebP).',
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -67,9 +69,10 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
       headers: {
         Accept: 'application/json',
         ...(method === 'GET' ? {} : { 'X-Requested-With': 'wohnpilot' }),
-        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        // Forms with files set their own multipart Content-Type.
+        ...(body === undefined || body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
     })
   } catch {
     throw new ApiError(0, 'offline')
@@ -88,6 +91,7 @@ export const api = {
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {}),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
   delete: <T>(path: string) => request<T>('DELETE', path),
+  upload: <T>(path: string, form: FormData) => request<T>('POST', path, form),
 }
 
 /** Only with APP_ENV=dev: sign in as DEV_LOGIN_USER. */
