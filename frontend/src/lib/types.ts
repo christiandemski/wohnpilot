@@ -528,6 +528,10 @@ export interface Waste {
   etag: string | null
   fullService: boolean
   url: string | null
+  /** uploaded calendar file in the Nextcloud, when the municipality offers no address */
+  file: string | null
+  /** last pickup in the calendar */
+  calendarEnds: string | null
   bins: Bin[]
   pickups: { date: string; time: string | null; summary: string; bin: string | null }[]
   next: Record<string, string>

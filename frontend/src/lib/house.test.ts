@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { endText, intervalText, maintenanceChip, maintenanceMeta, paperlessLink, seasonText, wasteError } from './house'
+import { calendarEndHint, endText, intervalText, maintenanceChip, maintenanceMeta, paperlessLink, seasonText, wasteError } from './house'
 import type { MaintenanceEvaluation } from './types'
 
 const today = '2026-10-24'
@@ -72,5 +72,18 @@ describe('devices and more', () => {
     expect(paperlessLink(null, 1234)).toBeNull()
     expect(paperlessLink('https://paperless.example.org', '')).toBeNull()
     expect(paperlessLink('https://paperless.example.org', 1234)).toBe('https://paperless.example.org/documents/1234/details')
+  })
+})
+
+describe('calendarEndHint', () => {
+  const file = { file: 'anhaenge/muell/efh/abfuhrkalender.ics', error: null }
+  it('says when a downloaded calendar runs out', () => {
+    expect(calendarEndHint({ ...file, calendarEnds: '2026-12-23' }, '2026-10-24')).toBe('')
+    expect(calendarEndHint({ ...file, calendarEnds: '2026-12-23' }, '2026-11-23')).toBe('Deine Kalenderdatei reicht nur bis 23.12.2026. Lad die Datei fürs nächste Jahr hoch, sobald es sie gibt.')
+    expect(calendarEndHint({ ...file, calendarEnds: null }, '2027-01-02')).toMatch(/keine Abholung mehr/)
+  })
+  it('is quiet for an address or when loading failed', () => {
+    expect(calendarEndHint({ file: null, calendarEnds: null, error: null }, '2026-10-24')).toBe('')
+    expect(calendarEndHint({ ...file, calendarEnds: null, error: 'file_missing' }, '2026-10-24')).toBe('')
   })
 })

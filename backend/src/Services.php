@@ -221,6 +221,8 @@ class Services
             $this->calendarFetcher(),
             $this->path($this->config->get('CACHE_DIR', 'var/cache')),
             $this->clock(),
+            null,
+            $this->files(),
         );
     }
 

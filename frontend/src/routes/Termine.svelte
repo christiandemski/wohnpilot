@@ -2,9 +2,9 @@
   import { CalendarDays, Plus, Settings2 } from '@lucide/svelte'
   import { api } from '../lib/api'
   import { people } from '../lib/people.svelte'
-  import { Resource } from '../lib/resource.svelte'
+  import { Resource, todayIso } from '../lib/resource.svelte'
   import { formatChipDay, formatDate, formatLongDay } from '../lib/format'
-  import { wasteError } from '../lib/house'
+  import { calendarEndHint, wasteError } from '../lib/house'
   import type { Appointment, Waste } from '../lib/types'
   import IconTile from '../components/IconTile.svelte'
   import LoadState from '../components/LoadState.svelte'
@@ -91,13 +91,14 @@
         <Settings2 size={18} strokeWidth={1.75} aria-hidden="true" />
       </a>
     </div>
-    {#if !w.url}
+    {#if !w.url && !w.file}
       <p class="empty">
-        Hinterleg den Abfuhrkalender deines Entsorgers (ICS-Adresse), dann stehen die Abholtermine hier.
+        Hinterleg den Abfuhrkalender deines Entsorgers (Link oder ICS-Datei), dann stehen die Abholtermine hier.
         <a href="/termine/muell">Jetzt einrichten</a>
       </p>
     {:else}
       {#if w.error}<p class="problem" role="status">{wasteError(w.error)}{w.fetchedAt ? ' Angezeigt wird der letzte Stand.' : ''}</p>{/if}
+      {#if calendarEndHint(w, todayIso())}<p class="problem" role="status">{calendarEndHint(w, todayIso())} <a href="/termine/muell">Hochladen</a></p>{/if}
       {#if soon(w).length === 0 && !w.error}
         <p class="empty">Keine Abholung in den nächsten Wochen. Passen die Stichworte der Tonnen zum Kalender?</p>
       {:else}

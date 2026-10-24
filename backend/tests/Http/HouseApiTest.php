@@ -243,6 +243,44 @@ final class HouseApiTest extends ApiTestCase
         self::assertStringContainsString("  - { id: gelb, name: Gelbe Tonne, farbe: bin-gelb, stichwort: Gelb }\n", $note, 'bins untouched');
     }
 
+    private function uploadCalendar(string $bytes): \Psr\Http\Message\ResponseInterface
+    {
+        $request = (new \Slim\Psr7\Factory\ServerRequestFactory())->createServerRequest('POST', '/api/waste/calendar')
+            ->withHeader('X-Requested-With', 'wohnpilot')
+            ->withUploadedFiles(['kalender' => new \Slim\Psr7\UploadedFile((new \Slim\Psr7\Factory\StreamFactory())->createStream($bytes), 'abfuhr.ics', 'text/calendar', strlen($bytes))]);
+        return $this->app->handle($request);
+    }
+
+    public function testDownloadedCalendarFileInsteadOfAnAddress(): void
+    {
+        $ics = (string) file_get_contents(dirname(\Wohnpilot\Tests\Fixtures::root()) . '/abfuhrkalender.ics');
+        $this->calendarRequests = 0;
+
+        self::assertSame(['kalender' => 'not_a_calendar'], self::decode($this->uploadCalendar('Hallo'))['fields']);
+
+        $uploaded = $this->uploadCalendar($ics);
+        self::assertSame(201, $uploaded->getStatusCode(), (string) $uploaded->getBody());
+        $waste = self::decode($uploaded);
+        self::assertSame([null, 'anhaenge/muell/efh-musterstrasse/abfuhrkalender.ics'], [$waste['url'], $waste['file']]);
+        self::assertSame('2026-10-27', $waste['next']['gelb']);
+        self::assertSame('2026-12-23', $waste['calendarEnds']);
+        self::assertSame(0, $this->calendarRequests, 'nothing fetched from the internet');
+        self::assertSame($ics, file_get_contents("$this->root/anhaenge/muell/efh-musterstrasse/abfuhrkalender.ics"));
+
+        $note = $this->note(self::OBJECT . '/termine/muell.md');
+        self::assertStringNotContainsString('kalender_url', $note);
+        self::assertStringContainsString("kalender_datei: anhaenge/muell/efh-musterstrasse/abfuhrkalender.ics\n", $note);
+        self::assertStringContainsString("  - { id: gelb, name: Gelbe Tonne, farbe: bin-gelb, stichwort: Gelb }\n", $note, 'bins untouched');
+
+        // Saving the bins keeps the file; an address replaces it
+        self::assertSame('anhaenge/muell/efh-musterstrasse/abfuhrkalender.ics', self::decode($this->request('PUT', '/api/waste', ['kalender_url' => '', 'vollservice' => true]))['file']);
+        $this->request('PUT', '/api/waste', ['kalender_url' => 'https://neu.example.org/kalender.ics']);
+        self::assertStringNotContainsString('kalender_datei', $this->note(self::OBJECT . '/termine/muell.md'));
+
+        $this->signIn('alex');
+        self::assertSame(403, $this->uploadCalendar($ics)->getStatusCode());
+    }
+
     public function testPaperlessIsOptional(): void
     {
         self::assertSame(['paperlessUrl' => null, 'readingDay' => 1], self::decode($this->request('GET', '/api/settings')));

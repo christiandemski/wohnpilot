@@ -1,7 +1,7 @@
 import { dueChip } from './contracts'
-import { formatDate, formatDay, formatNumber } from './format'
+import { daysBetween, formatDate, formatDay, formatNumber } from './format'
 import type { ChipTone } from './meters'
-import type { DefectStatus, DeviceEnd, MaintenanceEvaluation } from './types'
+import type { DefectStatus, DeviceEnd, MaintenanceEvaluation, Waste } from './types'
 
 /** German texts for maintenance, defects, devices and the waste calendar; the API sends codes only. */
 
@@ -129,8 +129,20 @@ export function wasteError(code: string | null): string {
     not_a_calendar: 'Unter dieser Adresse liegt kein Kalender (ICS).',
     too_large: 'Der Kalender ist zu groß.',
     url: 'Die Adresse stimmt nicht.',
+    file_missing: 'Die Kalenderdatei fehlt in der Nextcloud. Lad sie bitte neu hoch.',
   }
   return texts[code] ?? (code.startsWith('http_') ? `Der Server des Entsorgers antwortet mit Fehler ${code.slice(5)}.` : 'Der Abfuhrkalender ließ sich nicht laden.')
+}
+
+/**
+ * A downloaded calendar file covers a year or so: say when it runs out,
+ * 30 days ahead. An address is kept up to date by the municipality.
+ */
+export function calendarEndHint(waste: Pick<Waste, 'file' | 'calendarEnds' | 'error'>, today: string): string {
+  if (!waste.file || waste.error) return ''
+  if (waste.calendarEnds === null) return 'In deiner Kalenderdatei steht keine Abholung mehr. Lad die neue Datei deines Entsorgers hoch.'
+  if (daysBetween(today, waste.calendarEnds) > 30) return ''
+  return `Deine Kalenderdatei reicht nur bis ${formatDate(waste.calendarEnds)}. Lad die Datei fürs nächste Jahr hoch, sobald es sie gibt.`
 }
 
 /** Paperless link to a document, or null while Paperless is off. */

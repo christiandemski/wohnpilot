@@ -1,14 +1,22 @@
 <script lang="ts">
-  import { Plus, Trash2 } from '@lucide/svelte'
+  import { FileUp, Plus, Trash2 } from '@lucide/svelte'
   import { api, ApiError } from '../lib/api'
-  import { formatChipDay } from '../lib/format'
-  import { BIN_COLORS, wasteError } from '../lib/house'
+  import { formatChipDay, formatDate } from '../lib/format'
+  import { BIN_COLORS, calendarEndHint, wasteError } from '../lib/house'
+  import { todayIso } from '../lib/resource.svelte'
   import type { Bin, Waste } from '../lib/types'
   import PageHeader from '../components/PageHeader.svelte'
+  import Segmentschalter from '../components/Segmentschalter.svelte'
   import Tonne from '../components/Tonne.svelte'
 
-  /** Waste calendar: address of the municipal ICS, full service, bins with keyword. */
+  /**
+   * Waste calendar: address of the municipal ICS or, if there is only a
+   * download, the file itself; full service, bins with keyword.
+   */
+  let source = $state<'link' | 'datei'>('link')
   let url = $state('')
+  let uploading = $state(false)
+  let uploadError = $state('')
   let fullService = $state(false)
   let bins = $state<Bin[]>([])
   let waste = $state<Waste | null>(null)
@@ -22,6 +30,7 @@
     try {
       waste = await api.get<Waste>('/waste')
       url = waste.url ?? ''
+      source = waste.file ? 'datei' : 'link'
       fullService = waste.fullService
       bins = waste.bins.map((b) => ({ ...b }))
     } catch (e) {
@@ -38,7 +47,8 @@
     error = ''
     fieldErrors = {}
     try {
-      waste = await api.put<Waste>('/waste', { kalender_url: url.trim(), vollservice: fullService, tonnen: bins })
+      // With a file, the address stays empty and the file is kept
+      waste = await api.put<Waste>('/waste', { kalender_url: source === 'link' ? url.trim() : '', vollservice: fullService, tonnen: bins })
       bins = waste.bins.map((b) => ({ ...b }))
     } catch (e) {
       const err = e instanceof ApiError ? e : new ApiError(0, 'internal')
@@ -48,6 +58,29 @@
       saving = false
     }
   }
+
+  async function upload(event: Event & { currentTarget: HTMLInputElement }) {
+    const file = event.currentTarget.files?.[0]
+    event.currentTarget.value = ''
+    if (!file) return
+    uploading = true
+    uploadError = ''
+    try {
+      const form = new FormData()
+      form.append('kalender', file)
+      waste = await api.upload<Waste>('/waste/calendar', form)
+      url = ''
+    } catch (e) {
+      const err = e instanceof ApiError ? e : new ApiError(0, 'internal')
+      const problem = (err.details.fields as Record<string, string> | undefined)?.kalender
+      uploadError = problem ? wasteError(problem) : err.text
+    } finally {
+      uploading = false
+    }
+  }
+
+  const fileName = (path: string) => path.split('/').pop() ?? path
+  const endHint = $derived(waste ? calendarEndHint(waste, todayIso()) : '')
 
   const addBin = () => (bins = [...bins, { id: '', name: '', farbe: 'bin-glas', stichwort: '' }])
   const removeBin = (i: number) => (bins = bins.filter((_, j) => j !== i))
@@ -61,12 +94,40 @@
 {:else}
   <form class="form" onsubmit={save} novalidate>
     <div class="card fields">
-      <div class="field">
-        <label for="url">Adresse des Abfuhrkalenders (ICS)</label>
-        <input id="url" class="input" type="url" inputmode="url" bind:value={url} placeholder="https://…/abfuhrkalender.ics" aria-invalid={fieldErrors.kalender_url !== undefined} />
-        <span class="hint">Auf der Seite deines Entsorgers: Abfuhrkalender für deine Straße, dann „Kalender abonnieren“ oder „iCal“. Die Adresse kopieren, nicht die Datei.</span>
-        {#if fieldErrors.kalender_url}<span class="error">{fieldErrors.kalender_url}</span>{/if}
-      </div>
+      <Segmentschalter
+        idPrefix="quelle"
+        label="Was bietet dein Entsorger an?"
+        bind:value={source}
+        options={[
+          { value: 'link', label: 'Abo-Link' },
+          { value: 'datei', label: 'ICS-Datei' },
+        ]}
+      />
+      {#if source === 'link'}
+        <div class="field">
+          <label for="url">Adresse des Abfuhrkalenders (ICS)</label>
+          <input id="url" class="input" type="url" inputmode="url" bind:value={url} placeholder="https://…/abfuhrkalender.ics" aria-invalid={fieldErrors.kalender_url !== undefined} />
+          <span class="hint">Auf der Seite deines Entsorgers: Abfuhrkalender für deine Straße, dann „Kalender abonnieren“ oder „iCal“. Die Adresse kopieren, nicht die Datei. Bleibt immer aktuell.</span>
+          {#if fieldErrors.kalender_url}<span class="error">{fieldErrors.kalender_url}</span>{/if}
+          {#if waste?.file}<span class="hint">Speichern ersetzt die hochgeladene Datei durch den Link.</span>{/if}
+        </div>
+      {:else}
+        <div class="field">
+          {#if waste?.file}
+            <p>
+              <strong>{fileName(waste.file)}</strong> liegt in deiner Nextcloud{waste.calendarEnds ? `, mit Abholungen bis ${formatDate(waste.calendarEnds)}` : ''}.
+            </p>
+          {/if}
+          <label class="btn btn-secondary on-surface upload" class:busy={uploading}>
+            <FileUp size={18} strokeWidth={1.75} aria-hidden="true" />
+            {uploading ? 'Lädt hoch …' : waste?.file ? 'Neue Datei hochladen' : 'ICS-Datei hochladen'}
+            <input type="file" accept=".ics,text/calendar" disabled={uploading} onchange={upload} />
+          </label>
+          <span class="hint">Lad beim Entsorger den Kalender für deine Straße als ICS- oder iCal-Datei herunter und wähl ihn hier aus. Eine Datei gilt meist ein Jahr; 30 Tage vor dem letzten Termin weist dich Wohnpilot unter Termine darauf hin.</span>
+          {#if uploadError}<span class="error" role="alert">{uploadError}</span>{/if}
+        </div>
+      {/if}
+      {#if endHint}<p class="save-error" role="status">{endHint}</p>{/if}
       <label class="checkbox">
         <input type="checkbox" bind:checked={fullService} />
         Vollservice: Der Entsorger holt die Tonnen selbst raus
@@ -98,7 +159,7 @@
                 <label for="stichwort-{i}">Stichwort im Kalender</label>
                 <input id="stichwort-{i}" class="input" bind:value={bin.stichwort} placeholder={bin.name} />
               </div>
-              <span class="hint">{nextFor(bin) ? `Nächste Abholung ${formatChipDay(nextFor(bin)!)}` : waste?.url ? 'Kein Termin gefunden' : ''}</span>
+              <span class="hint">{nextFor(bin) ? `Nächste Abholung ${formatChipDay(nextFor(bin)!)}` : waste?.url || waste?.file ? 'Kein Termin gefunden' : ''}</span>
             </div>
             <button type="button" class="btn btn-icon" aria-label="{bin.name || 'Tonne'} entfernen" onclick={() => removeBin(i)}>
               <Trash2 size={18} strokeWidth={1.75} aria-hidden="true" />
@@ -119,6 +180,28 @@
 {/if}
 
 <style>
+  .upload {
+    position: relative;
+    align-self: flex-start;
+    cursor: pointer;
+  }
+
+  .upload input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .upload:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .upload.busy {
+    opacity: 0.6;
+  }
+
   .bins {
     display: flex;
     flex-direction: column;

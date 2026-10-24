@@ -20,7 +20,7 @@ final class Roles
     private const OWN = ['#^/api/calendar$#', '#^/api/push/#', '#^/api/sync$#'];
 
     /** Writes for administrators only */
-    private const ADMIN_ONLY = ['#^/api/people(/|$)#', '#^/api/settings$#', '#^/api/waste$#', '#^/api/objects(/|$)#', '#^/api/move(/|$)#', '#^/api/entries/#'];
+    private const ADMIN_ONLY = ['#^/api/people(/|$)#', '#^/api/settings$#', '#^/api/waste(/|$)#', '#^/api/objects(/|$)#', '#^/api/move(/|$)#', '#^/api/entries/#'];
 
     /** A role as written in _haushalt.md: missing means member, anything unknown may only read. */
     public static function of(mixed $role): string

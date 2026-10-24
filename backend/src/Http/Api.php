@@ -449,6 +449,15 @@ final class Api
             // Waste: the calendar address and bins; refresh loads the calendar now
             $api->get('/waste', fn (Request $request, Response $response) => self::json($response, $services->waste()->get(isset($request->getQueryParams()['neu']))));
             $api->put('/waste', fn (Request $request, Response $response) => self::json($response, $services->waste()->save(self::body($request), self::user($request))));
+            // A downloaded calendar file instead of an address
+            $api->post('/waste/calendar', function (Request $request, Response $response) use ($services): Response {
+                $file = $request->getUploadedFiles()['kalender'] ?? null;
+                if (!$file instanceof UploadedFileInterface || $file->getError() !== UPLOAD_ERR_OK) {
+                    $tooLarge = $file instanceof UploadedFileInterface && in_array($file->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true);
+                    throw AppException::validation(['kalender' => $tooLarge ? 'too_large' : 'required']);
+                }
+                return self::json($response, $services->waste()->upload((string) $file->getStream(), self::user($request)), 201);
+            });
 
             $api->get('/settings', fn (Request $r, Response $response) => self::json($response, $services->settings()->get()));
             $api->put('/settings', fn (Request $request, Response $response) => self::json($response, $services->settings()->save(self::body($request), self::user($request))));
