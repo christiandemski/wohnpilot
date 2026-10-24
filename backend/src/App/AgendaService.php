@@ -53,9 +53,9 @@ final class AgendaService
             $monthly += $contract->monthlyCost() ?? 0.0;
 
             if ($term->state === ContractTerm::RUNNING) {
-                $items[] = $base + self::dated('kuendigung', $term->noticeBy, $term->daysUntilNotice, $term->status) + ['periodEnd' => $term->periodEnd, 'renewsMonths' => $term->renewsMonths];
+                $items[] = $base + self::dated('kuendigung', $term->noticeBy, $term->daysUntilNotice, $term->status) + ['periodEnd' => $term->periodEnd, 'renewsMonths' => $term->renewsMonths, 'countdownFrom' => $term->countdownFrom];
                 if ($nextNotice === null || $term->noticeBy < $nextNotice['date']) {
-                    $nextNotice = ['id' => $contract->id, 'name' => $name, 'date' => $term->noticeBy, 'daysUntil' => $term->daysUntilNotice, 'status' => $term->status];
+                    $nextNotice = ['id' => $contract->id, 'name' => $name, 'category' => $contract->category, 'date' => $term->noticeBy, 'daysUntil' => $term->daysUntilNotice, 'status' => $term->status, 'countdownFrom' => $term->countdownFrom];
                 }
             } elseif (in_array($term->state, [ContractTerm::CANCELLED, ContractTerm::EXPIRES], true)) {
                 $items[] = $base + self::dated('vertragsende', $term->endsOn, $term->daysUntilEnd, Urgency::OK) + ['cancelled' => $term->state === ContractTerm::CANCELLED];

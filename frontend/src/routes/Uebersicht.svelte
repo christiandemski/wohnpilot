@@ -1,10 +1,14 @@
 <script lang="ts">
-  import { Gauge, House, Plus } from '@lucide/svelte'
+  import { CalendarClock, Gauge, House, KeyRound, Plus, Receipt } from '@lucide/svelte'
   import { api } from '../lib/api'
   import { Resource } from '../lib/resource.svelte'
   import { formatChipDay, formatDay, formatLongDay, formatNumber, formatPercent, greeting, monthName } from '../lib/format'
   import { mediumName, meterChip, requestChip, roomName } from '../lib/meters'
-  import type { MeterSummary, Overview, User } from '../lib/types'
+  import { agendaText, GROUP_TITLES, groupAgenda, pickNext, remainingAgenda } from '../lib/agenda'
+  import { countdownShare } from '../lib/contracts'
+  import type { AgendaItem, MeterSummary, Overview, User } from '../lib/types'
+  import CategoryIcon from '../components/CategoryIcon.svelte'
+  import FristKachel from '../components/FristKachel.svelte'
   import IconTile from '../components/IconTile.svelte'
   import Kennzahlkachel from '../components/Kennzahlkachel.svelte'
   import LoadState from '../components/LoadState.svelte'
@@ -25,8 +29,7 @@
    * The "next" card: a reading the supplier asks for warns like a deadline,
    * the voluntary rhythm only offers the reading round.
    */
-  function nextCard(data: Overview) {
-    const next = data.next!
+  function readingCard(data: Overview, next: NonNullable<Overview['next']>) {
     const meters = data.meters.filter((m) => next.meterIds.includes(m.id))
     const rooms = [...new Set(meters.map((m) => roomName(m.room)).filter(Boolean))]
     const minutes = Math.max(1, Math.round(meters.length * 0.75))
@@ -59,6 +62,16 @@
       action: { href: '/ablesen', text: 'Jetzt schon ablesen' },
     }
   }
+
+  /** A contract, lease or deadline on the "Als Nächstes" card. */
+  function itemCard(data: Overview, item: AgendaItem) {
+    const text = agendaText(item, data.today)
+    return { title: text.title, meta: text.meta, chip: text.chip, action: { href: text.href, text: item.kind === 'frist' ? 'Frist ansehen' : item.kind === 'zustimmung' ? 'Mietvertrag ansehen' : 'Vertrag ansehen' } }
+  }
+
+  /** Later deadlines are many and calm: the first few, the rest on request. */
+  const LATER_SHOWN = 3
+  let showAllLater = $state(false)
 
   /** Daily rate this month against the same month last year, if both exist. */
   function trend(meter: MeterSummary) {
@@ -93,16 +106,24 @@
       meta="Haus oder Wohnung, Räume und Einzug – danach legst du deine Zähler an."
       action={{ href: '/zuhause/neu', text: 'Zuhause anlegen' }}
     />
-  {:else if data.meters.length === 0}
-    <NextCard
-      title="Leg deinen ersten Zähler an"
-      meta="Strom, Wasser, Gas – mit Zählernummer und Raum, dann kannst du ablesen."
-      action={{ href: '/zaehler/neu', text: 'Zähler anlegen' }}
-    />
   {:else}
+    {@const next = pickNext(data.agenda, data.next)}
+    {@const notice = data.figures.nextNotice}
+    {@const showNotice = notice !== null && !(next && 'item' in next && next.item.kind === 'kuendigung' && next.item.ref.id === notice.id)}
+    {@const groups = groupAgenda(remainingAgenda(data.agenda, next))}
     <div class="bento">
-      {#if data.next}
-        <div class="wide"><NextCard {...nextCard(data)} /></div>
+      {#if data.meters.length === 0}
+        <div class="wide">
+          <NextCard
+            title="Leg deinen ersten Zähler an"
+            meta="Strom, Wasser, Gas – mit Zählernummer und Raum, dann kannst du ablesen."
+            action={{ href: '/zaehler/neu', text: 'Zähler anlegen' }}
+          />
+        </div>
+      {:else if next && 'item' in next}
+        <div class="wide"><NextCard {...itemCard(data, next.item)} /></div>
+      {:else if next}
+        <div class="wide"><NextCard {...readingCard(data, next.reading)} /></div>
       {/if}
 
       {#each data.meters as meter (meter.id)}
@@ -120,6 +141,67 @@
         </Kennzahlkachel>
       {/each}
 
+      {#if notice && showNotice}
+        <FristKachel
+          href="/vertraege/{encodeURIComponent(notice.id)}"
+          title="{notice.name} kündigen?"
+          date={notice.date}
+          days={notice.daysUntil}
+          share={notice.countdownFrom ? countdownShare(notice.countdownFrom, notice.date, data.today) : 0}
+          status={notice.status}
+        />
+      {/if}
+
+      {#if data.figures.fixedMonthly > 0}
+        <Kennzahlkachel
+          href="/vertraege"
+          label={data.figures.rentMonthly !== null ? 'Fixkosten mit Miete' : 'Verträge im Monat'}
+          value={formatNumber(Math.round(data.figures.fixedMonthly))}
+          unit="€"
+          module="vertraege"
+        >
+          {#snippet icon()}<Receipt size={18} strokeWidth={1.75} aria-hidden="true" />{/snippet}
+        </Kennzahlkachel>
+      {/if}
+
+      {#if groups.length > 0}
+        <section class="card list wide agenda" aria-labelledby="agenda-title">
+          <div class="list-head">
+            <h2 id="agenda-title">Was steht an</h2>
+            <a href="/fristen">Fristen</a>
+          </div>
+          {#each groups as { group, items } (group)}
+            {@const shown = group === 'spaeter' && !showAllLater ? items.slice(0, LATER_SHOWN) : items}
+            <h3 class="group {group}">{GROUP_TITLES[group]}</h3>
+            {#each shown as item (item.kind + item.ref.id + item.date)}
+              {@const text = agendaText(item, data.today)}
+              <a class="row" href={text.href}>
+                {#if item.kind === 'zustimmung'}
+                  <IconTile module="miete"><KeyRound size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
+                {:else if item.kind === 'ablesung' || (item.kind === 'frist' && item.meterIds?.length)}
+                  <IconTile><Gauge size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
+                {:else if item.kind === 'frist'}
+                  <IconTile module="vertraege"><CalendarClock size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
+                {:else}
+                  <IconTile module="vertraege"><CategoryIcon category={item.category ?? ''} /></IconTile>
+                {/if}
+                <span class="row-text">
+                  <span class="row-title">{text.title}</span>
+                  <span class="row-meta">{text.meta}</span>
+                </span>
+                <StatusChip tone={text.chip.tone}>{text.chip.text}</StatusChip>
+              </a>
+            {/each}
+            {#if shown.length < items.length}
+              <button type="button" class="more" onclick={() => (showAllLater = true)}>
+                {items.length - shown.length} weitere anzeigen
+              </button>
+            {/if}
+          {/each}
+        </section>
+      {/if}
+
+      {#if data.meters.length > 0}
       <section class="card list wide" aria-labelledby="meters-title">
         <div class="list-head">
           <h2 id="meters-title">Zähler</h2>
@@ -140,6 +222,7 @@
           </a>
         {/each}
       </section>
+      {/if}
     </div>
   {/if}
 
@@ -200,6 +283,13 @@
     .list.wide {
       grid-column: span 2;
     }
+
+    /* Right column next to the next card and the tiles */
+    .list.agenda {
+      grid-column: 3 / 5;
+      grid-row: 1 / span 4;
+      align-self: start;
+    }
   }
 
   .list {
@@ -257,6 +347,31 @@
     font-size: 13px;
     line-height: 18px;
     color: var(--ink-muted);
+  }
+
+  .group {
+    padding-top: var(--space-2);
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 600;
+    color: var(--ink-muted);
+  }
+
+  .group.ueberfaellig {
+    color: var(--due);
+  }
+
+  .more {
+    align-self: flex-start;
+    min-height: var(--touch-min);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink-muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
   }
 
   .shortcut {

@@ -101,6 +101,47 @@ export interface Overview {
   object: ObjectData | null
   next: NextReading | null
   meters: MeterSummary[]
+  agenda: AgendaItem[]
+  figures: Figures
+}
+
+export type AgendaGroup = 'ueberfaellig' | 'woche' | 'bald' | 'spaeter' | 'hinweis'
+
+/** One dated thing of "Was steht an" (AgendaService); kind decides which extra fields are set. */
+export interface AgendaItem {
+  ref: { type: 'vertrag' | 'mietvertrag' | 'frist' | 'ablesung'; id: string | null }
+  name: string | null
+  category: string | null
+  kind: 'kuendigung' | 'vertragsende' | 'sonderkuendigung' | 'zustimmung' | 'frist' | 'ablesung'
+  date: string
+  daysUntil: number
+  status: DueStatus | 'open'
+  group: AgendaGroup
+  periodEnd?: string
+  renewsMonths?: number | null
+  countdownFrom?: string | null
+  cancelled?: boolean
+  effective?: string
+  validFrom?: string
+  received?: string
+  coldRent?: number | null
+  from?: string
+  meterIds?: string[]
+}
+
+export interface Figures {
+  contractsMonthly: number
+  rentMonthly: number | null
+  fixedMonthly: number
+  nextNotice: {
+    id: string
+    name: string
+    category: string
+    date: string
+    daysUntil: number
+    status: DueStatus
+    countdownFrom: string | null
+  } | null
 }
 
 export type NextReading =

@@ -32,6 +32,7 @@ final class ContractsApiTest extends ApiTestCase
         );
         self::assertSame('Stadtwerke', $data['agenda'][0]['name']);
         self::assertSame('2026-11-30', $data['agenda'][0]['periodEnd']);
+        self::assertSame('2024-12-01', $data['agenda'][0]['countdownFrom']);
         self::assertSame(['strom-haupt'], $data['agenda'][2]['meterIds']);
         self::assertSame('2027-01-01', $data['agenda'][3]['effective']);
         self::assertSame(1495.0, $data['agenda'][4]['coldRent']);
@@ -41,7 +42,7 @@ final class ContractsApiTest extends ApiTestCase
                 'contractsMonthly' => 138.02,
                 'rentMonthly' => 1730.0,
                 'fixedMonthly' => 1868.02,
-                'nextNotice' => ['id' => 'strom-stadtwerke', 'name' => 'Stadtwerke', 'date' => '2026-11-02', 'daysUntil' => 9, 'status' => 'soon'],
+                'nextNotice' => ['id' => 'strom-stadtwerke', 'name' => 'Stadtwerke', 'category' => 'energie', 'date' => '2026-11-02', 'daysUntil' => 9, 'status' => 'soon', 'countdownFrom' => '2024-12-01'],
             ],
             $data['figures'],
         );
