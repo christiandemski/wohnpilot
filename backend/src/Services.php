@@ -6,20 +6,28 @@ namespace Wohnpilot;
 
 use RuntimeException;
 use Wohnpilot\App\AgendaService;
+use Wohnpilot\App\AppointmentService;
 use Wohnpilot\App\Clock;
 use Wohnpilot\App\ContractService;
 use Wohnpilot\App\DeadlineService;
+use Wohnpilot\App\DefectService;
+use Wohnpilot\App\DeviceService;
 use Wohnpilot\App\HouseholdService;
 use Wohnpilot\App\LeaseService;
+use Wohnpilot\App\MaintenanceService;
 use Wohnpilot\App\MeterService;
 use Wohnpilot\App\NoteRepository;
+use Wohnpilot\App\ObjectNotes;
 use Wohnpilot\App\PhotoService;
+use Wohnpilot\App\SettingsService;
+use Wohnpilot\App\WasteService;
 use Wohnpilot\Auth\AccountStore;
 use Wohnpilot\Auth\BearId;
 use Wohnpilot\Auth\DevLogin;
 use Wohnpilot\Auth\LoginProvider;
 use Wohnpilot\Auth\NativeSession;
 use Wohnpilot\Auth\Session;
+use Wohnpilot\Calendar\CalendarFetcher;
 use Wohnpilot\Calendar\CalendarLinks;
 use Wohnpilot\Calendar\IcsFeed;
 use Wohnpilot\Index\NoteIndex;
@@ -115,6 +123,53 @@ class Services
     public function deadlines(): DeadlineService
     {
         return $this->instances[__FUNCTION__] ??= new DeadlineService($this->notes(), $this->household(), $this->meters(), $this->clock());
+    }
+
+    public function objectNotes(): ObjectNotes
+    {
+        return $this->instances[__FUNCTION__] ??= new ObjectNotes($this->notes(), $this->household());
+    }
+
+    public function maintenance(): MaintenanceService
+    {
+        return $this->instances[__FUNCTION__] ??= new MaintenanceService($this->notes(), $this->objectNotes(), $this->household(), $this->clock());
+    }
+
+    public function appointments(): AppointmentService
+    {
+        return $this->instances[__FUNCTION__] ??= new AppointmentService($this->notes(), $this->objectNotes(), $this->clock());
+    }
+
+    public function defects(): DefectService
+    {
+        return $this->instances[__FUNCTION__] ??= new DefectService($this->notes(), $this->objectNotes(), $this->household(), $this->clock());
+    }
+
+    public function devices(): DeviceService
+    {
+        return $this->instances[__FUNCTION__] ??= new DeviceService($this->notes(), $this->objectNotes(), $this->maintenance(), $this->clock());
+    }
+
+    public function calendarFetcher(): CalendarFetcher
+    {
+        return $this->instances[__FUNCTION__] ??= new CalendarFetcher();
+    }
+
+    /** Waste calendar; the downloaded copy is a cache in CACHE_DIR. */
+    public function waste(): WasteService
+    {
+        return $this->instances[__FUNCTION__] ??= new WasteService(
+            $this->notes(),
+            $this->objectNotes(),
+            $this->calendarFetcher(),
+            $this->path($this->config->get('CACHE_DIR', 'var/cache')),
+            $this->clock(),
+        );
+    }
+
+    public function settings(): SettingsService
+    {
+        return $this->instances[__FUNCTION__] ??= new SettingsService($this->notes(), $this->household());
     }
 
     public function agenda(): AgendaService

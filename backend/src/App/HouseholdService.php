@@ -16,6 +16,8 @@ use Wohnpilot\Storage\StoredNote;
 final class HouseholdService
 {
     public const HOUSEHOLD_PATH = '_haushalt.md';
+    public const HEATING = ['gas', 'oel', 'pellets', 'waermepumpe', 'fernwaerme', 'kamin', 'strom'];
+    public const DUTIES = ['garten', 'winterdienst', 'gehweg', 'treppenhaus', 'dachrinne', 'muelltonnen'];
     public const OBJECT_TYPES = ['haus', 'wohnung'];
     public const DEFAULT_READING_DAY = 1;
 
@@ -199,6 +201,17 @@ final class HouseholdService
                 static fn ($room): string => Slug::from((string) $room),
                 $rooms,
             ))));
+        }
+        // What the home has and what the lease asks of you: they decide the suggested tasks.
+        $more = (new Input($input, false))
+            ->enumList('heizung', self::HEATING)
+            ->enumList('mieterpflichten', self::DUTIES)
+            ->number('kleinreparatur_grenze_eur')
+            ->number('kleinreparatur_jahresgrenze_eur');
+        try {
+            $fields += $more->fields();
+        } catch (AppException $e) {
+            $errors += $e->details['fields'];
         }
         if ($errors !== []) {
             throw AppException::validation($errors);

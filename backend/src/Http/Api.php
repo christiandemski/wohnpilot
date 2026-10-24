@@ -278,6 +278,54 @@ final class Api
                 return self::json($response, ['result' => $outcome]);
             });
 
+            // Maintenance: list, suggestions, done (and taking it back)
+            $api->get('/maintenance', fn (Request $r, Response $response) => self::json($response, ['tasks' => $services->maintenance()->list()]));
+            $api->get('/maintenance/suggestions', fn (Request $r, Response $response) => self::json($response, ['suggestions' => $services->maintenance()->suggestions()]));
+            $api->post('/maintenance', fn (Request $request, Response $response) => self::json($response, $services->maintenance()->create(self::body($request), self::user($request)), 201));
+            $api->get('/maintenance/{id}', fn (Request $r, Response $response, array $args) => self::json($response, $services->maintenance()->detail($args['id'])));
+            $api->put('/maintenance/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                [$changes, $original, $etag] = self::merge($request);
+                return self::json($response, $services->maintenance()->update($args['id'], $changes, $original, $etag, self::user($request)));
+            });
+            $api->post('/maintenance/{id}/done', fn (Request $request, Response $response, array $args) => self::json($response, $services->maintenance()->done($args['id'], self::body($request), self::user($request))));
+            $api->delete('/maintenance/{id}/done/{date}', fn (Request $request, Response $response, array $args) => self::json($response, $services->maintenance()->undo($args['id'], $args['date'], self::user($request))));
+
+            $api->get('/appointments', fn (Request $r, Response $response) => self::json($response, $services->appointments()->list()));
+            $api->post('/appointments', fn (Request $request, Response $response) => self::json($response, $services->appointments()->create(self::body($request), self::user($request)), 201));
+            $api->get('/appointments/{id}', fn (Request $r, Response $response, array $args) => self::json($response, $services->appointments()->detail($args['id'])));
+            $api->put('/appointments/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                [$changes, $original, $etag] = self::merge($request);
+                return self::json($response, $services->appointments()->update($args['id'], $changes, $original, $etag, self::user($request)));
+            });
+
+            $api->get('/defects', fn (Request $r, Response $response) => self::json($response, ['defects' => $services->defects()->list()]));
+            $api->get('/defects/minor-repairs', function (Request $request, Response $response) use ($services): Response {
+                $year = (int) ($request->getQueryParams()['jahr'] ?? substr($services->clock()->today(), 0, 4));
+                return self::json($response, $services->defects()->minorRepairs($year));
+            });
+            $api->post('/defects', fn (Request $request, Response $response) => self::json($response, $services->defects()->create(self::body($request), self::user($request)), 201));
+            $api->get('/defects/{id}', fn (Request $r, Response $response, array $args) => self::json($response, $services->defects()->detail($args['id'])));
+            $api->put('/defects/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                [$changes, $original, $etag] = self::merge($request);
+                return self::json($response, $services->defects()->update($args['id'], $changes, $original, $etag, self::user($request)));
+            });
+            $api->post('/defects/{id}/status', fn (Request $request, Response $response, array $args) => self::json($response, $services->defects()->addStatus($args['id'], self::body($request), self::user($request))));
+
+            $api->get('/devices', fn (Request $r, Response $response) => self::json($response, ['devices' => $services->devices()->list()]));
+            $api->post('/devices', fn (Request $request, Response $response) => self::json($response, $services->devices()->create(self::body($request), self::user($request)), 201));
+            $api->get('/devices/{id}', fn (Request $r, Response $response, array $args) => self::json($response, $services->devices()->detail($args['id'])));
+            $api->put('/devices/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                [$changes, $original, $etag] = self::merge($request);
+                return self::json($response, $services->devices()->update($args['id'], $changes, $original, $etag, self::user($request)));
+            });
+
+            // Waste: the calendar address and bins; refresh loads the calendar now
+            $api->get('/waste', fn (Request $request, Response $response) => self::json($response, $services->waste()->get(isset($request->getQueryParams()['neu']))));
+            $api->put('/waste', fn (Request $request, Response $response) => self::json($response, $services->waste()->save(self::body($request), self::user($request))));
+
+            $api->get('/settings', fn (Request $r, Response $response) => self::json($response, $services->settings()->get()));
+            $api->put('/settings', fn (Request $request, Response $response) => self::json($response, $services->settings()->save(self::body($request), self::user($request))));
+
             // Photos of defects, devices and maintenance tasks
             $api->post('/photos/{type}/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
                 $file = $request->getUploadedFiles()['foto'] ?? null;

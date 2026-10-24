@@ -161,4 +161,78 @@ tonnen:
         }
         return $diff;
     }
+
+    public function testSetInChangesOneLineOfABlockMap(): void
+    {
+        $original = "---
+id: haushalt
+einstellungen:
+  ablesetag: 1
+  push: true
+name: Wir
+---
+Text
+";
+
+        $added = NoteDocument::parse($original);
+        $added->frontmatter()->setIn('einstellungen', 'paperless_url', 'https://p.example.org');
+        self::assertSame(str_replace("  push: true
+", "  push: true
+  paperless_url: https://p.example.org
+", $original), $added->toString());
+
+        $changed = NoteDocument::parse($original);
+        $changed->frontmatter()->setIn('einstellungen', 'ablesetag', 15);
+        self::assertSame(str_replace('ablesetag: 1', 'ablesetag: 15', $original), $changed->toString());
+
+        $removed = NoteDocument::parse($original);
+        $removed->frontmatter()->setIn('einstellungen', 'push', null);
+        self::assertSame(str_replace("  push: true
+", '', $original), $removed->toString());
+        self::assertSame(['ablesetag' => 1], $removed->frontmatter()->get('einstellungen'));
+    }
+
+    public function testSetInRemovesAnEmptyMapAndFallsBackForInlineMaps(): void
+    {
+        $last = NoteDocument::parse("---
+id: x
+einstellungen:
+  push: true
+---
+");
+        $last->frontmatter()->setIn('einstellungen', 'push', null);
+        self::assertSame("---
+id: x
+---
+", $last->toString());
+
+        $inline = NoteDocument::parse("---
+id: x
+tarif: { abschlag_eur: 85 }
+---
+");
+        $inline->frontmatter()->setIn('tarif', 'grundpreis_eur_monat', 12.5);
+        self::assertSame("---
+id: x
+tarif: { abschlag_eur: 85, grundpreis_eur_monat: 12.5 }
+---
+", $inline->toString());
+
+        $missing = NoteDocument::parse("---
+id: x
+---
+");
+        $missing->frontmatter()->setIn('einstellungen', 'paperless_url', 'https://p.example.org');
+        self::assertSame(['paperless_url' => 'https://p.example.org'], $missing->frontmatter()->get('einstellungen'));
+
+        $unchanged = NoteDocument::parse("---
+id: x
+---
+");
+        $unchanged->frontmatter()->setIn('einstellungen', 'paperless_url', null);
+        self::assertSame("---
+id: x
+---
+", $unchanged->toString());
+    }
 }

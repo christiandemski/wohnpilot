@@ -65,6 +65,68 @@ final class Frontmatter
         $this->data = null;
     }
 
+    /**
+     * Sets one key inside a map ($value null removes it). In a block map
+     *
+     *   einstellungen:
+     *     ablesetag: 1
+     *
+     * only that one line changes or is added, so the note keeps its layout.
+     * Inline or missing maps are written as a whole.
+     */
+    public function setIn(string $key, string $child, mixed $value): void
+    {
+        $current = $this->get($key);
+        $map = is_array($current) && !array_is_list($current) ? $current : [];
+        if (array_key_exists($child, $map) ? $map[$child] === $value : $value === null) {
+            return;
+        }
+        $block = $this->findBlock($key);
+        $indent = $block === null || $block[1] < 2 || trim(Lines::content($this->lines[$block[0]])) !== "$key:"
+            ? null
+            : (preg_match('/^(\s+)\S/', Lines::content($this->lines[$block[0] + 1]), $m) ? $m[1] : null);
+        if ($indent === null || ($current !== null && !is_array($current))) {
+            if ($value === null) {
+                unset($map[$child]);
+            } else {
+                $map[$child] = $value;
+            }
+            $map === [] ? $this->remove($key) : $this->set($key, $map);
+            return;
+        }
+
+        [$start, $length] = $block;
+        $childLine = null;
+        for ($i = $start + 1; $i < $start + $length; $i++) {
+            if (preg_match('/^' . preg_quote($indent . $child, '/') . '\s*:(\s|$)/', Lines::content($this->lines[$i]))) {
+                $childLine = $i;
+                break;
+            }
+        }
+        $line = $indent . $child . ': ' . YamlInline::format($value) . $this->eol;
+        if ($childLine !== null) {
+            // Only single-line values are replaced in place; a nested child is rewritten as a whole.
+            $next = $childLine + 1 < $start + $length ? Lines::content($this->lines[$childLine + 1]) : '';
+            if (str_starts_with($next, $indent . ' ') || str_starts_with($next, $indent . "\t")) {
+                $map[$child] = $value;
+                $this->set($key, array_filter($map, static fn ($v) => $v !== null));
+                return;
+            }
+            array_splice($this->lines, $childLine, 1, $value === null ? [] : [$line]);
+            if ($value === null && $length === 2) {
+                // That was the only key: the empty map goes too.
+                array_splice($this->lines, $start, 1);
+            }
+        } elseif ($value !== null) {
+            $last = $start + $length - 1;
+            if (Lines::terminator($this->lines[$last]) === '') {
+                $this->lines[$last] .= $this->eol;
+            }
+            array_splice($this->lines, $last + 1, 0, [$line]);
+        }
+        $this->data = null;
+    }
+
     public function remove(string $key): void
     {
         $block = $this->findBlock($key);

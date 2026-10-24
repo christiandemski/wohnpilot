@@ -11,6 +11,7 @@ use Slim\App;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use Wohnpilot\App\Clock;
 use Wohnpilot\Auth\AccountStore;
+use Wohnpilot\Calendar\CalendarFetcher;
 use Wohnpilot\Calendar\CalendarLinks;
 use Wohnpilot\Push\PushSender;
 use Wohnpilot\Push\PushSubscriptions;
@@ -38,6 +39,9 @@ abstract class ApiTestCase extends TestCase
     protected App $app;
     /** Pushes the API sent instead of delivering them */
     protected FakePushSender $push;
+    /** What the waste calendar address answers: ICS text, or null for "not reachable" */
+    public ?string $calendarBody = null;
+    public int $calendarRequests = 0;
 
     protected function setUp(): void
     {
@@ -49,6 +53,7 @@ abstract class ApiTestCase extends TestCase
         $this->session = new ArraySession();
         $this->bearIdPair = sodium_crypto_sign_keypair();
         $this->push = new FakePushSender();
+        $this->calendarBody = file_get_contents(dirname(Fixtures::root()) . '/abfuhrkalender.ics');
         $this->app = $this->buildApp();
     }
 
@@ -78,18 +83,33 @@ abstract class ApiTestCase extends TestCase
 
     protected function buildApp(): App
     {
-        $config = new Config(['APP_ENV' => 'dev', 'DEV_LOGIN_USER' => 'christian', 'WOHNPILOT_USERS' => 'christian', 'SYNC_MAX_AGE' => '0']);
+        $config = new Config(['APP_ENV' => 'dev', 'DEV_LOGIN_USER' => 'christian', 'WOHNPILOT_USERS' => 'christian', 'SYNC_MAX_AGE' => '0', 'CACHE_DIR' => $this->root . '/.cache']);
+        $calendar = $this;
         $root = $this->root;
         $session = $this->session;
         $today = $this->today;
         $bearIdKey = base64_encode(sodium_crypto_sign_publickey($this->bearIdPair));
         $push = $this->push;
-        $services = new class ($config, $root, $session, $today, $bearIdKey, $push) extends Services {
+        $services = new class ($config, $root, $session, $today, $bearIdKey, $push, $calendar) extends Services {
             protected ?NoteIndex $testIndex = null;
             protected ?StorageAdapter $testStorage = null;
             protected ?AccountStore $testAccounts = null;
             protected ?CalendarLinks $testCalendarLinks = null;
             protected ?PushSubscriptions $testPushSubscriptions = null;
+
+            /** The waste calendar comes from ApiTestCase::$calendarBody, never from the network. */
+            public function calendarFetcher(): CalendarFetcher
+            {
+                $source = $this->calendarSource;
+                $handler = static function () use ($source) {
+                    $source->calendarRequests++;
+                    if ($source->calendarBody === null) {
+                        throw new \GuzzleHttp\Exception\ConnectException('down', new \GuzzleHttp\Psr7\Request('GET', 'https://abfuhrkalender.example.org'));
+                    }
+                    return \GuzzleHttp\Promise\Create::promiseFor(new \GuzzleHttp\Psr7\Response(200, ['Content-Type' => 'text/calendar'], $source->calendarBody));
+                };
+                return new CalendarFetcher(new \GuzzleHttp\Client(['handler' => \GuzzleHttp\HandlerStack::create($handler)]), static fn (string $host): array => ['93.184.216.34']);
+            }
 
             public function pushSubscriptions(): PushSubscriptions
             {
@@ -121,7 +141,7 @@ abstract class ApiTestCase extends TestCase
                 return $this->testAccounts;
             }
 
-            public function __construct(Config $config, private readonly string $root, private readonly ArraySession $testSession, private readonly string $today, private readonly string $bearIdKey, private readonly FakePushSender $testPush)
+            public function __construct(Config $config, private readonly string $root, private readonly ArraySession $testSession, private readonly string $today, private readonly string $bearIdKey, private readonly FakePushSender $testPush, private readonly ApiTestCase $calendarSource)
             {
                 parent::__construct($config, sys_get_temp_dir());
             }

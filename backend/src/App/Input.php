@@ -6,6 +6,7 @@ namespace Wohnpilot\App;
 
 use Wohnpilot\Domain\Day;
 use Wohnpilot\Domain\Reading;
+use Wohnpilot\Domain\Season;
 
 /**
  * Checks form input field by field and collects frontmatter values.
@@ -87,6 +88,55 @@ final class Input
             foreach ($list as $slug) {
                 if (!Slug::isValid($slug)) {
                     return [null, 'id'];
+                }
+            }
+            return [$list === [] ? null : $list, null];
+        });
+    }
+
+    public function bool(string $key): self
+    {
+        return $this->check($key, false, static fn (mixed $v): array => is_bool($v) ? [$v, null] : [null, 'unknown']);
+    }
+
+    /** Time of day "08:00" (also "8:00", stored as "08:00"). */
+    public function time(string $key): self
+    {
+        return $this->check($key, false, static function (mixed $v): array {
+            if (!is_string($v) || !preg_match('/^([01]?\d|2[0-3]):([0-5]\d)$/', trim($v), $m)) {
+                return [null, 'time'];
+            }
+            return [sprintf('%02d:%s', (int) $m[1], $m[2]), null];
+        });
+    }
+
+    /** An http(s) address. */
+    public function url(string $key): self
+    {
+        return $this->check($key, false, static function (mixed $v): array {
+            $url = is_string($v) ? trim($v) : '';
+            $ok = filter_var($url, FILTER_VALIDATE_URL) && in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true);
+            return $ok && strlen($url) <= 500 ? [$url, null] : [null, 'url'];
+        });
+    }
+
+    /** Months a task may be done: `{ von: 10, bis: 2 }`. */
+    public function season(string $key): self
+    {
+        return $this->check($key, false, static function (mixed $v): array {
+            $season = Season::fromValue(is_array($v) ? array_map(static fn ($m) => is_numeric($m) ? (int) $m : $m, $v) : null);
+            return $season === null ? [null, 'season'] : [$season->toArray(), null];
+        });
+    }
+
+    /** @param list<string> $allowed several of them, e.g. heating types */
+    public function enumList(string $key, array $allowed): self
+    {
+        return $this->check($key, false, static function (mixed $v) use ($allowed): array {
+            $list = array_values(array_unique(is_array($v) ? $v : [$v]));
+            foreach ($list as $item) {
+                if (!in_array($item, $allowed, true)) {
+                    return [null, 'unknown'];
                 }
             }
             return [$list === [] ? null : $list, null];
