@@ -67,6 +67,8 @@ const routes: [string, string][] = [
   ['nebenkosten-bearbeiten', '/nebenkosten/:id/bearbeiten'],
   ['qr', '/q/:kind/:id'],
   ['personen', '/personen'],
+  ['umzug', '/umzug'],
+  ['checkliste', '/umzug/:id'],
   ['mehr', '/mehr'],
 ]
 

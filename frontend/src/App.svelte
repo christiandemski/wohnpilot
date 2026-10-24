@@ -55,6 +55,8 @@
   import Jahresbericht from './routes/Jahresbericht.svelte'
   import Kiosk from './routes/Kiosk.svelte'
   import Personen from './routes/Personen.svelte'
+  import Umzug from './routes/Umzug.svelte'
+  import Checkliste from './routes/Checkliste.svelte'
   import Nebenkosten from './routes/Nebenkosten.svelte'
   import NebenkostenDetail from './routes/NebenkostenDetail.svelte'
   import NebenkostenForm from './routes/NebenkostenForm.svelte'
@@ -224,6 +226,10 @@
           <Aufkleber />
         {:else if router.current.name === 'qr'}
           <p class="text-muted" aria-live="polite">Einen Moment …</p>
+        {:else if router.current.name === 'umzug'}
+          <Umzug />
+        {:else if router.current.name === 'checkliste'}
+          <Checkliste id={router.current.params.id} />
         {:else if router.current.name === 'personen'}
           <Personen />
         {:else if router.current.name === 'mehr'}

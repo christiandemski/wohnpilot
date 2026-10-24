@@ -89,10 +89,46 @@ export interface ObjectData {
   art: 'haus' | 'wohnung'
   adresse?: string
   einzug?: string
+  /** planned or past move-out */
+  auszug?: string
   wohnflaeche_m2?: number
   raeume: string[]
   etag: string
   [key: string]: unknown
+}
+
+export type HomeState = 'aktiv' | 'geplant' | 'frueher'
+
+export interface ChecklistSummary {
+  id: string
+  objekt: string
+  art: 'auszug' | 'einzug' | string
+  datum: string | null
+  done: number
+  total: number
+}
+
+export interface Home {
+  id: string
+  art: 'haus' | 'wohnung' | null
+  adresse: string | null
+  einzug: string | null
+  auszug: string | null
+  wohnflaeche_m2: number | null
+  state: HomeState
+  checklists: ChecklistSummary[]
+}
+
+/** GET /api/move */
+export interface MoveStatus {
+  active: string | null
+  homes: Home[]
+}
+
+export interface ChecklistDetail extends ChecklistSummary {
+  etag: string
+  home: { id: string; adresse: string | null; art: 'haus' | 'wohnung' | null } | null
+  sections: { title: string | null; items: { index: number; text: string; done: boolean }[] }[]
 }
 
 export interface Overview {

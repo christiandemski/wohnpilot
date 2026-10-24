@@ -1,6 +1,6 @@
 <script lang="ts">
   import { people } from '../lib/people.svelte'
-  import { BookOpen, CalendarDays, ChevronRight, House, KeyRound, Pencil, QrCode, ReceiptText, Siren, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
+  import { BookOpen, CalendarDays, ChevronRight, House, KeyRound, Pencil, QrCode, ReceiptText, Siren, TriangleAlert, Truck, WashingMachine, Wrench } from '@lucide/svelte'
   import type { Component } from 'svelte'
   import { api } from '../lib/api'
   import { Resource } from '../lib/resource.svelte'
@@ -87,6 +87,7 @@
     { href: '/maengel', label: 'Mängel', icon: TriangleAlert, module: 'maengel', meta: defectsMeta },
     { href: '/geraete', label: 'Geräte', icon: WashingMachine, module: 'geraete', meta: devicesMeta },
     { href: '/wissen', label: 'Wissen', icon: BookOpen, module: 'wissen', meta: () => 'Wo ist was, Kennwerte, Bedienung' },
+    { href: '/umzug', label: 'Umzug', icon: Truck, module: 'miete', meta: () => 'Auszug und Einzug mit Checklisten, frühere Zuhause' },
     { href: '/notfall', label: 'Notfallblatt', icon: Siren, module: 'maengel', meta: () => 'Was tun bei Wasser, Strom, Gas, Heizung' },
     { href: '/aufkleber', label: 'QR-Aufkleber', icon: QrCode, module: 'wissen', meta: () => 'Für Zähler, Geräte und Orte zum Ausdrucken' },
   ]
@@ -122,6 +123,7 @@
     </div>
     <dl class="facts">
       <div><dt>Eingezogen</dt><dd class="num">{o.einzug ? formatDate(o.einzug) : '–'}</dd></div>
+      {#if o.auszug}<div><dt>Auszug geplant</dt><dd class="num"><a href="/umzug">{formatDate(o.auszug)}</a></dd></div>{/if}
       <div><dt>Wohnfläche</dt><dd class="num">{o.wohnflaeche_m2 ? `${formatNumber(o.wohnflaeche_m2)} m²` : '–'}</dd></div>
     </dl>
   </section>

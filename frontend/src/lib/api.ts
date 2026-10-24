@@ -45,6 +45,8 @@ const MESSAGES: Record<string, string> = {
   self: 'Dich selbst kannst du nicht entfernen.',
   last_admin: 'Mindestens eine Person muss den Haushalt verwalten.',
   no_household: 'Leg zuerst dein Zuhause an.',
+  already_active: 'Das ist schon dein Zuhause.',
+  archived: 'Ein früheres Zuhause bleibt archiviert.',
 }
 
 const FIELD_PROBLEMS: Record<string, string> = {
@@ -68,6 +70,7 @@ const FIELD_PROBLEMS: Record<string, string> = {
   not_an_image: 'Das ist kein Foto (JPEG, PNG oder WebP).',
   email: 'Bitte eine gültige E-Mail-Adresse.',
   taken: 'Gehört schon zu einer anderen Person.',
+  before_move_in: 'Das liegt vor dem Einzug.',
 }
 
 export async function request<T>(method: string, path: string, body?: unknown, headers: Record<string, string> = {}): Promise<T> {
