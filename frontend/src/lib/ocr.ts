@@ -80,9 +80,9 @@ function getWorker(onProgress?: (share: number) => void): Promise<Worker> {
   worker ??= (async () => {
     const { createWorker, OEM, PSM } = await import('tesseract.js')
     const w = await createWorker('eng', OEM.LSTM_ONLY, {
-      workerPath: '/ocr/worker.min.js',
-      corePath: '/ocr/',
-      langPath: '/ocr/',
+      workerPath: `${__OCR_BASE__}worker.min.js`,
+      corePath: __OCR_BASE__,
+      langPath: __OCR_BASE__,
       workerBlobURL: false,
       logger: (m: { status: string; progress: number }) => {
         if (m.status.startsWith('loading')) onProgress?.(m.progress)

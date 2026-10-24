@@ -11,6 +11,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 // and the English model, which reads digits well.
 const require = createRequire(import.meta.url)
 const packageDir = (name: string) => dirname(require.resolve(`${name}/package.json`))
+// The version is in the path: the service worker keeps these files for good,
+// and a new tesseract.js must not meet an old worker from that cache.
+const OCR_VERSION = JSON.parse(readFileSync(join(packageDir('tesseract.js'), 'package.json'), 'utf8')).version as string
+const OCR_BASE = `/ocr/${OCR_VERSION}/`
 const OCR_FILES: Record<string, string> = {
   'worker.min.js': join(packageDir('tesseract.js'), 'dist/worker.min.js'),
   'tesseract-core-lstm.wasm.js': join(packageDir('tesseract.js-core'), 'tesseract-core-lstm.wasm.js'),
@@ -23,7 +27,7 @@ function ocrAssets(): Plugin {
   return {
     name: 'wohnpilot-ocr-assets',
     configureServer(server) {
-      server.middlewares.use('/ocr/', (req, res, next) => {
+      server.middlewares.use(OCR_BASE, (req, res, next) => {
         const file = OCR_FILES[(req.url ?? '').replace(/^\//, '').split('?')[0]]
         if (!file) return next()
         res.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : 'application/octet-stream')
@@ -32,7 +36,7 @@ function ocrAssets(): Plugin {
     },
     generateBundle() {
       for (const [name, file] of Object.entries(OCR_FILES)) {
-        this.emitFile({ type: 'asset', fileName: `ocr/${name}`, source: readFileSync(file) })
+        this.emitFile({ type: 'asset', fileName: `${OCR_BASE.slice(1)}${name}`, source: readFileSync(file) })
       }
     },
   }
@@ -47,6 +51,7 @@ const color = (name: string, theme: 'light' | 'dark' = 'light'): string =>
 // Build: the app lands in backend/public next to index.php, so one host serves both
 // and the service worker can control the whole app from "/".
 export default defineConfig({
+  define: { __OCR_BASE__: JSON.stringify(OCR_BASE) },
   plugins: [
     svelte(),
     ocrAssets(),
@@ -88,7 +93,8 @@ export default defineConfig({
         // OCR is large and only needed when photographing a meter: cached on first use instead
         globIgnores: ['ocr/**'],
         runtimeCaching: [
-          { urlPattern: /\/ocr\//, handler: 'CacheFirst', options: { cacheName: 'wohnpilot-ocr' } },
+          // Five files per version; older versions drop out
+          { urlPattern: /\/ocr\//, handler: 'CacheFirst', options: { cacheName: 'wohnpilot-ocr', expiration: { maxEntries: 10 } } },
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/auth/'),
             method: 'GET',

@@ -192,8 +192,9 @@ Wohnpilot/
       wissen/
   vertraege/              haushaltsgebunden, ziehen mit um
   fristen/                einmalige Fristen des Haushalts
-  kontakte/
-  anhaenge/               Fotos: anhaenge/<bereich>/<id>/<datum>-<n>.jpg
+  kontakte/               Vermieter, Handwerker, Störungsnummern
+  anhaenge/               Fotos: anhaenge/<bereich>/<id>/<datum>-<n>.jpg, PDFs: …/<datum>-<titel>.pdf,
+                          Belegfotos der Ablesungen: anhaenge/zaehler/<id>/<datum>-<n>.jpg
 ```
 
 Beispiel Zähler:
@@ -364,8 +365,20 @@ Stufe 1 liefert mit Zählern und Übersicht schon im ersten Monat Alltagsnutzen;
 - **Geräte:** Gewährleistung zwei Jahre ab `kaufdatum`, Garantie aus `garantie_bis` oder `garantie_monate`; Geräte des Vermieters haben für dich beides nicht. Endet eins davon in 30 Tagen, steht es in „Was steht an“.
 - **Fotos:** Liegen per WebDAV neben den Notizen unter `anhaenge/<bereich>/<id>/<datum>-<n>.jpg`; die Notiz enthält ein Markdown-Bild mit Pfad relativ zur Notiz, damit auch die Notes-App es zeigt. Die App verkleinert vor dem Hochladen auf 2000 px (JPEG); der Server prüft die ersten Bytes und gibt Fotos nur Angemeldeten aus.
 - **Paperless:** Optional über `einstellungen.paperless_url` in `_haushalt.md` (Mehr › Einstellungen); ohne Adresse sind alle Paperless-Felder ausgeblendet. Einstellungen werden zeilenweise in den Block `einstellungen:` geschrieben, der Block bleibt lesbar.
-- **Bedienung:** Das „+“ heißt „Erfassen“ und öffnet eine Auswahl (Ablesen, Mangel, Wartung erledigt, Termin, Frist, Gerät), die zuletzt genutzte oben. „Zuhause“ ist der Einstieg für alles am Haus.
+- **Bedienung:** Das „+“ heißt „Erfassen“ und öffnet eine Auswahl (Ablesen, Mangel, Wartung erledigt, Termin, Frist, Gerät; seit Stufe 4 auch „Datei oder Text ablegen“ für den Eingang), die zuletzt genutzte oben. „Zuhause“ ist der Einstieg für alles am Haus.
 - **Bereitstellung:** Eine GitHub Action testet bei jedem Push auf `main`, baut die App und legt den Inhalt von `httpdocs` in den Branch `deploy`; Plesk zieht diesen Branch nach `httpdocs` (Document Root `public/`). `main` gehört nie auf den Server.
+
+## Festlegungen aus Stufe 4
+
+- **Kontakte:** Eigene Notizen in `kontakte/` (`typ: kontakt`) mit `rolle`, `gewerk`, `telefon`, `mobil`, `email`, `adresse` und `notfall: [wasser, strom, gas, heizung]`. Sie gehören zum Haushalt und ziehen mit um; ein Kontakt mit `objekt` (der Vermieter) gilt nur für dieses Zuhause. Einträge zeigen mit `kontakt: <id>` auf ihn, die Kontaktseite listet umgekehrt, wo er vorkommt. Telefonnummern werden so gelesen, wie sie dastehen (`+49…` bleibt Text). „Ins Adressbuch“ liefert eine vCard.
+- **Wissen:** Seiten in `objekte/<id>/wissen/` (`typ: wissen`, `kategorie`: ort, kennwert, bedienung, notfall, sonstiges), der Text ist freies Markdown und wird wie die Notes-App bearbeitet (Drei-Wege-Abgleich mit Konflikt „text“). Eine Seite mit `kategorie: notfall` und `szenario` ersetzt die allgemeinen Schritte des Notfallblatts; Orte mit `notfall: [...]` erscheinen dort mit Foto. Das Notfallblatt lässt sich drucken (immer hell, ohne Navigation).
+- **Suche:** Durchsucht Titel, Felder und Text aller Notizen des Haushalts und des aktiven Zuhauses direkt im Index; jedes Wort muss vorkommen, Umlaute finden ihre Grundbuchstaben („mangel“ findet „Mängel“), Treffer im Titel zählen am meisten.
+- **QR-Aufkleber:** Ein Aufkleber trägt nur eine kurze Adresse `/q/<art>/<id>` (z Zähler → Ablesen, g Gerät, w Wissen, n Notfallblatt). Was sie öffnet, entscheidet die App; ändert sich das, muss niemand neu drucken. Wer nicht angemeldet ist, landet nach dem Login am Ziel. Bögen: 70 × 37 mm (24 je A4), 48,5 × 25,4 mm (40 je A4) oder Papier zum Ausschneiden; der erste freie Platz eines angebrochenen Bogens ist wählbar. Drucken in Originalgröße.
+- **OCR:** Tesseract läuft im Browser, ohne Cloud, von diesem Server (`/ocr/<version>/`, etwa 7 MB) und wird erst beim ersten Foto geladen; danach liegt es im Service-Worker-Cache. Aus allen gelesenen Zahlen wählt die App den Wert, der zu Stellen, Nachkommastellen, letztem Stand und üblichem Verbrauch passt; nie unter dem letzten Stand und nie weit weg vom Erwarteten. Die Zählernummer wird nie als Stand genommen. Der Wert ist nur ein Vorschlag, den du mit „Übernehmen“ auf die Walzen holst. Das Foto kommt als Beleg nach `anhaenge/zaehler/<id>/<datum>-<n>.jpg` und mit diesem Pfad in die Spalte `Foto` der Ablesung; fehlt die Spalte in einer handgeschriebenen Tabelle, lehnt die App das Foto ab, statt es still zu verlieren.
+- **Offline lesen:** Der Service Worker legt jede API-Antwort beim Laden ab und nimmt sie, wenn nach 5 Sekunden kein Netz antwortet (höchstens 400 Antworten, 30 Tage). Abmelden löscht diesen Cache.
+- **Offline schreiben:** Ablesungen (mit Foto), Erledigt-Haken für Wartung und Fristen und „Mangel melden“ (mit Foto) warten ohne Netz in IndexedDB auf dem Gerät und gehen von selbst raus, sobald wieder Netz da ist, die App nach vorn kommt oder jede Minute. Jede Anfrage trägt einen festen `Idempotency-Key`; der Server antwortet einem wiederholten Schlüssel 7 Tage lang mit der ersten Antwort, doppelt wird also nie geschrieben. Ein Eintrag aus mehreren Schritten (Mangel, dann sein Foto) macht nach einem Abbruch beim nächsten Schritt weiter. Lehnt der Server einen Eintrag ab, bleibt er mit Grund in der Liste „n Einträge warten“, bis du ihn verwirfst. Ein noch wartender Haken lässt sich zurücknehmen, ohne dass etwas gesendet wird. Abmelden fragt nach, wenn noch etwas wartet, und löscht es dann.
+- **Eingang und Teilen:** Android: Wohnpilot steht im Teilen-Menü (Manifest `share_target`); der Service Worker legt Fotos, PDFs und Text in den Eingang auf dem Gerät. iPhone kann das für Web-Apps nicht; dort wählst du auf der Seite „Eingang“ Dateien aus oder fügst Text und Bilder ein. Aus dem Eingang geht ein Foto oder PDF zu einem Mangel, Gerät, Vertrag, dem Mietvertrag, einer Frist oder einer Wissensseite (auch offline über die Warteschlange); ein Text beginnt einen Mangel oder eine Wissensseite. Bis zum Zuordnen verlässt nichts das Gerät.
+- **Dokumente:** PDFs liegen wie Fotos unter `anhaenge/<bereich>/<id>/<datum>-<titel>.pdf`, die Notiz bekommt eine Link-Zeile `[Titel](…pdf)`. Detailseiten zeigen sie unter „Unterlagen“; Verträge, Mietvertrag und Fristen haben dort auch Fotos (z. B. ein abfotografierter Brief). Im Notiztext der App stehen Bild- und PDF-Zeilen nicht mehr als Markdown.
 
 ## Offene Fragen
 
@@ -380,3 +393,7 @@ Stufe 1 liefert mit Zählern und Übersicht schon im ersten Monat Alltagsnutzen;
 - [x] Kalender: ICS-Abo mit geheimem Link je Person; CalDAV-Schreiben bleibt eine spätere Option (entschieden 24.10.2026)
 - [x] Zählerstände: monatlich freiwillig, Pflicht nur auf Aufforderung des Versorgers als Frist (entschieden 24.10.2026)
 - [x] Erinnerungen: eine tägliche Zusammenfassung als Push, nur an Tagen mit Anlass (entschieden 24.10.2026)
+- [x] Telefone: iPhone und Android im Haushalt; Teilen-Ziel für Android, Eingang-Seite für beide (entschieden 24.10.2026)
+- [x] OCR: im Handy ohne Cloud, nur als Vorschlag (entschieden 24.10.2026)
+- [x] Kontakte: als Wohnpilot-Notizen, nicht aus dem Nextcloud-Adressbuch (entschieden 24.10.2026)
+- [x] Offline: Lesen aus dem Cache; Ablesungen, Haken und Mängel mit Foto in der Warteschlange (entschieden 24.10.2026)

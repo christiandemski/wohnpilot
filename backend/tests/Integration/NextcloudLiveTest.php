@@ -10,6 +10,9 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Wohnpilot\Domain\Contract;
 use Wohnpilot\Domain\Lease;
+use Wohnpilot\Domain\Meter;
+use Wohnpilot\Domain\MeterNote;
+use Wohnpilot\Domain\Reading;
 use Wohnpilot\Note\HistoryTable;
 use Wohnpilot\Note\NoteDocument;
 use Wohnpilot\Storage\ConflictException;
@@ -93,6 +96,14 @@ final class NextcloudLiveTest extends TestCase
             'waste' => ['objekte/efh-musterstrasse/termine/muell.md'],
             'defect with photo' => ['objekte/efh-musterstrasse/maengel/fenster-schlafzimmer.md'],
             'device' => ['objekte/efh-musterstrasse/geraete/waschmaschine.md'],
+            // stage 4
+            'landlord contact with objekt' => ['kontakte/vermieter.md'],
+            'tradesman contact' => ['kontakte/heizungsbau-mueller.md'],
+            'utility hotline' => ['kontakte/stadtwerke-stoerung.md'],
+            'knowledge place with table' => ['objekte/efh-musterstrasse/wissen/sicherungskasten.md'],
+            'knowledge place' => ['objekte/efh-musterstrasse/wissen/haupthahn.md'],
+            'knowledge how-to' => ['objekte/efh-musterstrasse/wissen/heizung-umstellen.md'],
+            'emergency steps' => ['objekte/efh-musterstrasse/wissen/notfall-wasser.md'],
         ];
     }
 
@@ -187,6 +198,36 @@ final class NextcloudLiveTest extends TestCase
         self::assertStringContainsString("  tonnen_selbst_rausstellen: false
   paperless_url: https://paperless.example.org
 ", $read);
+    }
+
+    public function testReadingWithPhotoAndADocumentComeBackAsWritten(): void
+    {
+        $root = dirname(__DIR__, 3) . '/fixtures/Wohnpilot';
+        $folder = '_test/' . bin2hex(random_bytes(3));
+
+        // A reading with its proof photo, as MeterService::addReading writes it
+        $meterPath = $this->track("$folder/zaehler/strom-haupt.md");
+        $meter = $this->adapter->create($meterPath, file_get_contents("$root/objekte/efh-musterstrasse/zaehler/strom-haupt.md"));
+        $note = MeterNote::addReading(NoteDocument::parse($meter->content), new Reading('2026-10-25', 23731.4, 'regulär', 'anhaenge/zaehler/strom-haupt/2026-10-25-1.jpg'), 'live-test');
+        $this->adapter->update($meterPath, $note->toString(), $meter->etag);
+        $read = $this->adapter->get($meterPath)->content;
+        self::assertSame($note->toString(), $read);
+        self::assertSame('anhaenge/zaehler/strom-haupt/2026-10-25-1.jpg', Meter::fromNote(NoteDocument::parse($read))->latest()?->photo);
+
+        // A PDF through WebDAV, byte for byte
+        $files = NextcloudFiles::connect($_ENV['NEXTCLOUD_URL'], $_ENV['NEXTCLOUD_USER'], $_ENV['NEXTCLOUD_APP_PASSWORD'], $this->adapter, $_ENV['NEXTCLOUD_FOLDER'] ?? 'Wohnpilot');
+        $dir = 'live-test-' . bin2hex(random_bytes(3));
+        $pdf = "anhaenge/$dir/2026-10-25-brief.pdf";
+        $bytes = "%PDF-1.4\n" . random_bytes(4096) . "\n%%EOF\n";
+        try {
+            $files->putFile($pdf, $bytes);
+            self::assertSame($bytes, $files->getFile($pdf));
+            $files->deleteFile($pdf);
+        } finally {
+            $settings = $this->adapter->settings();
+            $dav = new \GuzzleHttp\Client(['base_uri' => rtrim($_ENV['NEXTCLOUD_URL'], '/') . NextcloudFiles::DAV_PATH, 'auth' => [$_ENV['NEXTCLOUD_USER'], $_ENV['NEXTCLOUD_APP_PASSWORD']], 'http_errors' => false]);
+            $dav->request('DELETE', implode('/', array_map('rawurlencode', [$settings['notesPath'], $_ENV['NEXTCLOUD_FOLDER'] ?? 'Wohnpilot', 'anhaenge', $dir])));
+        }
     }
 
     private function track(string $path): string

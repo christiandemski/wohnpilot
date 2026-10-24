@@ -2,7 +2,7 @@
 
 Selbst gehostete PWA für alle haushaltsrelevanten Daten eines Mietobjekts. Die Daten liegen als Markdown-Notizen in der eigenen Nextcloud. Konzept: [`docs/konzept.md`](docs/konzept.md), Designsystem: [`docs/design/README.md`](docs/design/README.md), Regeln für die Arbeit am Code: [`CLAUDE.md`](CLAUDE.md).
 
-Stand: **Ausbaustufe 3** – Haus im Griff: Wartung, Termine und Müll, Mängel, Geräte (auf Stufe 1: Zähler, Stufe 2: Fristen und Verträge).
+Stand: **Ausbaustufe 4** – Wissen und Komfort: Kontakte, Wissen und Notfallblatt, Suche, QR-Aufkleber, Zählerstand per Foto (OCR im Handy), offline ablesen und abhaken, Eingang zum Teilen von Fotos, PDFs und Texten (auf Stufe 1: Zähler, Stufe 2: Fristen und Verträge, Stufe 3: Haus im Griff).
 
 ## Aufbau
 
@@ -15,7 +15,7 @@ Stand: **Ausbaustufe 3** – Haus im Griff: Wartung, Termine und Müll, Mängel,
 | `backend/src/Calendar/` | ICS-Feed, geheime Kalender-Links, Abfuhrkalender lesen und abrufen |
 | `backend/src/Push/` | Web Push: Abos, tägliche Zusammenfassung, Versand |
 | `backend/src/Auth/` | Anmeldung: BearID-Cookie, E-Mail-Konten als Notzugang, Entwicklungs-Login |
-| `frontend/` | Svelte 5 + Vite + TypeScript, baut nach `backend/public/` |
+| `frontend/` | Svelte 5 + Vite + TypeScript, baut nach `backend/public/`; Service Worker mit Offline-Cache, Push und Teilen-Ziel (`public/push-sw.js`, `public/share-sw.js`), OCR-Dateien unter `/ocr/<version>/` |
 | `fixtures/Wohnpilot/` | Beispiel-Notizen; Parser-Tests lesen und schreiben sie byte-genau |
 
 ## Entwickeln
@@ -37,7 +37,7 @@ cd frontend && npm install && npm run dev                               # App au
 ```sh
 cd backend && composer test        # Parser, Berechnungen, Adapter, API
 cd backend && composer test-live   # gegen die echte Nextcloud aus .env (legt Notizen unter Wohnpilot/_test an und löscht sie)
-cd frontend && npm test            # Zahlenformat, Rollenzähler, Plausibilität, Frist-, Vertrags- und Haustexte
+cd frontend && npm test            # Zahlenformat, Rollenzähler, Plausibilität, Texte, OCR-Auswahl, Warteschlange, Aufkleber
 cd frontend && npm run check       # Svelte- und TypeScript-Prüfung
 ```
 
@@ -88,6 +88,8 @@ In Plesk (Git bei `wohnpilot.codekorb.de`):
 
 Den Kalender-Feed unter `/api/calendar/…` holen Kalender-Apps ohne Anmeldung ab. Schalte deshalb keinen BearID-Guard (`protect.php`) vor die ganze Subdomain; Wohnpilot prüft die Anmeldung selbst.
 
-Bei späteren Updates nur `public/`, `src/`, `bin/`, `vendor/` und `composer.*` ersetzen; `.env` und `var/` bleiben. Ins Backup gehören `var/accounts.sqlite` (Notzugang) und `var/settings.sqlite` (Kalender-Links, Push-Abos). `var/cache/` (Abfuhrkalender) und `var/index.sqlite` sind nur Cache. Fotos liegen in der Nextcloud unter `Wohnpilot/anhaenge/`.
+Bei späteren Updates nur `public/`, `src/`, `bin/`, `vendor/` und `composer.*` ersetzen; `.env` und `var/` bleiben. Ins Backup gehören `var/accounts.sqlite` (Notzugang) und `var/settings.sqlite` (Kalender-Links, Push-Abos, Idempotenz-Schlüssel der letzten 7 Tage). `var/cache/` (Abfuhrkalender) und `var/index.sqlite` sind nur Cache. Fotos und PDFs liegen in der Nextcloud unter `Wohnpilot/anhaenge/`.
+
+Teilen aus anderen Apps (Android) und der Offline-Cache brauchen den Service Worker, also HTTPS. Auf Android einmal „Zum Startbildschirm hinzufügen“, danach steht Wohnpilot im Teilen-Menü. Für den Upload großer PDFs sollten `upload_max_filesize` und `post_max_size` in PHP mindestens 20 MB sein.
 
 Der SQLite-Index ist nur ein Cache: Löschen von `var/index.sqlite` oder `php bin/reindex.php --full` baut ihn aus der Nextcloud neu auf.
