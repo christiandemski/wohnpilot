@@ -1,8 +1,42 @@
 /// <reference types="vitest/config" />
 import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+// OCR runs in the browser with Tesseract, served from this host (no CDN):
+// the worker, the LSTM-only cores (the worker picks one by CPU features)
+// and the English model, which reads digits well.
+const require = createRequire(import.meta.url)
+const packageDir = (name: string) => dirname(require.resolve(`${name}/package.json`))
+const OCR_FILES: Record<string, string> = {
+  'worker.min.js': join(packageDir('tesseract.js'), 'dist/worker.min.js'),
+  'tesseract-core-lstm.wasm.js': join(packageDir('tesseract.js-core'), 'tesseract-core-lstm.wasm.js'),
+  'tesseract-core-simd-lstm.wasm.js': join(packageDir('tesseract.js-core'), 'tesseract-core-simd-lstm.wasm.js'),
+  'tesseract-core-relaxedsimd-lstm.wasm.js': join(packageDir('tesseract.js-core'), 'tesseract-core-relaxedsimd-lstm.wasm.js'),
+  'eng.traineddata.gz': join(packageDir('@tesseract.js-data/eng'), '4.0.0_best_int/eng.traineddata.gz'),
+}
+
+function ocrAssets(): Plugin {
+  return {
+    name: 'wohnpilot-ocr-assets',
+    configureServer(server) {
+      server.middlewares.use('/ocr/', (req, res, next) => {
+        const file = OCR_FILES[(req.url ?? '').replace(/^\//, '').split('?')[0]]
+        if (!file) return next()
+        res.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : 'application/octet-stream')
+        res.end(readFileSync(file))
+      })
+    },
+    generateBundle() {
+      for (const [name, file] of Object.entries(OCR_FILES)) {
+        this.emitFile({ type: 'asset', fileName: `ocr/${name}`, source: readFileSync(file) })
+      }
+    },
+  }
+}
 
 // Manifest colours come from the design tokens, not from hard-coded values.
 const tokens = JSON.parse(readFileSync(new URL('../docs/design/tokens.json', import.meta.url), 'utf8'))
@@ -15,6 +49,7 @@ const color = (name: string, theme: 'light' | 'dark' = 'light'): string =>
 export default defineConfig({
   plugins: [
     svelte(),
+    ocrAssets(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
@@ -42,6 +77,9 @@ export default defineConfig({
       workbox: {
         // Only the app shell is cached. API answers are never cached (offline queue comes in stage 4).
         globPatterns: ['**/*.{js,css,html,woff2,png,svg,ico}'],
+        // OCR is large and only needed when photographing a meter: cached on first use instead
+        globIgnores: ['ocr/**'],
+        runtimeCaching: [{ urlPattern: /\/ocr\//, handler: 'CacheFirst', options: { cacheName: 'wohnpilot-ocr' } }],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         cleanupOutdatedCaches: true,

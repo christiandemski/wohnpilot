@@ -116,7 +116,7 @@ final class PhotoService
     }
 
     /** JPEG and PNG by their first bytes, WebP by its RIFF header; the client sends JPEG. */
-    private static function extension(string $bytes): ?string
+    public static function extension(string $bytes): ?string
     {
         foreach (self::SIGNATURES as $extension => $signature) {
             if (str_starts_with($bytes, $signature)) {

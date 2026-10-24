@@ -155,11 +155,22 @@ final class Api
                     self::user($request),
                 ));
             });
-            $api->post('/meters/{id}/readings', fn (Request $request, Response $response, array $args) => self::json(
-                $response,
-                $services->meters()->addReading($args['id'], self::body($request), self::user($request)),
-                201,
-            ));
+            // JSON, or multipart with the fields as text and the meter photo as "foto"
+            $api->post('/meters/{id}/readings', function (Request $request, Response $response, array $args) use ($services): Response {
+                $body = self::body($request);
+                $file = $request->getUploadedFiles()['foto'] ?? null;
+                $photo = null;
+                if ($file instanceof UploadedFileInterface) {
+                    if ($file->getError() !== UPLOAD_ERR_OK) {
+                        throw AppException::validation(['foto' => in_array($file->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true) ? 'too_large' : 'required']);
+                    }
+                    $photo = (string) $file->getStream();
+                    if (is_string($body['value'] ?? null) && is_numeric($body['value'])) {
+                        $body['value'] = (float) $body['value'];
+                    }
+                }
+                return self::json($response, $services->meters()->addReading($args['id'], $body, self::user($request), $photo), 201);
+            });
 
             $api->get('/objects/active', fn (Request $r, Response $response) => self::json($response, ['object' => $services->household()->activeObject()]));
             $api->post('/objects', fn (Request $request, Response $response) => self::json(

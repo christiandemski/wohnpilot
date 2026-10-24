@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Gauge, Lightbulb, Pencil, QrCode } from '@lucide/svelte'
+  import { Camera, Gauge, Lightbulb, Pencil, QrCode } from '@lucide/svelte'
   import { api } from '../lib/api'
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { formatDate, formatEuro, formatNumber, monthName, previousDay } from '../lib/format'
@@ -8,6 +8,8 @@
   import LoadState from '../components/LoadState.svelte'
   import MonthChart from '../components/MonthChart.svelte'
   import PageHeader from '../components/PageHeader.svelte'
+  import { fileUrl } from '../lib/markdown'
+  import { isPlaceholder } from '../lib/knowledge'
   import Segmentschalter from '../components/Segmentschalter.svelte'
   import StatusChip from '../components/StatusChip.svelte'
 
@@ -180,7 +182,14 @@
                       {formatDate(reading.date)}
                       {#if reading.occasion && reading.occasion !== 'regulär'}<span class="occasion">{reading.occasion}</span>{/if}
                     </th>
-                    <td class="num">{formatNumber(reading.value, m.decimals)}</td>
+                    <td class="num">
+                      {formatNumber(reading.value, m.decimals)}
+                      {#if reading.photo && !isPlaceholder(reading.photo)}
+                        <a class="proof" href={fileUrl(reading.photo)} target="_blank" rel="noopener" aria-label="Foto der Ablesung vom {formatDate(reading.date)}">
+                          <Camera size={14} strokeWidth={1.75} aria-hidden="true" />
+                        </a>
+                      {/if}
+                    </td>
                     <td class="num">{usage(m, i)}</td>
                   </tr>
                 {/each}
@@ -490,5 +499,15 @@
 
   .notes {
     white-space: pre-line;
+  }
+
+  .proof {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin: -6px -4px -6px 2px;
+    vertical-align: middle;
+    color: var(--ink-muted);
   }
 </style>

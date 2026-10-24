@@ -15,3 +15,6 @@ backend/public/*
 
 # BearID sources the user shared for reference (separate project)
 Data/
+
+# Vite cache when run from backend/
+backend/.vite/

@@ -11,6 +11,9 @@
   import MediumIcon from '../components/MediumIcon.svelte'
   import PageHeader from '../components/PageHeader.svelte'
   import Rollenzaehler from '../components/Rollenzaehler.svelte'
+  import ZaehlerFoto from '../components/ZaehlerFoto.svelte'
+  import { stopOcr } from '../lib/ocr'
+  import { onDestroy } from 'svelte'
 
   /**
    * Reading round: all meters of the home one after another, sorted by room.
@@ -30,6 +33,7 @@
   let askOccasion = $state(false)
   let saving = $state(false)
   let error = $state<ApiError | null>(null)
+  let photo = $state<Blob | null>(null)
   let done = $state<{ meter: MeterSummary; value: number; skipped: boolean }[]>([])
 
   const list = $derived(meters.data ?? [])
@@ -43,8 +47,28 @@
       occasion = 'regulär'
       askOccasion = false
       error = null
+      photo = null
     }
   })
+
+  // Tesseract stays loaded for the whole round, not longer
+  onDestroy(() => void stopOcr())
+
+  /** What the OCR suggestion is measured against */
+  const hint = $derived(
+    meter
+      ? {
+          places: meter.digits,
+          decimals: meter.decimals,
+          last: meter.latest?.value ?? null,
+          expected:
+            meter.latest && meter.check.typicalDailyRate !== null
+              ? meter.latest.value + meter.check.typicalDailyRate * daysBetween(meter.latest.date, date)
+              : null,
+          number: meter.number,
+        }
+      : null,
+  )
 
   const result = $derived(
     meter
@@ -68,7 +92,17 @@
     saving = true
     error = null
     try {
-      await api.post<MeterDetail>(`/meters/${encodeURIComponent(meter.id)}/readings`, { date, value, occasion })
+      const path = `/meters/${encodeURIComponent(meter.id)}/readings`
+      if (photo) {
+        const form = new FormData()
+        form.set('date', date)
+        form.set('value', String(value))
+        form.set('occasion', occasion)
+        form.set('foto', photo, 'zaehler.jpg')
+        await api.upload<MeterDetail>(path, form)
+      } else {
+        await api.post<MeterDetail>(path, { date, value, occasion })
+      }
       done = [...done, { meter, value, skipped: false }]
       index++
     } catch (e) {
@@ -166,6 +200,12 @@
         {/if}
       </p>
     </div>
+
+    {#if hint}
+      <div class="card">
+        <ZaehlerFoto bind:photo {hint} unit={meter.unit} onSuggest={(v) => (value = v)} />
+      </div>
+    {/if}
 
     {#if meter.latest}
       <div class="facts">
