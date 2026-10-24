@@ -15,7 +15,7 @@ Dein Zuhause im Blick – Zähler, Fristen, Termine. Wohnpilot verbindet ein mod
 - Du-Form, kurz, freundlich, deutsch. Konkrete Zahlen und Daten.
 - Überschrift = was ansteht („Zählerstände ablesen“), Chip = wie dringend („Überfällig · 2 Tage“), Schaltfläche = was passiert („Ablese-Runde starten“).
 - Warnungen ohne Schuld: „Kleiner als der letzte Stand“ statt „Fehlerhafte Eingabe“.
-- Daten `TT.MM.` in Fließtext, `TT.MM.JJJJ` in Tabellen; deutsches Komma, schmales Leerzeichen als Tausendertrenner (`23 702,0`).
+- Daten `TT.MM.` in Fließtext, `TT.MM.JJJJ` in Tabellen; deutsches Komma, Punkt als Tausendertrenner (`23.702,0`).
 
 ## Farben
 

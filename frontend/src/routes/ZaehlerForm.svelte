@@ -74,7 +74,7 @@
       if (id) {
         const m = await api.get<MeterDetail>(`/meters/${encodeURIComponent(id)}`)
         etag = m.etag
-        const decimal = (n: number | undefined) => (n === undefined ? '' : formatNumber(n, 2).replace(/,?0+$/, '').replace(/ /g, ''))
+        const decimal = (n: number | undefined) => (n === undefined ? '' : formatNumber(n, 2).replace(/,?0+$/, '').replace(/\./g, ''))
         form = {
           medium: m.medium,
           bezeichnung: m.name ?? '',

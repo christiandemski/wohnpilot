@@ -15,20 +15,16 @@ import {
 const N = ' '
 
 describe('formatNumber', () => {
-  it('groups thousands with a narrow no-break space and uses a decimal comma', () => {
-    expect(formatNumber(23702, 1)).toBe(`23${N}702,0`)
-    expect(formatNumber(3160.4)).toBe(`3${N}160`)
-    expect(formatNumber(1234567.891, 3)).toBe(`1${N}234${N}567,891`)
+  it('groups thousands with a dot and uses a decimal comma', () => {
+    expect(formatNumber(23702, 1)).toBe('23.702,0')
+    expect(formatNumber(3160.4)).toBe('3.160')
+    expect(formatNumber(1234567.891, 3)).toBe('1.234.567,891')
     expect(formatNumber(999)).toBe('999')
     expect(formatNumber(0.5, 1)).toBe('0,5')
   })
 
-  it('never uses the dot as separator like Intl de-DE does', () => {
-    expect(formatNumber(23702, 1)).not.toContain('.')
-  })
-
   it('uses a real minus and no negative zero', () => {
-    expect(formatNumber(-1234.5, 1)).toBe(`−1${N}234,5`)
+    expect(formatNumber(-1234.5, 1)).toBe('−1.234,5')
     expect(formatNumber(-0.04, 1)).toBe('0,0')
   })
 
@@ -36,7 +32,7 @@ describe('formatNumber', () => {
     expect(formatDelta(246, 1)).toBe('+246,0')
     expect(formatDelta(-2, 1)).toBe('−2,0')
     expect(formatDelta(0.01, 1)).toBe('±0,0')
-    expect(formatEuro(1069.37)).toBe(`1${N}069 €`)
+    expect(formatEuro(1069.37)).toBe(`1.069 €`)
     expect(formatPercent(-0.08)).toBe(`−8${N}%`)
     expect(formatPercent(0.124)).toBe(`+12${N}%`)
   })
@@ -50,6 +46,9 @@ describe('parseNumber', () => {
     [`23${N}702,5`, 23702.5],
     ['23.702,5', 23702.5],
     ['23702.5', 23702.5],
+    ['1.450', 1450],
+    ['1.234.567', 1234567],
+    ['3.5', 3.5],
     ['−3,5', -3.5],
   ])('reads %s', (text, expected) => {
     expect(parseNumber(text)).toBe(expected)

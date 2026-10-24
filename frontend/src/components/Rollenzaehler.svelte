@@ -27,7 +27,7 @@
   }
 
   function openKeypad() {
-    typed = formatNumber(value, decimals).replace(/ /g, '')
+    typed = formatNumber(value, decimals).replace(/\./g, '')
     typedError = ''
     typing = true
     queueMicrotask(() => input?.select())

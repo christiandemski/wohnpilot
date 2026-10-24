@@ -56,7 +56,7 @@ export function check(
   const perDay = last.days > 0 ? delta / last.days : null
   const expected = typicalDailyRate !== null && last.days > 0 ? typicalDailyRate * last.days : null
   const threshold = expected !== null ? Math.max(expected * highFactor, MIN_EXPECTED) : null
-  // Compare on the meter's resolution so 23 702,0 − 23 702,0 is never "lower" by float noise.
+  // Compare on the meter's resolution so 23.702,0 − 23.702,0 is never "lower" by float noise.
   const rounded = Math.round(delta * 1e6) / 1e6
   const result: CheckResult = rounded < 0 ? 'lower' : threshold !== null && rounded > threshold ? 'high' : 'ok'
   return { result, delta, days: last.days, perDay }

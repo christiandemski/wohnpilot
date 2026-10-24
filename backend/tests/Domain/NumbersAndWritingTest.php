@@ -15,7 +15,7 @@ use Wohnpilot\Tests\Fixtures;
 
 final class NumbersAndWritingTest extends TestCase
 {
-    private const NNBSP = "\u{202F}";
+    private const NNBSP = '.';
 
     public function testGermanNumberFormat(): void
     {

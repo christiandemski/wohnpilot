@@ -1,13 +1,12 @@
 /**
- * German formatting. Intl's de-DE groups thousands with a dot ("23.702"), the
- * design system wants a narrow no-break space ("23 702,0"), so numbers are
- * formatted here by hand.
+ * German formatting: a dot between thousands, a decimal comma ("23.702,0").
+ * Done by hand so the result is the same in every browser.
  */
 
-export const THOUSANDS = ' '
+export const THOUSANDS = '.'
 export const MINUS = '−'
 
-/** 23702 → "23 702,0" (decimals = 1) */
+/** 23702 → "23.702,0" (decimals = 1) */
 export function formatNumber(value: number, decimals = 0): string {
   const fixed = Math.abs(value).toFixed(decimals)
   const [whole, fraction] = fixed.split('.')
@@ -34,13 +33,18 @@ export function formatPercent(ratio: number): string {
   return (percent > 0 ? '+' : '') + formatNumber(percent) + ' %'
 }
 
-/** Reads what a person types: "23702", "23 702,5", "23.702,5", "23702.5". */
+/**
+ * Reads what a person types: "23702", "23.702,5", "23 702,5", "23702,5", "1.450"
+ * (dots between groups of three are thousands) and "23702.5".
+ */
 export function parseNumber(text: string): number | null {
   let t = text.trim().replace(/[\s  ]/g, '').replace(MINUS, '-')
   if (t === '') return null
   if (t.includes(',')) {
     if (!/^-?\d{1,3}(\.\d{3})*(,\d+)?$|^-?\d+(,\d+)?$/.test(t)) return null
     t = t.replace(/\./g, '').replace(',', '.')
+  } else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) {
+    t = t.replace(/\./g, '')
   }
   const value = Number(t)
   return Number.isFinite(value) ? value : null
