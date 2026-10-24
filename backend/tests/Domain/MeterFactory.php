@@ -20,9 +20,9 @@ final class MeterFactory
      *
      * @param list<array{0: string, 1: string, 2?: string}> $rows [date, value, occasion]
      */
-    public static function withRows(array $rows, string $extraFrontmatter = ''): Meter
+    public static function withRows(array $rows, string $extraFrontmatter = '', string $id = 'test'): Meter
     {
-        $text = "---\ntyp: zaehler\nid: test\neinheit: kWh\nnachkommastellen: 1\n$extraFrontmatter---\n| Datum | Stand | Anlass | Foto | Von |\n|---|---|---|---|---|\n";
+        $text = "---\ntyp: zaehler\nid: $id\neinheit: kWh\nnachkommastellen: 1\n$extraFrontmatter---\n| Datum | Stand | Anlass | Foto | Von |\n|---|---|---|---|---|\n";
         foreach ($rows as $row) {
             $text .= "| {$row[0]} | {$row[1]} | " . ($row[2] ?? 'regulär') . " |  | christian |\n";
         }

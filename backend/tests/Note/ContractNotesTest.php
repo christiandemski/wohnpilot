@@ -45,7 +45,7 @@ final class ContractNotesTest extends TestCase
         $fm = NoteDocument::parse(Fixtures::read(self::MIETVERTRAG))->frontmatter();
 
         self::assertSame('efh-musterstrasse', $fm->get('objekt'));
-        self::assertSame('index', $fm->get('mietart'));
+        self::assertSame('standard', $fm->get('mietart'));
         self::assertSame(
             ['betrag_eur' => 4350, 'art' => 'kautionskonto', 'hinterlegt' => '[Bank], Mietkautionskonto'],
             $fm->get('kaution'),
@@ -72,8 +72,8 @@ final class ContractNotesTest extends TestCase
 
         self::assertSame(
             [[
-                '| 2027-01-01 | 1495        | 280           | Indexanpassung VPI       | 2026-10-15 |            |',
-                '| 2027-01-01 | 1495        | 280           | Indexanpassung VPI       | 2026-10-15 | 2026-11-02 |',
+                '| 2027-01-01 | 1495        | 280           | Mieterhöhung Mietspiegel | 2026-10-15 |            |',
+                '| 2027-01-01 | 1495        | 280           | Mieterhöhung Mietspiegel | 2026-10-15 | 2026-11-02 |',
             ]],
             self::changedLines($original, $note->toString()),
         );

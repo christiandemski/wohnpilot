@@ -4,7 +4,7 @@ id: mietvertrag-efh-musterstrasse
 objekt: efh-musterstrasse
 vermieter: vermieter
 beginn: 2024-12-01
-mietart: index
+mietart: standard
 kaltmiete_eur: 1450
 nebenkosten_eur: 280
 kuendigungsfrist_monate: 3
@@ -14,7 +14,7 @@ erstellt_von: christian
 ---
 | Gültig ab  | Kaltmiete € | Nebenkosten € | Grund                    | Eingang    | Zugestimmt |
 |------------|-------------|---------------|--------------------------|------------|------------|
-| 2027-01-01 | 1495        | 280           | Indexanpassung VPI       | 2026-10-15 |            |
+| 2027-01-01 | 1495        | 280           | Mieterhöhung Mietspiegel | 2026-10-15 |            |
 | 2026-01-01 | 1450        | 280           | Betriebskostenabrechnung |            |            |
 | 2024-12-01 | 1450        | 250           | Einzug                   |            |            |
 
