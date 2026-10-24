@@ -391,7 +391,7 @@ export interface DefectSummary {
   path: string
   etag: string
   title: string
-  fields: { titel: string; raum?: string; zustaendig?: string; kleinreparatur?: boolean; kosten_eur?: number; nachfassen?: string; [key: string]: unknown }
+  fields: { titel: string; raum?: string; zustaendig?: string; kleinreparatur?: boolean; kosten_eur?: number; arbeitskosten_eur?: number; nachfassen?: string; [key: string]: unknown }
   evaluation: {
     status: DefectStatus
     open: boolean
@@ -551,6 +551,46 @@ export interface SearchResult {
 }
 
 /** Utility statement (UtilityService): landlord's operating costs or the metering service's heating costs */
+/** Year in review (ReportService) */
+export interface YearSpan {
+  amount: number
+  coveredDays: number
+  days: number
+  complete: boolean
+}
+
+export interface TaxItem {
+  date: string
+  taxKind: 'haushaltsnah' | 'handwerker'
+  title: string
+  amount: number
+  /** The labour share is not known, the whole amount is shown */
+  check: boolean
+  source: { type: 'nebenkosten' | 'mangel'; id: string; title: string }
+}
+
+export interface YearReport {
+  year: number
+  complete: boolean
+  period: { from: string; to: string }
+  meters: { id: string; medium: string; name: string; unit: string; year: YearSpan; previous: YearSpan; change: number | null; cost: number | null }[]
+  housing: {
+    rent: { months: number; cold: number; utilities: number }
+    contracts: { id: string; name: string; category: string; monthly: number; months: number; total: number }[]
+    contractsTotal: number
+    total: number
+  }
+  statements: { id: string; title: string; kind: string; total: number; balance: number | null; billedIn: string | null }[]
+  maintenance: { id: string; title: string; date: string; by: string; note: string }[]
+  defects: { id: string; title: string; fixedOn: string; responsible: string; cost: number | null }[]
+  minorRepairs: MinorRepairYear
+  tax: {
+    items: TaxItem[]
+    totals: Partial<Record<'haushaltsnah' | 'handwerker', { amount: number; reduction: number; cap: number }>>
+    reduction: number
+  }
+}
+
 export interface UtilityPosition {
   kind: string
   amount: number

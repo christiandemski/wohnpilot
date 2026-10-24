@@ -59,6 +59,7 @@ const routes: [string, string][] = [
   ['suche', '/suche'],
   ['aufkleber', '/aufkleber'],
   ['eingang', '/eingang'],
+  ['bericht', '/bericht'],
   ['nebenkosten', '/nebenkosten'],
   ['nebenkosten-neu', '/nebenkosten/neu'],
   ['nebenkosten-detail', '/nebenkosten/:id'],

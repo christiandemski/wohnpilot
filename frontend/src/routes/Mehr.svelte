@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Bell, BellOff, CalendarClock, CalendarPlus, ChevronRight, Copy, FileText, Inbox, LogOut, RefreshCw, Search, Settings2, UserRound } from '@lucide/svelte'
+  import { Bell, BellOff, CalendarClock, ChartColumn, CalendarPlus, ChevronRight, Copy, FileText, Inbox, LogOut, RefreshCw, Search, Settings2, UserRound } from '@lucide/svelte'
   import { api, ApiError, logout } from '../lib/api'
   import { outbox } from '../lib/outbox.svelte'
   import { inbox } from '../lib/inbox.svelte'
@@ -14,6 +14,7 @@
   const modules = [
     { href: '/vertraege', label: 'Verträge', meta: 'Strom, Internet, Versicherungen', icon: FileText, module: 'vertraege' },
     { href: '/kontakte', label: 'Kontakte', meta: 'Vermieter, Handwerker, Störungsnummern', icon: UserRound, module: 'kontakte' },
+    { href: '/bericht', label: 'Jahresbericht', meta: 'Kosten, Verbrauch und § 35a für die Steuer', icon: ChartColumn, module: 'vertraege' },
     { href: '/suche', label: 'Suchen', meta: 'In allen Einträgen', icon: Search, module: 'wissen' },
     { href: '/eingang', label: 'Eingang', meta: 'Geteilte Fotos, PDFs und Texte zuordnen', icon: Inbox, module: 'wissen' },
     { href: '/fristen', label: 'Fristen', meta: 'Einmalige Termine mit Stichtag', icon: CalendarClock, module: 'vertraege' },

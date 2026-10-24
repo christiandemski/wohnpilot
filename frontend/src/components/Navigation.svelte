@@ -20,7 +20,7 @@
       // Everything about the house itself
       prefixes: ['zuhause', 'mietvertrag', 'wartung', 'termine', 'termin', 'muell', 'maengel', 'mangel', 'geraete', 'geraet', 'wissen', 'notfall', 'aufkleber', 'nebenkosten'],
     },
-    { href: '/mehr', label: 'Mehr', icon: Ellipsis, module: 'wissen', prefixes: ['mehr', 'vertraege', 'vertrag', 'fristen', 'frist', 'einstellungen', 'kontakte', 'kontakt', 'eingang'] },
+    { href: '/mehr', label: 'Mehr', icon: Ellipsis, module: 'wissen', prefixes: ['mehr', 'vertraege', 'vertrag', 'fristen', 'frist', 'einstellungen', 'kontakte', 'kontakt', 'eingang', 'bericht'] },
   ]
 
   /** Route names like "mangel-detail" belong to the target with prefix "mangel". */

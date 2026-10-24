@@ -51,6 +51,7 @@
   import Suche from './routes/Suche.svelte'
   import Aufkleber from './routes/Aufkleber.svelte'
   import Eingang from './routes/Eingang.svelte'
+  import Jahresbericht from './routes/Jahresbericht.svelte'
   import Nebenkosten from './routes/Nebenkosten.svelte'
   import NebenkostenDetail from './routes/NebenkostenDetail.svelte'
   import NebenkostenForm from './routes/NebenkostenForm.svelte'
@@ -200,6 +201,8 @@
           <NebenkostenDetail id={router.current.params.id} />
         {:else if router.current.name === 'nebenkosten-bearbeiten'}
           <NebenkostenForm id={router.current.params.id} />
+        {:else if router.current.name === 'bericht'}
+          <Jahresbericht />
         {:else if router.current.name === 'eingang'}
           <Eingang />
         {:else if router.current.name === 'aufkleber'}

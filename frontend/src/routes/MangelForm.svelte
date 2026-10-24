@@ -17,9 +17,9 @@
   /** Report a defect (no id; one photo right away, more on the next page) or change its data. */
   let { id = null }: { id?: string | null } = $props()
 
-  const LABELS: Record<string, string> = { titel: 'Was', raum: 'Raum', zustaendig: 'Zuständig', kleinreparatur: 'Kleinreparatur', kosten_eur: 'Kosten', nachfassen: 'Nachfassen' }
+  const LABELS: Record<string, string> = { titel: 'Was', raum: 'Raum', zustaendig: 'Zuständig', kleinreparatur: 'Kleinreparatur', kosten_eur: 'Kosten', arbeitskosten_eur: 'Arbeitskosten', nachfassen: 'Nachfassen' }
 
-  const blank = { kontakt: '', titel: '', raum: '', zustaendig: 'vermieter', klein: false, kosten: '', nachfassen: '', entdeckt: todayIso(), notiz: '' }
+  const blank = { kontakt: '', titel: '', raum: '', zustaendig: 'vermieter', klein: false, kosten: '', arbeit: '', nachfassen: '', entdeckt: todayIso(), notiz: '' }
   type Form = typeof blank
 
   let form = $state<Form>({ ...blank })
@@ -64,6 +64,7 @@
           zustaendig: d.fields.zustaendig ?? 'vermieter',
           klein: d.fields.kleinreparatur === true,
           kosten: numberText(d.fields.kosten_eur),
+          arbeit: numberText(d.fields.arbeitskosten_eur),
           nachfassen: d.fields.nachfassen ?? '',
         }
         edit.loaded(payload(form), d.etag)
@@ -89,6 +90,7 @@
       kontakt: f.kontakt || null,
       kleinreparatur: f.klein ? true : null,
       kosten_eur: numberField(f.kosten),
+      arbeitskosten_eur: f.klein ? numberField(f.arbeit) : null,
       nachfassen: textField(f.nachfassen),
     }
   }
@@ -188,6 +190,12 @@
           <label for="kosten">Kosten €</label>
           <input id="kosten" class="input num" inputmode="decimal" bind:value={form.kosten} aria-invalid={error('kosten_eur') !== undefined} />
           {#if error('kosten_eur')}<span class="error">{error('kosten_eur')}</span>{/if}
+        </div>
+        <div class="field">
+          <label for="arbeit">davon Arbeitskosten € <span class="optional">(optional)</span></label>
+          <input id="arbeit" class="input num" inputmode="decimal" bind:value={form.arbeit} aria-invalid={error('arbeitskosten_eur') !== undefined} />
+          <span class="hint">Steht auf der Rechnung getrennt vom Material. 20 % davon kannst du von der Steuer abziehen (§ 35a).</span>
+          {#if error('arbeitskosten_eur')}<span class="error">{error('arbeitskosten_eur')}</span>{/if}
         </div>
       {/if}
     </fieldset>
