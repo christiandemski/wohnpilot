@@ -57,7 +57,7 @@ Ziel: Subdomain `wohnpilot.codekorb.de`, Ordner im Webspace `wohnpilot.codekorb.
 2. **Hochladen:** den *Inhalt* des ZIP nach `wohnpilot.codekorb.de/httpdocs/`, mit den versteckten Dateien. `var/` muss für PHP beschreibbar sein.
 3. **`.env`:** `.env.server` in `.env` umbenennen und das Nextcloud-App-Passwort eintragen. Vorausgefüllt sind:
    - `APP_ENV=prod`, `APP_URL=https://wohnpilot.codekorb.de`, `DEV_LOGIN_USER` leer
-   - Nextcloud-URL, -Benutzer und App-Passwort
+   - Nextcloud-URL und -Benutzer (das App-Passwort trägst du selbst ein)
    - `BEARID_PUBLIC_KEY_FILE=/var/www/vhosts/hosting226222.ae9bd.netcup.net/bearid-guard/public.key`
    - `WOHNPILOT_USERS=` deine E-Mail-Adresse (darf den Haushalt anlegen)
 4. **Plesk, Subdomain `wohnpilot.codekorb.de`:**
