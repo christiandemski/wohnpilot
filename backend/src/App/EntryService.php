@@ -29,6 +29,7 @@ final class EntryService
         'wissen' => 'wissen',
         'zaehler' => 'zaehler',
         'nebenkosten' => 'nebenkosten',
+        'checkliste' => 'umzug',
     ];
 
     public function __construct(

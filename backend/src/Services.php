@@ -20,6 +20,7 @@ use Wohnpilot\App\KnowledgeService;
 use Wohnpilot\App\LeaseService;
 use Wohnpilot\App\MaintenanceService;
 use Wohnpilot\App\MeterService;
+use Wohnpilot\App\MoveService;
 use Wohnpilot\App\NoteRepository;
 use Wohnpilot\App\PeopleService;
 use Wohnpilot\App\ObjectNotes;
@@ -135,6 +136,20 @@ class Services
     public function clock(): Clock
     {
         return $this->instances[__FUNCTION__] ??= new Clock();
+    }
+
+    public function moves(): MoveService
+    {
+        return $this->instances[__FUNCTION__] ??= new MoveService(
+            $this->notes(),
+            $this->household(),
+            $this->clock(),
+            $this->meters(),
+            $this->lease(),
+            $this->contracts(),
+            $this->defects(),
+            $this->devices(),
+        );
     }
 
     public function people(): PeopleService
