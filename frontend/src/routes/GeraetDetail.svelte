@@ -12,6 +12,7 @@
   import PageHeader from '../components/PageHeader.svelte'
   import PhotoGallery from '../components/PhotoGallery.svelte'
   import StatusChip from '../components/StatusChip.svelte'
+  import Unterlagen from '../components/Unterlagen.svelte'
 
   let { id }: { id: string } = $props()
 
@@ -108,6 +109,8 @@
           {#if d.modifiedBy}<p class="text-muted text-small">Zuletzt geändert von {d.modifiedBy}</p>{/if}
     </section>
   </div>
+
+  <Unterlagen type="geraet" {id} />
 {/if}
 
 <style>

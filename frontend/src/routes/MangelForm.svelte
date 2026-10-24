@@ -8,6 +8,7 @@
   import { roomName } from '../lib/meters'
   import { todayIso } from '../lib/resource.svelte'
   import { router } from '../lib/router.svelte'
+  import { takeDraft } from '../lib/inbox.svelte'
   import type { DefectDetail, ObjectData } from '../lib/types'
   import ConflictPanel from '../components/ConflictPanel.svelte'
   import ContactPicker from '../components/ContactPicker.svelte'
@@ -66,6 +67,10 @@
           nachfassen: d.fields.nachfassen ?? '',
         }
         edit.loaded(payload(form), d.etag)
+      } else {
+        // A text from the inbox starts the report
+        const draft = takeDraft()
+        if (draft) form = { ...form, titel: draft.titel, notiz: draft.rest }
       }
       loadError = null
     } catch (e) {

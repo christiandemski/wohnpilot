@@ -58,6 +58,7 @@ const routes: [string, string][] = [
   ['notfall', '/notfall'],
   ['suche', '/suche'],
   ['aufkleber', '/aufkleber'],
+  ['eingang', '/eingang'],
   ['qr', '/q/:kind/:id'],
   ['mehr', '/mehr'],
 ]

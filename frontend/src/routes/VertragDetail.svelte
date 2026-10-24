@@ -14,6 +14,7 @@
   import LoadState from '../components/LoadState.svelte'
   import PageHeader from '../components/PageHeader.svelte'
   import StatusChip from '../components/StatusChip.svelte'
+  import Unterlagen from '../components/Unterlagen.svelte'
 
   let { id }: { id: string } = $props()
 
@@ -248,6 +249,8 @@
       </div>
     </div>
   </div>
+
+  <Unterlagen type="vertrag" {id} photos />
 {/if}
 
 <style>

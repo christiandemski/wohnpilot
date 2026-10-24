@@ -15,6 +15,7 @@ export const CHOICES: CaptureChoice[] = [
   { id: 'termin', label: 'Termin eintragen', meta: 'Handwerker, Schornsteinfeger, Besichtigung', href: '/termine/neu', module: 'termine' },
   { id: 'frist', label: 'Frist anlegen', meta: 'Brief mit Stichtag, Ablese-Aufforderung', href: '/fristen/neu', module: 'vertraege' },
   { id: 'geraet', label: 'Gerät anlegen', meta: 'Kaufdatum, Garantie, Typenschild', href: '/geraete/neu', module: 'geraete' },
+  { id: 'eingang', label: 'Datei oder Text ablegen', meta: 'Brief, Rechnung, Foto – später zuordnen', href: '/eingang', module: 'wissen' },
 ]
 
 const KEY = 'wohnpilot.erfassen.zuletzt'

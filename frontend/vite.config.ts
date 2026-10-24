@@ -73,6 +73,13 @@ export default defineConfig({
           { src: 'maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
         shortcuts: [{ name: 'Zählerstände ablesen', short_name: 'Ablesen', url: '/ablesen', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] }],
+        // Android: Wohnpilot in the share menu; files and text land in the inbox (public/share-sw.js)
+        share_target: {
+          action: '/eingang/teilen',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: { title: 'title', text: 'text', url: 'url', files: [{ name: 'dateien', accept: ['image/*', 'application/pdf'] }] },
+        },
       },
       workbox: {
         // The app shell is precached. API answers are cached as they come in, for reading
@@ -96,8 +103,8 @@ export default defineConfig({
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         cleanupOutdatedCaches: true,
-        // Push messages and taps on them (public/push-sw.js)
-        importScripts: ['push-sw.js'],
+        // Push messages and taps on them (public/push-sw.js), the share target (public/share-sw.js)
+        importScripts: ['push-sw.js', 'share-sw.js'],
       },
     }),
   ],

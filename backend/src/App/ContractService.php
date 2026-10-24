@@ -59,7 +59,7 @@ final class ContractService
 
         return $this->summary($stored, $this->clock->today()) + [
             'prices' => $table === null ? null : ['columns' => $table->headers(), 'rows' => $table->rows()],
-            'notes' => trim($note->body()->text()),
+            'notes' => MaintenanceService::freeText($note),
         ];
     }
 

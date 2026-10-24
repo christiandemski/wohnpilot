@@ -50,6 +50,7 @@
   import Notfall from './routes/Notfall.svelte'
   import Suche from './routes/Suche.svelte'
   import Aufkleber from './routes/Aufkleber.svelte'
+  import Eingang from './routes/Eingang.svelte'
 
   theme.apply()
 
@@ -188,6 +189,8 @@
           <Notfall />
         {:else if router.current.name === 'suche'}
           <Suche />
+        {:else if router.current.name === 'eingang'}
+          <Eingang />
         {:else if router.current.name === 'aufkleber'}
           <Aufkleber />
         {:else if router.current.name === 'qr'}

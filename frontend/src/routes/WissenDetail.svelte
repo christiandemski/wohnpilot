@@ -10,6 +10,7 @@
   import PageHeader from '../components/PageHeader.svelte'
   import PhotoGallery from '../components/PhotoGallery.svelte'
   import StatusChip from '../components/StatusChip.svelte'
+  import Unterlagen from '../components/Unterlagen.svelte'
 
   let { id }: { id: string } = $props()
 
@@ -68,4 +69,6 @@
       <p class="text-muted text-small">Ein Foto sagt oft mehr: wo genau der Hahn sitzt, wie der Kasten beschriftet ist.</p>
     </section>
   </div>
+
+  <Unterlagen type="wissen" {id} />
 {/if}

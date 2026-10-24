@@ -2,7 +2,7 @@ import { api } from './api'
 
 /** Photos of defects, devices and maintenance tasks (backend PhotoService). */
 
-export type PhotoOwner = 'mangel' | 'geraet' | 'wartung' | 'wissen'
+export type PhotoOwner = 'mangel' | 'geraet' | 'wartung' | 'wissen' | 'vertrag' | 'mietvertrag' | 'frist'
 
 export interface Photo {
   path: string

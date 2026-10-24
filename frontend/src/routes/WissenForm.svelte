@@ -4,6 +4,7 @@
   import { CATEGORIES, DEFAULT_STEPS, SCENARIOS } from '../lib/knowledge'
   import { roomName } from '../lib/meters'
   import { router } from '../lib/router.svelte'
+  import { takeDraft } from '../lib/inbox.svelte'
   import type { DeviceSummary, KnowledgeDetail, ObjectData } from '../lib/types'
   import ConflictPanel from '../components/ConflictPanel.svelte'
   import PageHeader from '../components/PageHeader.svelte'
@@ -46,6 +47,12 @@
         originalText = p.text
         edit.loaded(payload(form), p.etag)
       } else {
+        const draft = takeDraft()
+        if (draft) {
+          form.titel = draft.titel
+          form.text = draft.text
+          form.kategorie = 'sonstiges'
+        }
         const scenario = router.query.get('notfall')
         if (scenario && SCENARIOS[scenario]) {
           form.kategorie = 'notfall'

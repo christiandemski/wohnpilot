@@ -12,6 +12,7 @@
   import NextCard from '../components/NextCard.svelte'
   import PageHeader from '../components/PageHeader.svelte'
   import StatusChip from '../components/StatusChip.svelte'
+  import Unterlagen from '../components/Unterlagen.svelte'
 
   const lease = new Resource(async () => (await api.get<{ lease: Lease | null }>('/lease')).lease)
   const today = todayIso()
@@ -239,6 +240,8 @@
       </div>
     </div>
   </div>
+
+  <Unterlagen type="mietvertrag" id={l.id} photos />
 {/if}
 
 <style>

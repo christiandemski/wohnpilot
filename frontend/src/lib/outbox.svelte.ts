@@ -1,4 +1,5 @@
 import { ApiError, request } from './api'
+import { inStore } from './idb'
 import { isTransient, jobOf, newJob, runJob, type Job, type QueuedRequest } from './queue'
 
 /**
@@ -7,39 +8,15 @@ import { isTransient, jobOf, newJob, runJob, type Job, type QueuedRequest } from
  * app comes to the front and every minute while something waits.
  */
 
-const DB = 'wohnpilot'
-const STORE = 'outbox'
 const RETRY_MS = 60_000
-
-function openDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const open = indexedDB.open(DB, 1)
-    open.onupgradeneeded = () => open.result.createObjectStore(STORE, { keyPath: 'id' })
-    open.onsuccess = () => resolve(open.result)
-    open.onerror = () => reject(open.error)
-  })
-}
-
-async function store<T>(mode: IDBTransactionMode, work: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-  const db = await openDb()
-  try {
-    return await new Promise<T>((resolve, reject) => {
-      const tx = db.transaction(STORE, mode)
-      const req = work(tx.objectStore(STORE))
-      tx.oncomplete = () => resolve(req.result)
-      tx.onerror = () => reject(tx.error)
-    })
-  } finally {
-    db.close()
-  }
-}
+const store = <T,>(mode: IDBTransactionMode, work: (s: IDBObjectStore) => IDBRequest<T>) => inStore('outbox', mode, work)
 
 function send(step: QueuedRequest, key: string): Promise<unknown> {
   let body: unknown = step.json
   if (step.form) {
     const form = new FormData()
     for (const [name, value] of Object.entries(step.form)) {
-      if (value instanceof Blob) form.set(name, value, name === 'foto' ? 'foto.jpg' : name)
+      if (value instanceof Blob) form.set(name, value, name === 'foto' ? 'foto.jpg' : name === 'dokument' ? 'dokument.pdf' : name)
       else form.set(name, value)
     }
     body = form

@@ -78,7 +78,7 @@ final class PhotoApiTest extends ApiTestCase
         self::assertSame(['foto' => 'not_an_image'], self::decode($text)['fields']);
         self::assertFileDoesNotExist("$this->root/anhaenge/maengel/fenster-schlafzimmer/2026-10-24-1.jpg");
 
-        self::assertSame(404, $this->upload('/api/photos/vertrag/strom-stadtwerke', self::JPEG)->getStatusCode(), 'contracts have no photos');
+        self::assertSame(404, $this->upload('/api/photos/zaehler/strom-haupt', self::JPEG)->getStatusCode(), 'meters keep their photos in the readings');
         self::assertSame(404, $this->upload('/api/photos/mangel/gibt-es-nicht', self::JPEG)->getStatusCode());
     }
 

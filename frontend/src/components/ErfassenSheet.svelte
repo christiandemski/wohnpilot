@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CalendarClock, CalendarDays, Gauge, TriangleAlert, WashingMachine, Wrench, X } from '@lucide/svelte'
+  import { CalendarClock, CalendarDays, Gauge, Inbox, TriangleAlert, WashingMachine, Wrench, X } from '@lucide/svelte'
   import { ordered, readLastUsed, rememberLastUsed, type CaptureChoice } from '../lib/capture'
   import IconTile from './IconTile.svelte'
 
@@ -18,6 +18,7 @@
     termin: CalendarDays,
     frist: CalendarClock,
     geraet: WashingMachine,
+    eingang: Inbox,
   } as const
 
   export function open() {

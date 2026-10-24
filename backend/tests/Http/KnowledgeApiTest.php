@@ -163,6 +163,22 @@ final class KnowledgeApiTest extends ApiTestCase
         self::assertFileDoesNotExist("$this->root/anhaenge/vertraege/strom-stadtwerke/2026-10-24-preiserhoehung-2027.pdf");
     }
 
+    public function testFilesOfAnEntryListDocumentsAndPhotos(): void
+    {
+        $this->upload('/api/documents/vertrag/strom-stadtwerke', 'dokument', self::PDF, 'brief.pdf', ['titel' => 'Brief']);
+        $photo = $this->upload('/api/photos/vertrag/strom-stadtwerke', 'foto', "\xFF\xD8\xFF\xE0letter", 'brief.jpg', ['alt' => 'Brief, Seite 2']);
+        self::assertSame(201, $photo->getStatusCode(), 'a photographed letter can go to a contract');
+
+        $files = self::decode($this->request('GET', '/api/documents/vertrag/strom-stadtwerke'));
+        self::assertSame(['Brief'], array_column($files['documents'], 'title'));
+        self::assertSame(['anhaenge/vertraege/strom-stadtwerke/2026-10-24-1.jpg'], array_column($files['photos'], 'path'));
+        self::assertSame(404, $this->request('GET', '/api/documents/zaehler/strom-haupt')->getStatusCode());
+
+        $notes = self::decode($this->request('GET', '/api/contracts/strom-stadtwerke'))['notes'];
+        self::assertStringContainsString('Sonderkündigung prüfen', $notes);
+        self::assertStringNotContainsString('](', $notes, 'files show under Unterlagen, not as Markdown in the notes');
+    }
+
     public function testRepeatedWriteGetsTheFirstAnswer(): void
     {
         $send = fn (string $key): ResponseInterface => $this->app->handle(
