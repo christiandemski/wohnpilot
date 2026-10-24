@@ -6,7 +6,7 @@ namespace Wohnpilot\Storage;
 
 use InvalidArgumentException;
 
-/** Checks attachment paths: relative, no "..", an image extension. */
+/** Checks attachment paths: relative, no "..", an image or PDF extension. */
 final class AttachmentPath
 {
     public static function assertReadable(string $path): void
@@ -18,7 +18,7 @@ final class AttachmentPath
             }
         }
         if (self::type($path) === null) {
-            throw new InvalidArgumentException("Not an image: $path");
+            throw new InvalidArgumentException("Not an image or PDF: $path");
         }
     }
 
@@ -26,12 +26,12 @@ final class AttachmentPath
     public static function assertWritable(string $path): void
     {
         self::assertReadable($path);
-        if (!preg_match('#^' . AttachmentStore::FOLDER . '(/[a-z0-9][a-z0-9_-]*)+\.(jpg|jpeg|png|webp)$#', $path)) {
+        if (!preg_match('#^' . AttachmentStore::FOLDER . '(/[a-z0-9][a-z0-9_-]*)+\.(jpg|jpeg|png|webp|pdf)$#', $path)) {
             throw new InvalidArgumentException("Wohnpilot writes below anhaenge/ only: $path");
         }
     }
 
-    /** The media type by extension, or null if it is no image. */
+    /** The media type by extension, or null if it is neither image nor PDF. */
     public static function type(string $path): ?string
     {
         return AttachmentStore::TYPES[strtolower(pathinfo($path, PATHINFO_EXTENSION))] ?? null;

@@ -95,6 +95,12 @@ abstract class ApiTestCase extends TestCase
             protected ?StorageAdapter $testStorage = null;
             protected ?AccountStore $testAccounts = null;
             protected ?CalendarLinks $testCalendarLinks = null;
+            protected ?\Wohnpilot\Http\IdempotencyStore $testIdempotency = null;
+
+            public function idempotency(): \Wohnpilot\Http\IdempotencyStore
+            {
+                return $this->testIdempotency ??= new \Wohnpilot\Http\IdempotencyStore(new PDO('sqlite::memory:'));
+            }
             protected ?PushSubscriptions $testPushSubscriptions = null;
 
             /** The waste calendar comes from ApiTestCase::$calendarBody, never from the network. */

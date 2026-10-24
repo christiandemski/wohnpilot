@@ -118,6 +118,12 @@ final class NoteIndex
         return array_map(self::toStored(...), $statement->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    /** @return list<StoredNote> every note, ordered by path (search, "where is this contact used") */
+    public function all(): array
+    {
+        return array_map(self::toStored(...), $this->db->query('SELECT * FROM notes ORDER BY path')->fetchAll(PDO::FETCH_ASSOC));
+    }
+
     public function findById(string $typ, string $id): ?StoredNote
     {
         $statement = $this->db->prepare('SELECT * FROM notes WHERE typ = ? AND id = ? ORDER BY path LIMIT 1');
