@@ -5,6 +5,7 @@ objekt: efh-musterstrasse
 titel: Fenster im Schlafzimmer zieht
 raum: schlafzimmer
 zustaendig: vermieter
+kontakt: vermieter
 nachfassen: 2026-11-02
 erstellt_von: christian
 ---

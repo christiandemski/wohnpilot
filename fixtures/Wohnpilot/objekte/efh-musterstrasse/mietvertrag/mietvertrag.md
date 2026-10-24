@@ -3,6 +3,7 @@ typ: mietvertrag
 id: mietvertrag-efh-musterstrasse
 objekt: efh-musterstrasse
 vermieter: vermieter
+kontakt: vermieter
 beginn: 2024-12-01
 mietart: standard
 kaltmiete_eur: 1450

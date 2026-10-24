@@ -3,6 +3,7 @@ typ: vertrag
 id: strom-stadtwerke
 kategorie: energie
 anbieter: Stadtwerke
+kontakt: stadtwerke-stoerung
 vertragsnummer: 4711-0815
 kosten_eur: 85
 rhythmus: monatlich
