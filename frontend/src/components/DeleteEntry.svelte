@@ -2,6 +2,7 @@
   import { Trash2 } from '@lucide/svelte'
   import { api, ApiError } from '../lib/api'
   import { router } from '../lib/router.svelte'
+  import { people } from '../lib/people.svelte'
 
   /**
    * "… löschen" at the end of a detail page: asks once more, deletes only
@@ -55,6 +56,7 @@
   }
 </script>
 
+{#if people.manages}
 <div class="delete no-print">
   {#if confirming}
     <p class="text-small" role="alert">„{title}“ löschen?{hint ? ` ${hint}` : ''} In Nextcloud landet die Notiz im Papierkorb.</p>
@@ -73,6 +75,7 @@
   {/if}
   {#if error}<p class="save-error" role="alert">{error}</p>{/if}
 </div>
+{/if}
 
 <style>
   .delete {

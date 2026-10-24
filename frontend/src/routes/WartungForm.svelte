@@ -7,6 +7,7 @@
   import type { DeviceSummary, MaintenanceDetail, ObjectData } from '../lib/types'
   import ConflictPanel from '../components/ConflictPanel.svelte'
   import ContactPicker from '../components/ContactPicker.svelte'
+  import PersonPicker from '../components/PersonPicker.svelte'
   import PageHeader from '../components/PageHeader.svelte'
 
   /** New recurring task (no id) or its settings. */
@@ -19,6 +20,7 @@
     saison: 'Saison',
     ab: 'Erstmals fällig',
     zustaendig: 'Zuständig',
+    person: 'Wer kümmert sich',
     ausfuehrung: 'Wie',
     raum: 'Raum',
     vorlauf_tage: 'Erinnern vorher',
@@ -35,6 +37,7 @@
     bis: '2',
     ab: '',
     zustaendig: 'mieter',
+    person: '',
     ausfuehrung: 'selbst',
     raum: '',
     vorlauf: '' as string | number,
@@ -71,6 +74,7 @@
           bis: String(f.saison?.bis ?? 2),
           ab: f.ab ?? '',
           zustaendig: f.zustaendig ?? 'mieter',
+          person: f.person ?? '',
           ausfuehrung: f.ausfuehrung ?? 'selbst',
           raum: f.raum ?? '',
           vorlauf: f.vorlauf_tage === undefined ? '' : String(f.vorlauf_tage),
@@ -97,6 +101,7 @@
       saison: f.saisonal ? { von: Number(f.von), bis: Number(f.bis) } : null,
       ab: textField(f.ab),
       zustaendig: f.zustaendig,
+      person: f.person || null,
       kontakt: f.kontakt || null,
       // Yourself is the default and is not written.
       ausfuehrung: f.ausfuehrung === 'selbst' ? null : f.ausfuehrung,
@@ -170,6 +175,7 @@
           </select>
         </div>
       </div>
+      {#if form.zustaendig !== 'vermieter'}<PersonPicker bind:value={form.person} />{/if}
     </div>
 
     <fieldset class="card fields">

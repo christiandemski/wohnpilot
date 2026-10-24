@@ -131,6 +131,8 @@ export interface AgendaItem {
   lastDone?: string | null
   appointment?: boolean
   responsible?: string
+  /** wartung, termin, frist: who of the household takes care of it */
+  person?: { id: string; name: string } | null
   /** termin */
   time?: string | null
   until?: string | null
@@ -179,9 +181,25 @@ export type NextReading =
       meterIds: string[]
     }
 
+export type Role = 'verwalter' | 'mitglied' | 'gast'
+
 export interface User {
   id: string
   name: string
+  role: Role
+}
+
+/** A person of the household (GET /api/people) */
+export interface Person {
+  id: string
+  name: string
+  rolle: Role
+  email: string | null
+  bearid: string | null
+  /** has an e-mail emergency account on the server */
+  emergency: boolean
+  /** the signed-in person */
+  self: boolean
 }
 
 export type TermState = 'running' | 'expires' | 'cancelled' | 'ended' | 'open'
@@ -305,6 +323,7 @@ export interface Deadline {
     vorlauf_tage?: number
     bezieht_sich_auf?: string[]
     erledigt?: string
+    person?: string
     [key: string]: unknown
   }
   windowStart: string
@@ -344,6 +363,7 @@ export interface MaintenanceSummary {
     saison?: { von: number; bis: number }
     ab?: string
     zustaendig?: string
+    person?: string
     raum?: string
     vorlauf_tage?: number
     pflicht?: string
@@ -379,7 +399,7 @@ export interface Appointment {
   date: string
   time: string | null
   daysUntil: number
-  fields: { titel: string; datum: string; uhrzeit?: string; bis?: string; ort?: string; bezieht_sich_auf?: string[]; [key: string]: unknown }
+  fields: { titel: string; datum: string; uhrzeit?: string; bis?: string; ort?: string; person?: string; bezieht_sich_auf?: string[]; [key: string]: unknown }
   modifiedBy: string | null
   notes?: string
 }

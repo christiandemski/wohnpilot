@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Bell, BellOff, CalendarClock, ChartColumn, CalendarPlus, ChevronRight, Copy, FileText, Inbox, LogOut, RefreshCw, Search, Settings2, UserRound } from '@lucide/svelte'
+  import { Bell, BellOff, CalendarClock, ChartColumn, CalendarPlus, ChevronRight, Copy, FileText, Inbox, LogOut, RefreshCw, Search, Settings2, UserRound, UsersRound } from '@lucide/svelte'
   import { api, ApiError, logout } from '../lib/api'
   import { outbox } from '../lib/outbox.svelte'
   import { inbox } from '../lib/inbox.svelte'
@@ -7,6 +7,7 @@
   import type { User } from '../lib/types'
   import { Resource } from '../lib/resource.svelte'
   import { formatDate } from '../lib/format'
+  import { people, ROLE_NAMES } from '../lib/people.svelte'
   import { disablePush, enablePush, isAppleMobile, pushState, testPush, type PushState } from '../lib/push'
   import IconTile from '../components/IconTile.svelte'
   import Segmentschalter from '../components/Segmentschalter.svelte'
@@ -18,6 +19,7 @@
     { href: '/suche', label: 'Suchen', meta: 'In allen Einträgen', icon: Search, module: 'wissen' },
     { href: '/eingang', label: 'Eingang', meta: 'Geteilte Fotos, PDFs und Texte zuordnen', icon: Inbox, module: 'wissen' },
     { href: '/fristen', label: 'Fristen', meta: 'Einmalige Termine mit Stichtag', icon: CalendarClock, module: 'vertraege' },
+    { href: '/personen', label: 'Personen', meta: 'Wer mitmacht und was jemand darf', icon: UsersRound, module: 'kontakte' },
     { href: '/einstellungen', label: 'Einstellungen', meta: 'Paperless und mehr für den ganzen Haushalt', icon: Settings2, module: 'wissen' },
   ]
 
@@ -317,7 +319,7 @@
 
 <section class="card" aria-labelledby="konto">
   <h2 id="konto">Konto</h2>
-  <p>Angemeldet als <strong>{user.name}</strong>.</p>
+  <p>Angemeldet als <strong>{user.name}</strong> · {ROLE_NAMES[user.role] ?? user.role}</p>
   {#if confirmLogout}
     <p class="save-error" role="alert">
       {outbox.jobs.length === 1 ? 'Ein Eintrag ist' : `${outbox.jobs.length} Einträge sind`} noch nicht gesendet und {outbox.jobs.length === 1 ? 'geht' : 'gehen'} beim Abmelden verloren.

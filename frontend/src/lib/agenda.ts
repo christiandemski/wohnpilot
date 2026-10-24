@@ -20,7 +20,13 @@ export interface AgendaText {
   chip: { text: string; tone: ChipTone }
 }
 
+/** With the name of who takes care of it, if someone does */
 export function agendaText(item: AgendaItem, today: string): AgendaText {
+  const text = baseText(item, today)
+  return item.person ? { ...text, meta: text.meta ? `${text.meta} · ${item.person.name}` : item.person.name } : text
+}
+
+function baseText(item: AgendaItem, today: string): AgendaText {
   const name = item.name ?? ''
   const chip = dueChip({ date: item.date, daysUntil: item.daysUntil, status: item.status })
   const contract = `/vertraege/${encodeURIComponent(item.ref.id ?? '')}`

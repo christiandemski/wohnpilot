@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { people } from '../lib/people.svelte'
   import { CalendarPlus, Check, Pencil, Radio } from '@lucide/svelte'
   import { outbox } from '../lib/outbox.svelte'
   import { api, ApiError } from '../lib/api'
@@ -155,6 +156,7 @@
           {#if t.fields.saison}<div><dt>Saison</dt><dd>{seasonText(t.fields.saison)}</dd></div>{/if}
           <div><dt>Wie</dt><dd>{EXECUTIONS[t.fields.ausfuehrung ?? 'selbst']}</dd></div>
           <div><dt>Zuständig</dt><dd>{RESPONSIBLE[t.fields.zustaendig ?? 'mieter'] ?? t.fields.zustaendig}</dd></div>
+          {#if t.fields.person}<div><dt>Kümmert sich</dt><dd>{people.name(t.fields.person)}</dd></div>{/if}
           {#if t.fields.raum}<div><dt>Raum</dt><dd>{roomName(t.fields.raum)}</dd></div>{/if}
           {#if t.fields.bezieht_sich_auf?.length}
             <div>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { CalendarClock, Check, ChevronRight, Plus } from '@lucide/svelte'
   import { outbox } from '../lib/outbox.svelte'
+  import { people } from '../lib/people.svelte'
   import { api, ApiError } from '../lib/api'
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { formatDate, formatDay } from '../lib/format'
@@ -44,6 +45,7 @@
     const parts = [linked.length ? linked.join(', ') : d.object === '' ? 'Haushalt' : 'Zuhause']
     if (d.evaluation.status !== 'done' && today < d.windowStart && linked.length) parts.push(`ablesen ab ${formatDay(d.windowStart)}`)
     else parts.push(`bis ${formatDate(d.fields.datum)}`)
+    if (d.fields.person) parts.push(people.name(d.fields.person))
     return parts.join(' · ')
   }
 </script>

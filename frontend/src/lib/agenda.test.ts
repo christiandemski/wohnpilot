@@ -149,3 +149,11 @@ describe('groupAgenda', () => {
     expect(groupAgenda([hint, item({ group: 'woche' })]).map((g) => g.group)).toEqual(['woche', 'hinweis'])
   })
 })
+
+describe('who takes care of it', () => {
+  it('adds the name to the line under the title', () => {
+    const task = item({ ref: { type: 'wartung', id: 'rauchmelder' }, name: 'Rauchmelder testen', kind: 'wartung', date: '2026-11-08', daysUntil: 15, status: 'ok', from: null, lastDone: '2025-11-08', person: { id: 'alex', name: 'Alex' } })
+    expect(agendaText(task, today).meta).toMatch(/ · Alex$/)
+    expect(agendaText({ ...task, person: null }, today).meta).not.toContain('Alex')
+  })
+})

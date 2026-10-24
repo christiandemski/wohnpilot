@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Check, Plus, Wrench } from '@lucide/svelte'
   import { outbox } from '../lib/outbox.svelte'
+  import { people } from '../lib/people.svelte'
   import { api, ApiError } from '../lib/api'
   import { Resource, todayIso } from '../lib/resource.svelte'
   import { RESPONSIBLE, intervalText, maintenanceChip, maintenanceMeta, seasonText, suggestionReason } from '../lib/house'
@@ -55,7 +56,8 @@
 
   const responsible = (task: MaintenanceSummary) => {
     const who = task.fields.zustaendig ?? 'mieter'
-    return who === 'mieter' ? '' : ` · ${RESPONSIBLE[who] ?? who}`
+    const person = task.fields.person ? ` · ${people.name(task.fields.person)}` : ''
+    return (who === 'mieter' ? '' : ` · ${RESPONSIBLE[who] ?? who}`) + person
   }
 </script>
 

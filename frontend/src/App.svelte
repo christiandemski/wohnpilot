@@ -6,6 +6,7 @@
   import { rememberReturn, takeReturn } from './lib/returnTo'
   import { qrTarget } from './lib/stickers'
   import { outbox } from './lib/outbox.svelte'
+  import { people } from './lib/people.svelte'
   import type { User } from './lib/types'
   import Navigation from './components/Navigation.svelte'
   import OutboxBanner from './components/OutboxBanner.svelte'
@@ -53,6 +54,7 @@
   import Eingang from './routes/Eingang.svelte'
   import Jahresbericht from './routes/Jahresbericht.svelte'
   import Kiosk from './routes/Kiosk.svelte'
+  import Personen from './routes/Personen.svelte'
   import Nebenkosten from './routes/Nebenkosten.svelte'
   import NebenkostenDetail from './routes/NebenkostenDetail.svelte'
   import NebenkostenForm from './routes/NebenkostenForm.svelte'
@@ -67,6 +69,7 @@
     .get<{ user: User }>('/me')
     .then((data) => {
       user = data.user
+      people.signedIn(data.user)
       void settings.load()
       void outbox.start()
       // Back from BearID or the redirect login, which always land on "/"
@@ -102,7 +105,7 @@
 {:else if !checked}
   <p class="splash" aria-live="polite">Wohnpilot lädt …</p>
 {:else if user === null}
-  <Login error={authError} reason={router.query.get('login')} onSignedIn={(u) => { user = u; void settings.load(); void outbox.start(); router.go(takeReturn() ?? "/", true) }} />
+  <Login error={authError} reason={router.query.get('login')} onSignedIn={(u) => { user = u; people.signedIn(u); void settings.load(); void outbox.start(); router.go(takeReturn() ?? "/", true) }} />
 {:else}
   <div class="layout" class:focused>
     {#if !focused}<Navigation />{/if}
@@ -221,6 +224,8 @@
           <Aufkleber />
         {:else if router.current.name === 'qr'}
           <p class="text-muted" aria-live="polite">Einen Moment …</p>
+        {:else if router.current.name === 'personen'}
+          <Personen />
         {:else if router.current.name === 'mehr'}
           <Mehr {user} />
         {:else}

@@ -41,6 +41,10 @@ const MESSAGES: Record<string, string> = {
   no_column: 'Der Notiz fehlt die Spalte dafür. Ergänz sie in der Notes-App.',
   invalid_note: 'Die Notiz hat kein gültiges Datum. Bitte in der Notes-App prüfen.',
   not_released: 'Wohnpilot ist für dein BearID-Konto nicht freigegeben. Der Admin kann es unter „Benutzer“ freigeben.',
+  role: 'Das darfst du in diesem Haushalt nicht. Frag jemanden, der ihn verwaltet.',
+  self: 'Dich selbst kannst du nicht entfernen.',
+  last_admin: 'Mindestens eine Person muss den Haushalt verwalten.',
+  no_household: 'Leg zuerst dein Zuhause an.',
 }
 
 const FIELD_PROBLEMS: Record<string, string> = {
@@ -62,6 +66,8 @@ const FIELD_PROBLEMS: Record<string, string> = {
   season: 'Bitte zwei Monate auswählen.',
   after_start: 'Muss nach dem Beginn liegen.',
   not_an_image: 'Das ist kein Foto (JPEG, PNG oder WebP).',
+  email: 'Bitte eine gültige E-Mail-Adresse.',
+  taken: 'Gehört schon zu einer anderen Person.',
 }
 
 export async function request<T>(method: string, path: string, body?: unknown, headers: Record<string, string> = {}): Promise<T> {

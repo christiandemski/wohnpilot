@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { people } from '../lib/people.svelte'
   import { api, ApiError } from '../lib/api'
   import { settings } from '../lib/settings.svelte'
   import type { Settings } from '../lib/types'
@@ -45,7 +46,8 @@
     </div>
   </fieldset>
   <p role="status" class="small">{message}</p>
-  <button type="submit" class="btn btn-primary btn-large" disabled={saving}>{saving ? 'Speichert …' : 'Speichern'}</button>
+  {#if !people.manages}<p class="muted small">Ändern kann, wer den Haushalt verwaltet.</p>{/if}
+  <button type="submit" class="btn btn-primary btn-large" disabled={saving || !people.manages}>{saving ? 'Speichert …' : 'Speichern'}</button>
 </form>
 
 <style>

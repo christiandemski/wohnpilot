@@ -5,6 +5,7 @@
   import { router } from '../lib/router.svelte'
   import type { Deadline, MeterSummary } from '../lib/types'
   import ConflictPanel from '../components/ConflictPanel.svelte'
+  import PersonPicker from '../components/PersonPicker.svelte'
   import PageHeader from '../components/PageHeader.svelte'
 
   /**
@@ -18,11 +19,12 @@
     datum: 'Stichtag',
     ab: 'Ab',
     vorlauf_tage: 'Erinnern vorher',
+    person: 'Wer kümmert sich',
     bezieht_sich_auf: 'Zähler',
     erledigt: 'Erledigt',
   }
 
-  const blank = { titel: '', datum: '', ab: '', vorlauf_tage: '', zaehler: [] as string[], haushalt: false }
+  const blank = { titel: '', datum: '', ab: '', vorlauf_tage: '', person: '', zaehler: [] as string[], haushalt: false }
   type Form = typeof blank
 
   let form = $state<Form>({ ...blank, zaehler: [] })
@@ -42,6 +44,7 @@
           datum: d.fields.datum,
           ab: d.fields.ab ?? '',
           vorlauf_tage: d.fields.vorlauf_tage === undefined ? '' : String(d.fields.vorlauf_tage),
+          person: d.fields.person ?? '',
           zaehler: d.fields.bezieht_sich_auf ?? [],
           haushalt: d.object === '',
         }
@@ -68,6 +71,7 @@
       datum: textField(f.datum),
       ab: textField(f.ab),
       vorlauf_tage: numberField(f.vorlauf_tage),
+      person: f.person || null,
       bezieht_sich_auf: f.zaehler.length ? f.zaehler : null,
     }
   }
@@ -130,6 +134,7 @@
         <label for="vorlauf">Erinnern Tage vorher <span class="optional">(optional)</span></label>
         <input id="vorlauf" class="input num" type="number" min="0" max="365" inputmode="numeric" bind:value={form.vorlauf_tage} placeholder="14" aria-invalid={error('vorlauf_tage') !== undefined} />
       </div>
+      <PersonPicker bind:value={form.person} />
     </div>
 
     {#if meters.length > 0}

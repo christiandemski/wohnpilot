@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { people } from '../lib/people.svelte'
   import { Pencil } from '@lucide/svelte'
   import { api } from '../lib/api'
   import { Resource } from '../lib/resource.svelte'
@@ -45,6 +46,7 @@
     {#if typeof a.fields.kontakt === 'string'}<ContactLine id={a.fields.kontakt} />{/if}
     <dl class="fact-list">
       {#if a.fields.ort}<div><dt>Wo</dt><dd>{a.fields.ort}</dd></div>{/if}
+      {#if a.fields.person}<div><dt>Kümmert sich</dt><dd>{people.name(a.fields.person)}</dd></div>{/if}
       {#if a.fields.bezieht_sich_auf?.length}
         <div>
           <dt>Gerät</dt>

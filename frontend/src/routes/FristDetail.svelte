@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { people } from '../lib/people.svelte'
   import { Check, Gauge, Pencil } from '@lucide/svelte'
   import { outbox } from '../lib/outbox.svelte'
   import { api, ApiError } from '../lib/api'
@@ -123,6 +124,7 @@
         <p class="text-muted text-small" role="status">Als erledigt vorgemerkt. Wird gesendet, sobald du Netz hast.</p>
       {/if}
       {#if error}<p class="save-error" role="alert">{error.text}</p>{/if}
+      {#if d.fields.person}<p>Kümmert sich: <strong>{people.name(d.fields.person)}</strong></p>{/if}
       {#if d.notes}<p class="notes">{d.notes}</p>{/if}
       {#if d.modifiedBy}<p class="muted small">Zuletzt geändert von {d.modifiedBy}</p>{/if}
       <DeleteEntry type="frist" id={d.id} etag={d.etag} what="Frist" title={d.title} back="/fristen" hint={''} onChanged={() => deadline.reload()} />

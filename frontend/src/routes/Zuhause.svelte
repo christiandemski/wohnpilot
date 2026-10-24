@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { people } from '../lib/people.svelte'
   import { BookOpen, CalendarDays, ChevronRight, House, KeyRound, Pencil, QrCode, ReceiptText, Siren, TriangleAlert, WashingMachine, Wrench } from '@lucide/svelte'
   import type { Component } from 'svelte'
   import { api } from '../lib/api'
@@ -93,7 +94,7 @@
 
 <header class="head">
   <h1>Zuhause</h1>
-  {#if object.data}
+  {#if object.data && people.manages}
     <a class="btn btn-secondary" href="/zuhause/bearbeiten">
       <Pencil size={16} strokeWidth={1.75} aria-hidden="true" />
       Bearbeiten

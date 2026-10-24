@@ -1,6 +1,7 @@
 <script lang="ts">
   import { CalendarDays, Plus, Settings2 } from '@lucide/svelte'
   import { api } from '../lib/api'
+  import { people } from '../lib/people.svelte'
   import { Resource } from '../lib/resource.svelte'
   import { formatChipDay, formatDate, formatLongDay } from '../lib/format'
   import { wasteError } from '../lib/house'
@@ -51,7 +52,7 @@
               <IconTile module="termine"><CalendarDays size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
               <span class="list-text">
                 <span class="list-title">{a.title}</span>
-                <span class="list-meta">{formatLongDay(a.date)} · {when(a)}{a.fields.ort ? ` · ${a.fields.ort}` : ''}</span>
+                <span class="list-meta">{formatLongDay(a.date)} · {when(a)}{a.fields.ort ? ` · ${a.fields.ort}` : ''}{a.fields.person ? ` · ${people.name(a.fields.person)}` : ''}</span>
               </span>
               <StatusChip tone={a.daysUntil <= 1 ? 'soon' : 'neutral'}>{a.daysUntil === 0 ? 'Heute' : a.daysUntil === 1 ? 'Morgen' : formatChipDay(a.date)}</StatusChip>
             </a>
