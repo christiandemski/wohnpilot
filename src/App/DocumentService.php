@@ -19,7 +19,7 @@ use Wohnpilot\Storage\StoredNote;
 final class DocumentService
 {
     /** Note type => folder below anhaenge/ */
-    public const TYPES = ['vertrag' => 'vertraege', 'mietvertrag' => 'mietvertrag', 'geraet' => 'geraete', 'mangel' => 'maengel', 'wissen' => 'wissen', 'frist' => 'fristen'];
+    public const TYPES = ['vertrag' => 'vertraege', 'mietvertrag' => 'mietvertrag', 'geraet' => 'geraete', 'mangel' => 'maengel', 'wissen' => 'wissen', 'frist' => 'fristen', 'nebenkosten' => 'nebenkosten'];
     public const MAX_BYTES = 20 * 1024 * 1024;
     /** [title](path.pdf), not an image; groups 1 = title, 2 = path */
     private const LINK = '(?<!!)\[([^\]\n]+)\]\(\s*<?([^)\s>]+\.pdf)>?\s*\)';

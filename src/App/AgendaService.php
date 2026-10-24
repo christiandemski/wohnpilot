@@ -14,7 +14,7 @@ use Wohnpilot\Domain\Urgency;
 /**
  * "Was steht an": every dated thing from contracts, lease, deadlines,
  * meters and the house (maintenance, appointments, defects to follow up,
- * warranties ending, waste pickups) in one list, grouped by urgency, plus
+ * warranties ending, waste pickups, utility statements) in one list, grouped by urgency, plus
  * the key figures of the overview.
  * Items carry codes and names only; the frontend writes the sentences.
  */
@@ -42,6 +42,7 @@ final class AgendaService
         private readonly ?DefectService $defects = null,
         private readonly ?DeviceService $devices = null,
         private readonly ?WasteService $waste = null,
+        private readonly ?UtilityService $utilities = null,
     ) {
     }
 
@@ -109,6 +110,11 @@ final class AgendaService
 
         [$houseItems, $openDefects] = $this->house($today, $pickupDays);
         array_push($items, ...$houseItems);
+
+        // Utility statements: back payment, objection deadline, a late statement
+        foreach ($this->utilities?->agendaItems($today) ?? [] as $item) {
+            $items[] = $item + ['group' => self::dated($item['kind'], $item['date'], $item['daysUntil'], $item['status'])['group']];
+        }
 
         usort($items, static fn (array $a, array $b): int => [$a['group'] === self::GROUP_HINT, $a['date'], $a['kind']] <=> [$b['group'] === self::GROUP_HINT, $b['date'], $b['kind']]);
 

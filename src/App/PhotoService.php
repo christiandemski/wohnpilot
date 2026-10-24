@@ -21,7 +21,7 @@ use Wohnpilot\Storage\StoredNote;
 final class PhotoService
 {
     /** Note type => folder below anhaenge/ */
-    public const TYPES = ['mangel' => 'maengel', 'geraet' => 'geraete', 'wartung' => 'wartung', 'wissen' => 'wissen', 'vertrag' => 'vertraege', 'mietvertrag' => 'mietvertrag', 'frist' => 'fristen'];
+    public const TYPES = ['mangel' => 'maengel', 'geraet' => 'geraete', 'wartung' => 'wartung', 'wissen' => 'wissen', 'vertrag' => 'vertraege', 'mietvertrag' => 'mietvertrag', 'frist' => 'fristen', 'nebenkosten' => 'nebenkosten'];
     public const MAX_BYTES = 10 * 1024 * 1024;
     private const SIGNATURES = ['jpg' => "\xFF\xD8\xFF", 'png' => "\x89PNG\r\n\x1A\n"];
 

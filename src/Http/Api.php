@@ -205,6 +205,23 @@ final class Api
                 201,
             ));
 
+            // Utility statements (landlord, metering service)
+            $api->get('/utilities', fn (Request $r, Response $response) => self::json($response, ['statements' => $services->utilities()->list()]));
+            $api->post('/utilities', fn (Request $request, Response $response) => self::json($response, $services->utilities()->create(self::body($request), self::user($request)), 201));
+            $api->get('/utilities/{id}', fn (Request $r, Response $response, array $args) => self::json($response, $services->utilities()->detail($args['id'])));
+            $api->put('/utilities/{id}', function (Request $request, Response $response, array $args) use ($services): Response {
+                [$changes, $original, $etag] = self::merge($request);
+                return self::json($response, $services->utilities()->update($args['id'], $changes, $original, $etag, self::user($request)));
+            });
+            $api->put('/utilities/{id}/positions', function (Request $request, Response $response, array $args) use ($services): Response {
+                $body = self::body($request);
+                return self::json($response, $services->utilities()->setPositions($args['id'], (array) ($body['positionen'] ?? []), (array) ($body['original'] ?? []), self::user($request)));
+            });
+            $api->put('/utilities/{id}/paid', function (Request $request, Response $response, array $args) use ($services): Response {
+                $date = self::body($request)['datum'] ?? null;
+                return self::json($response, $services->utilities()->setPaid($args['id'], is_string($date) ? $date : null, self::user($request)));
+            });
+
             $api->get('/lease', fn (Request $r, Response $response) => self::json($response, ['lease' => $services->lease()->get()]));
             $api->post('/lease', fn (Request $request, Response $response) => self::json(
                 $response,
