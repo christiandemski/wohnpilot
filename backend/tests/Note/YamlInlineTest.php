@@ -18,6 +18,7 @@ final class YamlInlineTest extends TestCase
             'words stay plain' => ['Zählerstand Strom an die Stadtwerke melden', 'Zählerstand Strom an die Stadtwerke melden'],
             'number with space' => ['1ESY 123', '1ESY 123'],
             'colon without space' => ['Termin 12:30', 'Termin 12:30'],
+            'time of day' => ['08:00', '08:00'],
             'hash inside a word' => ['C#-Kurs', 'C#-Kurs'],
             'iso date' => ['2026-10-24', '2026-10-24'],
             'placeholder in brackets' => ['[Nummer]', '"[Nummer]"'],

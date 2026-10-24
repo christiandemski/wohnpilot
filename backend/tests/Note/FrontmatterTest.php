@@ -25,10 +25,16 @@ final class FrontmatterTest extends TestCase
     public function testDatesStayIsoStrings(): void
     {
         $objekt = NoteDocument::parse(Fixtures::read('objekte/efh-musterstrasse/_objekt.md'))->frontmatter();
-        $muell = NoteDocument::parse(Fixtures::read('objekte/efh-musterstrasse/termine/muell.md'))->frontmatter();
+        $termin = NoteDocument::parse(Fixtures::read('objekte/efh-musterstrasse/termine/schornsteinfeger-2026-11.md'))->frontmatter();
+        $nested = NoteDocument::parse("---
+tonnen:
+  - { id: gelb, naechste: 2026-10-27 }
+---
+")->frontmatter();
 
         self::assertSame('2024-12-01', $objekt->get('einzug'));
-        self::assertSame('2026-10-27', $muell->get('tonnen')[3]['naechste']);
+        self::assertSame('2026-11-12', $termin->get('datum'));
+        self::assertSame('2026-10-27', $nested->get('tonnen')[0]['naechste'], 'also inside inline maps');
     }
 
     public function testReadsQuotedPlaceholdersUnicodeAndLists(): void

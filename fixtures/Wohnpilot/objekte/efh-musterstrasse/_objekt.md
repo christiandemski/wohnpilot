@@ -10,6 +10,7 @@ raeume: [keller, kueche, bad, wohnzimmer, schlafzimmer, flur, dachboden, garten]
 vermieter: vermieter
 mieterpflichten: [garten, winterdienst]
 kleinreparatur_grenze_eur: 100
+kleinreparatur_jahresgrenze_eur: 300
 erstellt_von: christian
 ---
 Gemietetes Einfamilienhaus. Beispielwerte, bitte durch echte ersetzen.
