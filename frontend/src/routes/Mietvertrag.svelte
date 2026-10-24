@@ -61,7 +61,7 @@
   const warm = (l: Lease) => (l.rent.cold ?? 0) + (l.rent.utilities ?? 0)
 </script>
 
-<PageHeader back="/vertraege">
+<PageHeader back="/zuhause">
   {#snippet action()}
     {#if lease.data}
       <a class="btn btn-secondary" href="/mietvertrag/bearbeiten">

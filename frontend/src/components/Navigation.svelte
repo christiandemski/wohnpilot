@@ -1,29 +1,40 @@
 <script lang="ts">
   import { Ellipsis, Gauge, House, LayoutGrid, Plus } from '@lucide/svelte'
   import { router } from '../lib/router.svelte'
+  import ErfassenSheet from './ErfassenSheet.svelte'
+
+  let sheet: ReturnType<typeof ErfassenSheet> | undefined = $state()
 
   /**
    * Phone: floating dark TabBar (docs/design/komponenten/TabBar.md).
    * Desktop: list of modules on the left. Same targets in both.
    */
   const items = [
-    { href: '/', label: 'Übersicht', icon: LayoutGrid, module: 'wissen', match: ['uebersicht'] },
-    { href: '/zaehler', label: 'Zähler', icon: Gauge, module: 'zaehler', match: ['zaehler', 'zaehler-detail', 'zaehler-neu', 'zaehler-bearbeiten'] },
-    { href: '/zuhause', label: 'Zuhause', icon: House, module: 'miete', match: ['zuhause', 'zuhause-neu', 'zuhause-bearbeiten'] },
-    { href: '/mehr', label: 'Mehr', icon: Ellipsis, module: 'wissen', match: ['mehr', 'vertraege', 'vertrag-neu', 'vertrag-detail', 'vertrag-bearbeiten', 'mietvertrag', 'mietvertrag-bearbeiten', 'fristen', 'frist-neu', 'frist-detail', 'frist-bearbeiten'] },
+    { href: '/', label: 'Übersicht', icon: LayoutGrid, module: 'wissen', prefixes: ['uebersicht'] },
+    { href: '/zaehler', label: 'Zähler', icon: Gauge, module: 'zaehler', prefixes: ['zaehler'] },
+    {
+      href: '/zuhause',
+      label: 'Zuhause',
+      icon: House,
+      module: 'miete',
+      // Everything about the house itself
+      prefixes: ['zuhause', 'mietvertrag', 'wartung', 'termine', 'termin', 'muell', 'maengel', 'mangel', 'geraete', 'geraet'],
+    },
+    { href: '/mehr', label: 'Mehr', icon: Ellipsis, module: 'wissen', prefixes: ['mehr', 'vertraege', 'vertrag', 'fristen', 'frist', 'einstellungen'] },
   ]
 
-  const isCurrent = (item: (typeof items)[number]) => item.match.includes(router.current.name)
+  /** Route names like "mangel-detail" belong to the target with prefix "mangel". */
+  const isCurrent = (item: (typeof items)[number]) => item.prefixes.some((p) => router.current.name === p || router.current.name.startsWith(p + '-'))
 </script>
 
 <nav class="tabbar" aria-label="Hauptnavigation">
   {#each items.slice(0, 2) as item (item.href)}
     {@render tab(item)}
   {/each}
-  <a class="tab add" href="/ablesen">
+  <button type="button" class="tab add" aria-haspopup="dialog" onclick={() => sheet?.open()}>
     <span class="fab"><Plus size={22} strokeWidth={2.25} aria-hidden="true" /></span>
-    <span class="label">Ablesen</span>
-  </a>
+    <span class="label">Erfassen</span>
+  </button>
   {#each items.slice(2) as item (item.href)}
     {@render tab(item)}
   {/each}
@@ -52,11 +63,13 @@
       </li>
     {/each}
   </ul>
-  <a class="btn btn-primary" href="/ablesen">
+  <button type="button" class="btn btn-primary" aria-haspopup="dialog" onclick={() => sheet?.open()}>
     <Plus size={20} strokeWidth={2.25} aria-hidden="true" />
-    Ablesen
-  </a>
+    Erfassen
+  </button>
 </nav>
+
+<ErfassenSheet bind:this={sheet} />
 
 <style>
   .tabbar {
@@ -126,7 +139,12 @@
 
   .add {
     gap: 0;
+    padding: 0;
+    border: 0;
+    background: none;
     color: var(--on-inverse);
+    font: inherit;
+    cursor: pointer;
   }
 
   .sidenav {

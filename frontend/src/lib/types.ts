@@ -290,3 +290,171 @@ export interface Deadline {
   modifiedBy: string | null
   notes?: string
 }
+
+export interface PhotoRef {
+  path: string
+  alt: string
+  url: string
+}
+
+export interface MaintenanceEvaluation {
+  dueDate: string
+  /** Seasonal tasks: first day it may be done */
+  from: string | null
+  daysUntil: number
+  status: DueStatus
+  lastDone: string | null
+  inSeason: boolean | null
+  missedSeason: boolean
+}
+
+export interface MaintenanceSummary {
+  id: string
+  path: string
+  etag: string
+  title: string
+  fields: {
+    titel: string
+    intervall_monate?: number
+    intervall_wochen?: number
+    saison?: { von: number; bis: number }
+    ab?: string
+    zustaendig?: string
+    raum?: string
+    vorlauf_tage?: number
+    pflicht?: string
+    bezieht_sich_auf?: string[]
+    [key: string]: unknown
+  }
+  evaluation: MaintenanceEvaluation
+  modifiedBy: string | null
+}
+
+export interface MaintenanceDetail extends MaintenanceSummary {
+  history: { date: string; by: string; note: string }[]
+  photos: PhotoRef[]
+  notes: string
+}
+
+export interface MaintenanceSuggestion {
+  id: string
+  titel: string
+  intervall_monate: number
+  zustaendig: string
+  saison: { von: number; bis: number } | null
+  raum: string | null
+  grund: string
+}
+
+export interface Appointment {
+  id: string
+  path: string
+  etag: string
+  title: string
+  date: string
+  time: string | null
+  daysUntil: number
+  fields: { titel: string; datum: string; uhrzeit?: string; bis?: string; ort?: string; bezieht_sich_auf?: string[]; [key: string]: unknown }
+  modifiedBy: string | null
+  notes?: string
+}
+
+export type DefectStatus = 'entdeckt' | 'gemeldet' | 'bestaetigt' | 'termin' | 'behoben'
+
+export interface DefectSummary {
+  id: string
+  path: string
+  etag: string
+  title: string
+  fields: { titel: string; raum?: string; zustaendig?: string; kleinreparatur?: boolean; kosten_eur?: number; nachfassen?: string; [key: string]: unknown }
+  evaluation: {
+    status: DefectStatus
+    open: boolean
+    discovered: string | null
+    reported: string | null
+    fixedOn: string | null
+    days: number | null
+    followUp: { date: string; daysUntil: number; status: DueStatus } | null
+  }
+  photoCount: number
+  modifiedBy: string | null
+}
+
+export interface DefectDetail extends DefectSummary {
+  history: { date: string; status: string; channel: string; note: string }[]
+  photos: PhotoRef[]
+  notes: string
+}
+
+export interface MinorRepairYear {
+  year: number
+  cases: { id: string; title: string; date: string; cost: number; overLimit: boolean }[]
+  total: number
+  perCase: number | null
+  perYear: number | null
+  left: number | null
+  overYear: boolean
+}
+
+export interface DeviceEnd {
+  until: string
+  daysUntil: number
+  status: DueStatus
+}
+
+export interface DeviceSummary {
+  id: string
+  path: string
+  etag: string
+  name: string
+  fields: {
+    name: string
+    hersteller?: string
+    modell?: string
+    seriennummer?: string
+    raum?: string
+    eigentum?: string
+    kaufdatum?: string
+    haendler?: string
+    preis_eur?: number
+    garantie_monate?: number
+    garantie_bis?: string
+    baujahr?: number
+    paperless?: number | string
+    [key: string]: unknown
+  }
+  evaluation: { warranty: DeviceEnd | null; liability: DeviceEnd | null }
+  photoCount: number
+  modifiedBy: string | null
+}
+
+export interface DeviceDetail extends DeviceSummary {
+  maintenance: { id: string; title: string; evaluation: MaintenanceEvaluation }[]
+  photos: PhotoRef[]
+  notes: string
+}
+
+export interface Bin {
+  id: string
+  name: string
+  farbe: string
+  stichwort?: string
+}
+
+export interface Waste {
+  configured: boolean
+  id: string | null
+  etag: string | null
+  fullService: boolean
+  url: string | null
+  bins: Bin[]
+  pickups: { date: string; time: string | null; summary: string; bin: string | null }[]
+  next: Record<string, string>
+  fetchedAt: number | null
+  error: string | null
+}
+
+export interface Settings {
+  paperlessUrl: string | null
+  readingDay: number
+}

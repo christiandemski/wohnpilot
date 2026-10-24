@@ -8,7 +8,8 @@ Schwebende dunkle Navigation am unteren Rand mit vier Zielen und der Plus-Schalt
 - Ziele: Übersicht · Zähler · Plus · Zuhause · Mehr, alle gleich breit.
 - Jedes Ziel zeigt Icon (20 px) und Wort darunter (11 px, `font-weight` 600); die ganze Spalte ist das Tippziel (mindestens `touch-min`).
 - Inaktiv in `on-inverse-muted`; aktiv in `on-inverse` mit heller Pill hinter dem Icon (`on-inverse` mit 16 % Deckkraft).
-- Plus: Kreis `fab` (36 px) in `accent`, Icon `on-accent`, darunter das Wort wie bei den anderen Zielen („Ablesen“, später „Erfassen“ für das Erfassen-Sheet).
+- Plus: Kreis `fab` (36 px) in `accent`, Icon `on-accent`, darunter das Wort „Erfassen“ wie bei den anderen Zielen. Ein Tipp öffnet das Erfassen-Sheet: Zählerstände ablesen, Mangel melden, Wartung erledigt, Termin, Frist, Gerät; die zuletzt genutzte Wahl steht oben.
+- „Zuhause“ ist aktiv für alles am Haus (Mietvertrag, Wartung, Termine und Müll, Mängel, Geräte), „Mehr“ für Verträge, Fristen und Einstellungen.
 
 ## Regeln
 

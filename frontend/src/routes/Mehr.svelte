@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Bell, BellOff, CalendarClock, CalendarPlus, ChevronRight, Copy, FileText, KeyRound, LogOut, RefreshCw } from '@lucide/svelte'
+  import { Bell, BellOff, CalendarClock, CalendarPlus, ChevronRight, Copy, FileText, LogOut, RefreshCw } from '@lucide/svelte'
   import { api, ApiError, logout } from '../lib/api'
   import { theme, type ThemeChoice } from '../lib/theme.svelte'
   import type { User } from '../lib/types'
@@ -11,7 +11,6 @@
 
   const modules = [
     { href: '/vertraege', label: 'Verträge', meta: 'Strom, Internet, Versicherungen', icon: FileText, module: 'vertraege' },
-    { href: '/mietvertrag', label: 'Mietvertrag', meta: 'Miete, Kaution, Kündigung', icon: KeyRound, module: 'miete' },
     { href: '/fristen', label: 'Fristen', meta: 'Einmalige Termine mit Stichtag', icon: CalendarClock, module: 'vertraege' },
   ]
 
