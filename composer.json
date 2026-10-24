@@ -1,0 +1,46 @@
+{
+    "name": "christiandemski/wohnpilot",
+    "description": "Wohnpilot backend",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.3",
+        "guzzlehttp/guzzle": "^8.3",
+        "minishlink/web-push": "^11.0",
+        "slim/psr7": "^1.8",
+        "slim/slim": "^4.15",
+        "symfony/yaml": "^7.4",
+        "vlucas/phpdotenv": "^5.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Wohnpilot\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Wohnpilot\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test-live": "phpunit --group live",
+        "seed-dev": "php bin/seed-dev.php",
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "php -S localhost:8080 -t public public/index.php"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.3.0"
+        },
+        "allow-plugins": {
+            "php-http/discovery": false
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.5"
+    }
+}
