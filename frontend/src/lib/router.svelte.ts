@@ -19,6 +19,16 @@ const routes: [string, string][] = [
   ['zuhause', '/zuhause'],
   ['zuhause-neu', '/zuhause/neu'],
   ['zuhause-bearbeiten', '/zuhause/bearbeiten'],
+  ['vertraege', '/vertraege'],
+  ['vertrag-neu', '/vertraege/neu'],
+  ['vertrag-detail', '/vertraege/:id'],
+  ['vertrag-bearbeiten', '/vertraege/:id/bearbeiten'],
+  ['mietvertrag', '/mietvertrag'],
+  ['mietvertrag-bearbeiten', '/mietvertrag/bearbeiten'],
+  ['fristen', '/fristen'],
+  ['frist-neu', '/fristen/neu'],
+  ['frist-detail', '/fristen/:id'],
+  ['frist-bearbeiten', '/fristen/:id/bearbeiten'],
   ['mehr', '/mehr'],
 ]
 

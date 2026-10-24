@@ -13,6 +13,14 @@
   import Zuhause from './routes/Zuhause.svelte'
   import ObjektForm from './routes/ObjektForm.svelte'
   import Mehr from './routes/Mehr.svelte'
+  import Vertraege from './routes/Vertraege.svelte'
+  import VertragDetail from './routes/VertragDetail.svelte'
+  import VertragForm from './routes/VertragForm.svelte'
+  import Mietvertrag from './routes/Mietvertrag.svelte'
+  import MietvertragForm from './routes/MietvertragForm.svelte'
+  import Fristen from './routes/Fristen.svelte'
+  import FristDetail from './routes/FristDetail.svelte'
+  import FristForm from './routes/FristForm.svelte'
   import NichtGefunden from './routes/NichtGefunden.svelte'
 
   theme.apply()
@@ -60,6 +68,26 @@
           <ObjektForm />
         {:else if router.current.name === 'zuhause-bearbeiten'}
           <ObjektForm edit />
+        {:else if router.current.name === 'vertraege'}
+          <Vertraege />
+        {:else if router.current.name === 'vertrag-neu'}
+          <VertragForm />
+        {:else if router.current.name === 'vertrag-detail'}
+          <VertragDetail id={router.current.params.id} />
+        {:else if router.current.name === 'vertrag-bearbeiten'}
+          <VertragForm id={router.current.params.id} />
+        {:else if router.current.name === 'mietvertrag'}
+          <Mietvertrag />
+        {:else if router.current.name === 'mietvertrag-bearbeiten'}
+          <MietvertragForm />
+        {:else if router.current.name === 'fristen'}
+          <Fristen />
+        {:else if router.current.name === 'frist-neu'}
+          <FristForm />
+        {:else if router.current.name === 'frist-detail'}
+          <FristDetail id={router.current.params.id} />
+        {:else if router.current.name === 'frist-bearbeiten'}
+          <FristForm id={router.current.params.id} />
         {:else if router.current.name === 'mehr'}
           <Mehr {user} />
         {:else}

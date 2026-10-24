@@ -212,6 +212,12 @@
               <div><dt>Abschlag</dt><dd class="num">{formatEuro(m.tariff.abschlag_eur, true)} im Monat</dd></div>
             {/if}
           </dl>
+          {#if m.request}
+            <p class="small">Aufforderung: <a href="/fristen/{encodeURIComponent(m.request.id)}">{m.request.title}</a></p>
+          {:else}
+            <a class="btn btn-secondary on-surface" href="/fristen/neu?zaehler={encodeURIComponent(m.id)}">Aufforderung zum Ablesen eintragen</a>
+            <p class="muted small">Kommt ein Brief vom Versorger mit Stichtag, trag ihn hier ein. Dann erinnert dich Wohnpilot rechtzeitig.</p>
+          {/if}
           {#if m.notes}<p class="notes">{m.notes}</p>{/if}
           {#if m.modifiedBy}<p class="muted small">Zuletzt geändert von {m.modifiedBy}</p>{/if}
         </section>

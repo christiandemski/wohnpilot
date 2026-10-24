@@ -37,6 +37,9 @@ const MESSAGES: Record<string, string> = {
   offline: 'Du bist offline. Deine Eingabe ist noch nicht gespeichert.',
   invalid_login: 'E-Mail oder Passwort stimmt nicht.',
   rate_limited: 'Zu viele Fehlversuche. Warte bitte 15 Minuten oder melde dich mit BearID an.',
+  exists: 'Das gibt es schon.',
+  no_column: 'Der Notiz fehlt die Spalte dafür. Ergänz sie in der Notes-App.',
+  invalid_note: 'Die Notiz hat kein gültiges Datum. Bitte in der Notes-App prüfen.',
   not_released: 'Wohnpilot ist für dein BearID-Konto nicht freigegeben. Der Admin kann es unter „Benutzer“ freigeben.',
 }
 
@@ -49,6 +52,10 @@ const FIELD_PROBLEMS: Record<string, string> = {
   range: 'Wert außerhalb des Bereichs.',
   unknown: 'Bitte aus der Liste wählen.',
   too_long: 'Das ist zu lang.',
+  text: 'Bitte als Text.',
+  id: 'Ungültige Auswahl.',
+  one_of: 'Bitte nur Wochen oder Monate.',
+  after_date: 'Muss vor dem Stichtag liegen.',
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {

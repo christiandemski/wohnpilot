@@ -1,9 +1,16 @@
 <script lang="ts">
-  import { LogOut, RefreshCw } from '@lucide/svelte'
+  import { CalendarClock, ChevronRight, FileText, KeyRound, LogOut, RefreshCw } from '@lucide/svelte'
   import { api, ApiError, logout } from '../lib/api'
   import { theme, type ThemeChoice } from '../lib/theme.svelte'
   import type { User } from '../lib/types'
+  import IconTile from '../components/IconTile.svelte'
   import Segmentschalter from '../components/Segmentschalter.svelte'
+
+  const modules = [
+    { href: '/vertraege', label: 'Verträge', meta: 'Strom, Internet, Versicherungen', icon: FileText, module: 'vertraege' },
+    { href: '/mietvertrag', label: 'Mietvertrag', meta: 'Miete, Kaution, Kündigung', icon: KeyRound, module: 'miete' },
+    { href: '/fristen', label: 'Fristen', meta: 'Einmalige Termine mit Stichtag', icon: CalendarClock, module: 'vertraege' },
+  ]
 
   let { user }: { user: User } = $props()
 
@@ -26,6 +33,24 @@
 </script>
 
 <header class="head"><h1>Mehr</h1></header>
+
+<nav class="card modules" aria-label="Bereiche">
+  <ul>
+    {#each modules as item (item.href)}
+      {@const Icon = item.icon}
+      <li>
+        <a class="row" href={item.href}>
+          <IconTile module={item.module}><Icon size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
+          <span class="text">
+            <span class="title">{item.label}</span>
+            <span class="meta">{item.meta}</span>
+          </span>
+          <ChevronRight size={18} strokeWidth={1.75} aria-hidden="true" class="chevron" />
+        </a>
+      </li>
+    {/each}
+  </ul>
+</nav>
 
 <section class="card" aria-labelledby="darstellung">
   <h2 id="darstellung">Darstellung</h2>
@@ -89,6 +114,51 @@
 
   .card :global(.track) {
     align-self: stretch;
+  }
+
+  .modules {
+    padding: var(--space-1) var(--space-4);
+  }
+
+  .modules ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .modules li + li {
+    border-top: 1px solid var(--line);
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 64px;
+    text-decoration: none;
+  }
+
+  .text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .title {
+    font-weight: 600;
+  }
+
+  .meta {
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--ink-muted);
+  }
+
+  .row :global(.chevron) {
+    flex-shrink: 0;
+    color: var(--ink-muted);
   }
 
   .muted {

@@ -10,7 +10,7 @@
     { href: '/', label: 'Übersicht', icon: LayoutGrid, module: 'wissen', match: ['uebersicht'] },
     { href: '/zaehler', label: 'Zähler', icon: Gauge, module: 'zaehler', match: ['zaehler', 'zaehler-detail', 'zaehler-neu', 'zaehler-bearbeiten'] },
     { href: '/zuhause', label: 'Zuhause', icon: House, module: 'miete', match: ['zuhause', 'zuhause-neu', 'zuhause-bearbeiten'] },
-    { href: '/mehr', label: 'Mehr', icon: Ellipsis, module: 'wissen', match: ['mehr'] },
+    { href: '/mehr', label: 'Mehr', icon: Ellipsis, module: 'wissen', match: ['mehr', 'vertraege', 'vertrag-neu', 'vertrag-detail', 'vertrag-bearbeiten', 'mietvertrag', 'mietvertrag-bearbeiten', 'fristen', 'frist-neu', 'frist-detail', 'frist-bearbeiten'] },
   ]
 
   const isCurrent = (item: (typeof items)[number]) => item.match.includes(router.current.name)

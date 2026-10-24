@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { House, Pencil } from '@lucide/svelte'
+  import { ChevronRight, House, KeyRound, Pencil } from '@lucide/svelte'
   import { api } from '../lib/api'
   import { Resource } from '../lib/resource.svelte'
   import { formatDate, formatNumber } from '../lib/format'
@@ -46,6 +46,12 @@
     </dl>
   </section>
 
+  <a class="card lease" href="/mietvertrag">
+    <IconTile module="miete"><KeyRound size={20} strokeWidth={1.75} aria-hidden="true" /></IconTile>
+    <span>Mietvertrag</span>
+    <ChevronRight size={18} strokeWidth={1.75} aria-hidden="true" />
+  </a>
+
   <section class="card" aria-labelledby="raeume">
     <h2 id="raeume">Räume</h2>
     {#if o.raeume.length === 0}
@@ -87,6 +93,18 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+  }
+
+  .lease {
+    flex-direction: row;
+    align-items: center;
+    min-height: 52px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .lease span {
+    flex: 1;
   }
 
   .title-row {
